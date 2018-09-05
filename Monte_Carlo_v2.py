@@ -10,15 +10,15 @@ import time
 # SIMULATION PARAMETERS
 output_folder_name='test'                                                       # You must create this folder before you start the simulation
 number_of_phonons=200
-number_of_phonons_in_a_group=50                                                 # To reduce the memory load, phonons are simulated in small groups
-number_of_timesteps=20000
+number_of_phonons_in_a_group=200                                                 # To reduce the memory load, phonons are simulated in small groups
+number_of_timesteps=50000
 number_of_nodes=400                                                             # Resolution of distribution plots
 timestep=0.5e-12                                                                # [s] Duration of one timestep
-T=300.0                                                                           # [K] Temperature of the system
+T=4.0                                                                          # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
-width=100e-9    
-length=500e-9#2275e-9
+width=1300e-9    
+length=2200e-9#2275e-9
 thickness=70e-9 
 
 # ROUGHNESS [m]                                                                                              
@@ -29,38 +29,115 @@ bottom_roughness=0.2e-9
 pillar_top_roughness=0.3e-9
 
 # HOLE PARAMETERS [m]
-hole_shape='pillar'                                                               # Chose between 'circle', 'rectangle', 'pillar', 'none'
-lattice_type='square'#'square'
+hole_shape='circle'                                                             # Chose between 'circle', 'rectangle', 'pillar', 'none'
+lattice_type='turn'#'square'                                                   # Chose between 'square', 'serpentine','cloak' (or write your own in the 'hole_positioning') 
 pillar_wall_angle=pi/2
-circular_hole_diameter=40e-9#185e-9
+circular_hole_diameter=260e-9#185e-9
 rectangular_hole_side_x=100e-9#545e-9
 rectangular_hole_side_y=200e-9#390e-9                                                        
-number_of_periods_x=1
-number_of_periods_y=5
+number_of_periods_x=5
+number_of_periods_y=3
 period_x=300e-9#360e-9
-period_y=100e-9#400e-9
-first_hole_coordinate=50e-9
+period_y=300e-9#period_x*np.sqrt(3)/2#300e-9#400e-9
+first_hole_coordinate=200e-9
 pillar_height=70e-9
 
 
 def hole_positioning():
-    '''This function positions holes in space and returns coordinates of their centers'''
+    '''This function places holes in space, depending on the lattice type, 
+    and returns coordinates of their centers and changes in their diameter (if any).
+    In the hole_coordinates array, column 0 is X, column 1 is Y, column 2 is correction of the size, 
+    i.e. 0 is no correction, 1 means the hole will be +100% larger, -0.5 means 50% smaller.'''
     if lattice_type=='square':
-        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,2))
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
         hole_number=0
         for i in range(number_of_periods_y):
             for j in range(number_of_periods_x):
                 hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
                 hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
                 hole_number+=1
+    
     if lattice_type=='serpentine':
-        hole_coordinates=zeros((5,2))
+        hole_coordinates=zeros((5,3))
         neck=155e-9
         hole_coordinates[0,0]=neck/2
         hole_coordinates[0,1]=0
         for i in range(1,5):
             hole_coordinates[i,0]=sign(-0.5+i%2)*neck/2
             hole_coordinates[i,1]=(2*i-1)*(rectangular_hole_side_y)/2+neck*i
+    
+    if lattice_type=='cloak':
+        total_number_of_holes=38
+        hole_in_the_center=True
+        total_number_of_holes+=hole_in_the_center*1                             # i.e. if there is hole in the center, than there is one more hole
+        hole_coordinates=zeros((total_number_of_holes,3))
+        hole_coordinates[0,0]=0.0
+        hole_coordinates[0,1]=first_hole_coordinate   
+        hole_coordinates[1,0]=-period_x/2
+        hole_coordinates[1,1]=first_hole_coordinate+period_y
+        hole_coordinates[2,0]=+period_x/2
+        hole_coordinates[2,1]=first_hole_coordinate+period_y
+        for i in range(3):
+            hole_coordinates[3+i,0]=-period_x+period_x*i
+            hole_coordinates[3+i,1]=first_hole_coordinate+period_y*2
+        for i in range(4):
+            hole_coordinates[6+i,0]=-1.5*period_x+period_x*i
+            hole_coordinates[6+i,1]=first_hole_coordinate+period_y*3
+        for i in range(5):
+            hole_coordinates[10+i,0]=-2.0*period_x+period_x*i
+            hole_coordinates[10+i,1]=first_hole_coordinate+period_y*4
+        hole_coordinates[15,0]=-2.25*period_x
+        hole_coordinates[15,1]=first_hole_coordinate+period_y*5
+        hole_coordinates[16,0]=+2.25*period_x
+        hole_coordinates[16,1]=first_hole_coordinate+period_y*5
+        for i in range(2):
+            hole_coordinates[17+2*i,0]=-2.4*period_x
+            hole_coordinates[17+2*i,1]=first_hole_coordinate+period_y*(6+i)
+            hole_coordinates[18+2*i,0]=+2.4*period_x
+            hole_coordinates[18+2*i,1]=first_hole_coordinate+period_y*(6+i)   
+        hole_coordinates[21,0]=-2.25*period_x
+        hole_coordinates[21,1]=first_hole_coordinate+period_y*8
+        hole_coordinates[22,0]=+2.25*period_x
+        hole_coordinates[22,1]=first_hole_coordinate+period_y*8
+        for i in range(5):
+            hole_coordinates[23+i,0]=-2.0*period_x+period_x*i
+            hole_coordinates[23+i,1]=first_hole_coordinate+period_y*9        
+        for i in range(4):
+            hole_coordinates[28+i,0]=-1.5*period_x+period_x*i
+            hole_coordinates[28+i,1]=first_hole_coordinate+period_y*10
+        for i in range(3):
+            hole_coordinates[32+i,0]=-period_x+period_x*i
+            hole_coordinates[32+i,1]=first_hole_coordinate+period_y*11
+        hole_coordinates[35,0]=-period_x/2
+        hole_coordinates[35,1]=first_hole_coordinate+period_y*12
+        hole_coordinates[36,0]=+period_x/2
+        hole_coordinates[36,1]=first_hole_coordinate+period_y*12           
+        hole_coordinates[37,0]=0.0
+        hole_coordinates[37,1]=first_hole_coordinate+period_y*13             
+            
+        # This is the big hole in the center
+        if hole_in_the_center==True:
+            hole_coordinates[38,0]=0
+            hole_coordinates[38,1]=first_hole_coordinate+period_y*6.5  
+            hole_coordinates[38,2]=3.5
+    
+    if lattice_type=='turn':
+        turn_shift=30e-9
+        number_of_periods_x_in_turn=4
+        # This is just a suqare lattice before the turn 
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y+number_of_periods_x_in_turn*number_of_periods_x,3))
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
+                hole_number+=1
+        # This is the turning part after the square lattice part
+        for i in range(number_of_periods_x_in_turn):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x+turn_shift*(i)
+                hole_coordinates[hole_number,1]=first_hole_coordinate+period_y*(number_of_periods_y+i)
+                hole_number+=1
     return hole_coordinates
 
 
@@ -92,7 +169,7 @@ def bulk_phonon_dispersion(N):
 def phonon_properties_assignment():
     '''This function assigns phonon frequency (f) according to the Plank distribution at a given temperature T,
     choses polarization and calculates group velocity from bulk disperion'''
-    default_speed=6000                                                          #[m/s] This is the speed for Debye approximation
+    default_speed=6000                                                          # [m/s] This is the speed for Debye approximation
     f_max=default_speed/(2*pi*hbar*default_speed/(2.82*k*T))                    # Frequency of the peak of the Plank distribution
     DOS_max=3*((2*pi*f_max)**2)/(2*(pi**2)*(default_speed**3))                  # DOS for f_max in Debye approximation
     bose_einstein_max=1/(exp((hbar*2*pi*f_max)/(k*T))-1)                        # Bose-Einstein destribution for f_max
@@ -108,7 +185,7 @@ def phonon_properties_assignment():
     polarization=choice(['TA','TA','LA'])                                       # There are two TA branches and one LA branch    
     dispersion=bulk_phonon_dispersion(5000)
     
-    if polarization=='TA' and f<4.5e12:                                         # Limit <4.5e12 because TA branches end there
+    if polarization=='TA' and f<4.5e12:                                         # Limit <4.5e12 because TA branches in Si end there
         j=(np.abs(dispersion[:,2] - f)).argmin()
         speed=2*pi*abs(dispersion[j+1,2]-dispersion[j,2])/abs(dispersion[j+1,0]-dispersion[j,0])
     else:                                                                       # i.e. LA polarization
@@ -143,11 +220,13 @@ def scattering_on_rectangular_holes(x, y, z, theta, phi, frequency, hole_coordin
     x,y,z=move(x,y,z,theta,phi,speed)                                           # We make a step to check if the scattering occurs on the next step
     for i in range(hole_coordinates.shape[0]):
         x0=hole_coordinates[i,0]                                                # Coordinates of the hole center
-        y0=hole_coordinates[i,1]  
-        if abs(x-x0)<=rectangular_hole_side_x/2 and abs(y-y0)<=rectangular_hole_side_y/2:
+        y0=hole_coordinates[i,1]
+        Lx=rectangular_hole_side_x*(hole_coordinates[i,2]+1)                    # Correction of the hole size if there are holes of non standard size
+        Ly=rectangular_hole_side_y*(hole_coordinates[i,2]+1)
+        if abs(x-x0)<=Lx/2 and abs(y-y0)<=Ly/2:
             lam=speed/frequency
-            y1=(y0-y)+cos(theta)*(rectangular_hole_side_x/2-abs(x0-x))/abs(sin(theta)) # y coordinate of the intersection with the hole side
-            if abs(y1)<=rectangular_hole_side_y/2:                              # Sidewalls scattering 
+            y1=(y0-y)+cos(theta)*(Lx/2-abs(x0-x))/abs(sin(theta))               # y coordinate of the intersection with the hole side
+            if abs(y1)<=Ly/2:                                                   # Sidewalls scattering 
                 a=arctan(tan(theta)*cos(phi))                                   # Angle to the surface
                 p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(pi/2-a))**2)/(lam**2)) # Specular scattering probability    
                 if random()<p:                                                    # Specular scattering
@@ -186,8 +265,9 @@ def scattering_on_circular_holes(x,y,z,theta,phi,frequency,hole_coordinates,spee
     x,y,z=move(x,y,z,theta,phi,speed)
     for i in range(hole_coordinates.shape[0]):                                  # For each hole
         x0=hole_coordinates[i,0]                                                # Coordinates of the hole center
-        y0=hole_coordinates[i,1]                  
-        if (x-x0)**2+(y-y0)**2 <= (circular_hole_diameter/2)**2:                # i.e. if it at the hole boundary        
+        y0=hole_coordinates[i,1]  
+        R=circular_hole_diameter*(1+hole_coordinates[i,2])/2                    # Radius of the given hole              
+        if (x-x0)**2+(y-y0)**2 <= R**2:                                         # If the phonon is inside the hole        
             tangent_theta=arctan(-(x-x0)/(y-y0))
             lam=speed/frequency                                                 
             a=arctan(tan((pi/2-theta)+tangent_theta)*cos(phi))                  # Angle to the surface
@@ -217,8 +297,8 @@ def scattering_on_circular_pillars(x,y,z,theta,phi,frequency,hole_coordinates,sp
     for i in range(hole_coordinates.shape[0]):                                  # For each hole
         x0=hole_coordinates[i,0]                                                # Coordinates of the hole center
         y0=hole_coordinates[i,1]
-        #R=circular_hole_diameter/2 
-        R=(circular_hole_diameter/2)-(z-thickness/2)/tan(pillar_wall_angle)     # Cone radius at a given z coordinate                  
+        R=(circular_hole_diameter/2)-(z-thickness/2)/tan(pillar_wall_angle)     # Cone radius at a given z coordinate   
+        R=R+R*hole_coordinates[i,2]                                             # Correction of the radius of the given pillar           
         if (x-x0)**2+(y-y0)**2 >= R**2 and (x-x0)**2+(y-y0)**2 < (R+2*speed*timestep)**2 and z > thickness/2: # i.e. if it at the boundary inside the pillar      
             tangent_theta=arctan(-(x-x0)/(y-y0))                                
             lam=speed/frequency                                                 
@@ -765,4 +845,4 @@ def main2():
     np.savetxt('Distribution of wavelengths.txt', cummulative_conductivity, delimiter="	")
     return
 
-main2()
+main1()
