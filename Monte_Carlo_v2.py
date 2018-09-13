@@ -9,16 +9,16 @@ import time
 
 # SIMULATION PARAMETERS
 output_folder_name='test'                                                       # You must create this folder before you start the simulation
-number_of_phonons=200
-number_of_phonons_in_a_group=200                                                 # To reduce the memory load, phonons are simulated in small groups
-number_of_timesteps=50000
+number_of_phonons=20
+number_of_phonons_in_a_group=20                                                 # To reduce the memory load, phonons are simulated in small groups
+number_of_timesteps=80000
 number_of_nodes=400                                                             # Resolution of distribution plots
 timestep=0.5e-12                                                                # [s] Duration of one timestep
 T=4.0                                                                          # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
 width=1300e-9    
-length=2200e-9#2275e-9
+length=2800e-9#2275e-9
 thickness=70e-9 
 
 # ROUGHNESS [m]                                                                                              
@@ -29,26 +29,25 @@ bottom_roughness=0.2e-9
 pillar_top_roughness=0.3e-9
 
 # HOLE PARAMETERS [m]
-hole_shape='circle'                                                             # Chose between 'circle', 'rectangle', 'pillar', 'none'
-lattice_type='turn'#'square'                                                   # Chose between 'square', 'serpentine','cloak' (or write your own in the 'hole_positioning') 
-pillar_wall_angle=pi/2
+hole_shape='circle'                                                             # Choose between 'circle', 'rectangle', 'pillar', 'none'
+lattice_type='turn'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
 circular_hole_diameter=260e-9#185e-9
 rectangular_hole_side_x=100e-9#545e-9
 rectangular_hole_side_y=200e-9#390e-9                                                        
-number_of_periods_x=5
-number_of_periods_y=3
 period_x=300e-9#360e-9
 period_y=300e-9#period_x*np.sqrt(3)/2#300e-9#400e-9
 first_hole_coordinate=200e-9
 pillar_height=70e-9
-
+pillar_wall_angle=pi/2
 
 def hole_positioning():
     '''This function places holes in space, depending on the lattice type, 
-    and returns coordinates of their centers and changes in their diameter (if any).
+    and returns coordinates of their centers and changes in their size (if any).
     In the hole_coordinates array, column 0 is X, column 1 is Y, column 2 is correction of the size, 
     i.e. 0 is no correction, 1 means the hole will be +100% larger, -0.5 means 50% smaller.'''
     if lattice_type=='square':
+        number_of_periods_x=5
+        number_of_periods_y=3
         hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
         hole_number=0
         for i in range(number_of_periods_y):
@@ -56,7 +55,7 @@ def hole_positioning():
                 hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
                 hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
                 hole_number+=1
-    
+
     if lattice_type=='serpentine':
         hole_coordinates=zeros((5,3))
         neck=155e-9
@@ -65,7 +64,7 @@ def hole_positioning():
         for i in range(1,5):
             hole_coordinates[i,0]=sign(-0.5+i%2)*neck/2
             hole_coordinates[i,1]=(2*i-1)*(rectangular_hole_side_y)/2+neck*i
-    
+
     if lattice_type=='cloak':
         total_number_of_holes=38
         hole_in_the_center=True
@@ -120,24 +119,30 @@ def hole_positioning():
             hole_coordinates[38,0]=0
             hole_coordinates[38,1]=first_hole_coordinate+period_y*6.5  
             hole_coordinates[38,2]=3.5
-    
+
     if lattice_type=='turn':
-        turn_shift=30e-9
-        number_of_periods_x_in_turn=4
-        # This is just a suqare lattice before the turn 
-        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y+number_of_periods_x_in_turn*number_of_periods_x,3))
+        turning_point=13 # This is an integer number N in Lx=N*period_x where Lx is the distance form the center to the center of the turn
+        number_of_periods_y_in_turn=4                                           # Number of periods in the turning part
+        number_of_periods_y_before_turn=4                                       # Number of periods before the turn
+        number_of_periods_x=7                                                   # Number of periods along x (should be odd number)
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y_before_turn+number_of_periods_y_in_turn*number_of_periods_x,3))
         hole_number=0
-        for i in range(number_of_periods_y):
-            for j in range(number_of_periods_x):
-                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
-                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
+        for Ny in range(number_of_periods_y_before_turn):                       # This is the square lattice before the turn
+            for Nx in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+Nx*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+Ny*period_y
                 hole_number+=1
-        # This is the turning part after the square lattice part
-        for i in range(number_of_periods_x_in_turn):
-            for j in range(number_of_periods_x):
-                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x+turn_shift*(i)
-                hole_coordinates[hole_number,1]=first_hole_coordinate+period_y*(number_of_periods_y+i)
+        
+        offset_x=-period_x*turning_point
+        offset_y=first_hole_coordinate+period_y*(number_of_periods_y_before_turn-1)        
+        turning_angle=2.0*arcsin(1.0/(2.0*turning_point))       
+        for Ny in range(number_of_periods_y_in_turn):                           # This is the turning part
+            for Nx in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=offset_x + (Nx+turning_point-(number_of_periods_x-1)/2)*period_x*cos(turning_angle*(Ny+1))
+                hole_coordinates[hole_number,1]=offset_y + (Nx+turning_point-(number_of_periods_x-1)/2)*period_x*sin(turning_angle*(Ny+1))  
+                #hole_coordinates[hole_number,2]=period_y*(-turning_point + (Nx+turning_point-(number_of_periods_x-1)/2))/(turning_point*period_x)
                 hole_number+=1
+
     return hole_coordinates
 
 
@@ -648,6 +653,7 @@ def output_distributions():
 
 
 def output_information(start_time, simulation_scheme):
+    '''This function outputs the simulation information into the file in the folder'''
     with open("All exit angles.txt", "r") as f:
         exit_angles = np.loadtxt(f, dtype='float')
     percentage=100*np.count_nonzero(exit_angles)/(number_of_phonons+2*number_of_phonons*((simulation_scheme==2)*1))
@@ -672,6 +678,7 @@ def output_information(start_time, simulation_scheme):
 
 
 def output_statistics_on_scattering_events():
+    '''This function calculated and outputs statistics on scattering events'''
     with open("Statistics.txt","r") as f:
         stat = np.loadtxt(f, dtype='float')
     with open("Information.txt","a") as f:
