@@ -1,4 +1,4 @@
-from numpy import pi, cos, sin, tan, exp, arctan, arcsin, sign, zeros, log, sqrt
+from numpy import pi, cos, sin, tan, exp, arctan, arcsin, sign, zeros, log, sqrt, arccos
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
@@ -10,12 +10,12 @@ import time
 
 # SIMULATION PARAMETERS
 output_folder_name='test'                                                       # You must create this folder before you start the simulation
-number_of_phonons=300
-number_of_phonons_in_a_group=300                                                 # To reduce the memory load, phonons are simulated in small groups
-number_of_timesteps=25000
+number_of_phonons=100
+number_of_phonons_in_a_group=100                                               # To reduce the memory load, phonons are simulated in small groups
+number_of_timesteps=8000
 number_of_nodes=400                                                             # Resolution of distribution plots
 timestep=0.5e-12                                                                # [s] Duration of one timestep
-T=4.0                                                                          # [K] Temperature of the system
+T=4.0                                                                           # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
 width=300e-9    
@@ -29,21 +29,22 @@ top_roughness=0.2e-9
 bottom_roughness=0.2e-9                              
 pillar_top_roughness=0.3e-9
 
-# HOLE PARAMETERS [m]
+# SCATTER PARAMETERS [m]
 holes='yes'                                                             
+hole_lattice_type='square'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
 pillars='no'
-lattice_type='square'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
-circular_hole_diameter=200e-9#185e-9
-rectangular_hole_side_x=200e-9#545e-9
-rectangular_hole_side_y=200e-9#390e-9                                                        
+pillar_lattice_type='square'
+circular_hole_diameter=250e-9#185e-9
+rectangular_hole_side_x=150e-9#545e-9
+rectangular_hole_side_y=300e-9#390e-9                                                        
 period_x=300e-9#360e-9
 period_y=300e-9#period_x*np.sqrt(3)/2#300e-9#400e-9
 pillar_height=70e-9
 pillar_wall_angle=pi/2 # DO NOT CHANGE
 
 # ENERGY MAP PARAMETERS
-number_of_pixels_x=200
-number_of_pixels_y=200
+number_of_pixels_x=int(0.5*width*1e9)
+number_of_pixels_y=int(0.5*length*1e9)
 minimum_of_colorbar=1e-22                                                       # Cannot be zero!
 
 
@@ -51,13 +52,14 @@ def hole_positioning():
     '''This function places holes in space, depending on the lattice type, 
     and returns coordinates of their centers and changes in their size (if any).
     In the hole_coordinates array, column 0 is X, column 1 is Y, column 2 is correction of the size, 
-    i.e. 0 is no correction, 1 means the hole will be +100% larger, -0.5 means 50% smaller.'''
-    if lattice_type=='square':
+    i.e. 0 is no correction, 1 means the hole will be +100% larger, -0.5 means -50% smaller.
+    hole_shapes list contains shapes of hole e.g. 'rectangle', 'circle', 'triangle_up' or 'triangle_down' '''
+    if hole_lattice_type=='square':
         first_hole_coordinate=200e-9
-        number_of_periods_x=2
-        number_of_periods_y=1
+        number_of_periods_x=1
+        number_of_periods_y=2
         hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
-        hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
+        hole_shapes=['triangle_down' for x in range(hole_coordinates.shape[0])]
         #hole_shapes[1]='rectangle'
         hole_number=0
         for i in range(number_of_periods_y):
@@ -65,8 +67,8 @@ def hole_positioning():
                 hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
                 hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
                 hole_number+=1
-
-    if lattice_type=='serpentine':
+                
+    if hole_lattice_type=='serpentine':
         hole_coordinates=zeros((5,3))
         neck=155e-9
         hole_coordinates[0,0]=neck/2
@@ -76,7 +78,26 @@ def hole_positioning():
             hole_coordinates[i,1]=(2*i-1)*(rectangular_hole_side_y)/2+neck*i
         hole_shapes=['rectangle' for x in range(hole_coordinates.shape[0])]
 
-    if lattice_type=='cloak':
+    if hole_lattice_type=='diode':
+        first_hole_coordinate=200e-9
+        number_of_periods_x=2
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y+number_of_periods_y,3))
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
+                hole_coordinates[hole_number,2]=0
+                hole_number+=1
+        for i in range(number_of_periods_y):
+            hole_coordinates[hole_number,0]=0
+            hole_coordinates[hole_number,1]=(256.5e-9)+i*period_y#first_hole_coordinate
+            hole_coordinates[hole_number,2]=-0.4#-0.5625
+            hole_number+=1
+        hole_shapes=['triangle_down' for x in range(hole_coordinates.shape[0])]
+        
+    if hole_lattice_type=='cloak':
         first_hole_coordinate=200e-9
         total_number_of_holes=38
         hole_in_the_center=False
@@ -133,7 +154,7 @@ def hole_positioning():
             hole_coordinates[38,1]=first_hole_coordinate+period_y*6.5  
             hole_coordinates[38,2]=3.5
 
-    if lattice_type=='turn':
+    if hole_lattice_type=='turn':
         turning_point=14 # This is an integer number N in Lx=N*period_x where Lx is the distance form the center to the center of the turn
         number_of_periods_y_in_turn=4                                           # Number of periods in the turning part
         number_of_periods_y_before_turn=4                                       # Number of periods before the turn
@@ -165,7 +186,7 @@ def pillar_positioning():
     and returns coordinates of their centers and changes in their size (if any).
     In the pillar_coordinates array, column 0 is X, column 1 is Y, column 2 is correction of the size, 
     i.e. 0 is no correction, 1 means the pillar will be +100% larger, -0.5 means 50% smaller.'''
-    if lattice_type=='square':
+    if pillar_lattice_type=='square':
         number_of_periods_x=1
         number_of_periods_y=2
         first_pillar_coordinate=200e-9
@@ -178,9 +199,10 @@ def pillar_positioning():
                 hole_number+=1
     return pillar_coordinates
 
+
 def initialization():
     '''This function initializes position and angles of a phonon'''
-    if lattice_type=='serpentine':
+    if hole_lattice_type=='serpentine':
         x=-width/2+(155e-9)/2+0.4*(155e-9)*(2*random()-1)
     else:
         x=0.4*width*(2*random()-1)                                              # Here 0.4 is to prevent initialization right next to a wall                                             
@@ -240,7 +262,7 @@ def phonon_properties_assignment_2(j, branch):
     w=2*pi*abs((dispersion[j+1,branch+1]+dispersion[j,branch+1])/2)             # Angular freequency  (we take average in the interval)
     dw=2*pi*abs(dispersion[j+1,branch+1]-dispersion[j,branch+1])                # Delta angular freequency        
     speed=dw/dK                                                                 # Group velocity
-    frequency=w/(2*pi)    
+    frequency=w/(2*pi)
     polarization='LA'*(branch == 0)*1+'TA'*(branch != 0)*1                      # Polarization according to the branch                                        
     return frequency, polarization, speed, w, K, dK
 
@@ -253,26 +275,25 @@ def move(x, y, z, theta, phi, speed):
     return x, y, z
 
 
-def scattering_on_rectangular_holes(x, y, z, theta, phi, frequency, speed, x0, y0, Lx, Ly):
+def scattering_on_rectangular_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx, Ly):
     '''This function checks if the phonon strikes a rectangular hole and what is the new direction after the scattering'''
     x,y,z=move(x,y,z,theta,phi,speed)                                           # We make a test step to check if the scattering occurs on the next step
-    if abs(x-x0)<=Lx/2 and abs(y-y0)<=Ly/2:
-        lam=speed/frequency
+    if abs(x-x0)<=Lx/2 and abs(y-y0)<=Ly/2:                                     # If the phonon is inside the rectangle
         y1=(y0-y)+cos(theta)*(Lx/2-abs(x0-x))/abs(sin(theta))                   # y coordinate of the intersection with the hole side
         if abs(y1)<=Ly/2:                                                       # Sidewalls scattering 
-            a=arctan(tan(theta)*cos(phi))                                       # Angle to the surface
-            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(pi/2-a))**2)/(lam**2))  # Specular scattering probability    
+            a=arccos(cos(phi)*sin(abs(theta)))                                  # Angle to the normale to the surface
+            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability    
             if random()<p:                                                      # Specular scattering
                 new_theta=-theta
                 new_phi=phi
-                scattering_type='specular'                                        
+                scattering_type='specular'    
             else:                                                               # Diffuse scattering                                                       
                 new_theta=-sign(sin(theta))*pi/2+arcsin(2*random()-1)           # Lambert cosine distribution
                 new_phi=arcsin(2*random()-1)
                 scattering_type='diffuse'
         else:                                                                   # Top and bottom scattering
-            a=arcsin(cos(theta)*cos(phi))                                       # Angle to the surface
-            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(pi/2-a))**2)/(lam**2))  # Specular scattering probability
+            a=arccos(cos(phi)*cos(theta))                                       # Angle to the surface
+            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
             if random()<p:                                                      # Specular scattering
                 new_theta=sign(theta)*pi-theta
                 new_phi=phi
@@ -296,10 +317,10 @@ def scattering_on_circular_holes(x,y,z,theta,phi,frequency,speed,x0,y0,R):
     '''This function checks if a phonon strikes a circular hole and what is the new direction after the scattering'''
     x,y,z=move(x,y,z,theta,phi,speed)                                           # We make a test step to check if the scattering occurs on the next step
     if (x-x0)**2+(y-y0)**2 <= R**2:                                             # If the phonon is inside the circle with radius R        
-        tangent_theta=arctan(-(x-x0)/(y-y0))
+        tangent_theta=arctan((x-y0)/(y-y0))
         lam=speed/frequency                                                 
-        a=arctan(tan((pi/2-theta)+tangent_theta)*cos(phi))                      # Angle to the surface
-        p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(pi/2-a))**2)/(lam**2))      # Specular scatteing probability
+        a=arccos(cos(phi)*cos(theta+sign(y-y0)*tangent_theta))                  # Angle to the surface (note that equation depends on the top/bottom side)
+        p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/(lam**2))      # Specular scatteing probability
         if random()<p:                                                          # Specular scattering
             new_theta=theta-pi-theta-2*tangent_theta-theta
             new_phi=phi
@@ -350,6 +371,82 @@ def scattering_on_circular_pillars(x,y,z,theta,phi,frequency,speed,x0,y0,R):
     return new_theta, new_phi, scattering_type
 
 
+def scattering_on_triangle_down_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx, Ly, all_scat_stat):
+    '''This function checks if the phonon strikes a reverse triangular hole and what is the new direction after the scattering'''
+    y_previous=y
+    x,y,z=move(x,y,z,theta,phi,speed)                                           # We make a step to check if the scattering occurs on the next step
+    beta=arctan(0.5*Lx/Ly)                                                      # Angle of the triangle (tip angle)
+    if Ly/2-(y-y0)<=(Lx/2-abs(x-x0))/tan(beta) and abs(y-y0)<=Ly/2:
+        if abs(y_previous-y0)<Ly/2:                                             # Sidewalls scattering 
+            a=arccos(cos(phi)*cos(theta+sign(x-x0)*(pi/2-beta)))                # Angle to the surface
+            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
+            if random()<p:                                                      # Specular scattering
+                new_theta=-theta+sign(x-x0)*2*beta
+                new_phi=phi
+                scattering_type='specular'                                        
+            else:                                                               # Diffuse scattering                                                       
+                rand_sign=sign((2*random()-1))
+                new_theta=rand_sign*pi-rand_sign*arcsin(random())-sign(x-x0)*(pi/2-beta)           # Lambert cosine distribution
+                new_phi=arcsin(2*random()-1)
+                scattering_type='diffuse'
+                if x>x0:
+                    all_scat_stat.append(new_theta)                   
+        else:                                                                   # Top and bottom scattering
+            a=arccos(cos(phi)*cos(theta))                                       # Angle to the surface
+            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
+            if random()<p:                                                      # Specular scattering
+                new_theta=sign(theta)*pi-theta
+                new_phi=phi
+                scattering_type='specular'
+            else:                                                               # Diffuse scattering
+                new_theta=arcsin(2*random()-1)                                  # Lambert cosine distribution
+                new_phi=arcsin(2*random()-1)
+                scattering_type='diffuse'             
+    else:
+        new_theta=theta
+        new_phi=phi
+        scattering_type='no_scattering'
+    return new_theta, new_phi, scattering_type, all_scat_stat
+
+
+def scattering_on_triangle_up_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx, Ly, all_scat_stat):
+    '''This function checks if the phonon strikes a reverse triangular hole and what is the new direction after the scattering'''
+    y_previous=y
+    x,y,z=move(x,y,z,theta,phi,speed)                                           # We make a step to check if the scattering occurs on the next step
+    beta=arctan(0.5*Lx/Ly)                                                      # Angle of the triangle (tip angle)
+    if Ly/2+(y-y0)<=(Lx/2-abs(x-x0))/tan(beta) and abs(y-y0)<=Ly/2:
+        if abs(y_previous-y0)<Ly/2:                                             # Sidewalls scattering 
+            a=arccos(cos(phi)*cos(theta+sign(x-x0)*(pi/2-beta)))                # Angle to the surface
+            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
+            if random()<p:                                                      # Specular scattering
+                new_theta=-theta-sign(x-x0)*2*beta
+                new_phi=phi
+                scattering_type='specular'                                        
+            else:                                                               # Diffuse scattering                                                       
+                new_theta=arcsin(2*random()-1)+sign(x-x0)*(pi/2-beta)           # Lambert cosine distribution
+                new_phi=arcsin(2*random()-1)
+                scattering_type='diffuse'
+                if x<x0:
+                    all_scat_stat.append(new_theta)                   
+        else:                                                                   # Top and bottom scattering
+            a=arccos(cos(phi)*cos(theta))                                       # Angle to the surface
+            p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
+            if random()<p:                                                      # Specular scattering
+                new_theta=sign(theta)*pi-theta
+                new_phi=phi
+                scattering_type='specular'
+            else:                                                               # Diffuse scattering
+                rand_sign=sign((2*random()-1))
+                new_theta=rand_sign*pi-rand_sign*arcsin(random())               # Lambert cosine distribution
+                new_phi=arcsin(2*random()-1)
+                scattering_type='diffuse'             
+    else:
+        new_theta=theta
+        new_phi=phi
+        scattering_type='no_scattering'
+    return new_theta, new_phi, scattering_type, all_scat_stat
+
+
 def internal_scattering_time_calculation(frequency, polarization):
     '''This function determines time after which this phonon will undegro internal scattering'''
     w=2*pi*frequency
@@ -386,8 +483,8 @@ def side_wall_scattering(x, y, z, theta, phi, frequency, speed):
     scattering_type='no_scattering'
     if abs(x) > width/2 :                                                       # Check if we hit the wall
         lam=speed/frequency                                                     
-        a=arctan(tan(theta)*cos(phi))                                           # Angle to the surface
-        p=exp(-16*(pi**2)*(side_wall_roughness**2)*((cos(pi/2-a))**2)/(lam**2)) # Specular scatteing probability  
+        a=arccos(cos(phi)*sin(abs(theta)))                                      # Angle to the surface
+        p=exp(-16*(pi**2)*(side_wall_roughness**2)*((cos(a))**2)/(lam**2)) # Specular scatteing probability  
         if random()<p:                                                          # Specular scattering
             theta=-theta
             scattering_type='specular'                                          # Each time we record scattering type
@@ -471,7 +568,7 @@ def bottom_scattering(x, y, z, theta,phi, frequency, speed):
     return theta, phi, scattering_type
 
 
-def surface_scattering(x, y, z, theta, phi, frequency, hole_coordinates, hole_shapes, pillar_coordinates, speed):
+def surface_scattering(x, y, z, theta, phi, frequency, hole_coordinates, hole_shapes, pillar_coordinates, speed, all_scat_stat):
     '''This function checks if there will be a surface scattering on this timestep and returns a new vector'''       
     hole_scattering_type = 'no_scattering'                                      # first, we assume there is no scattering
     pillar_scattering_type = 'no_scattering'
@@ -486,6 +583,14 @@ def surface_scattering(x, y, z, theta, phi, frequency, hole_coordinates, hole_sh
                 Lx=rectangular_hole_side_x*(hole_coordinates[i,2]+1)            # Correction of the hole size if there are holes of non standard size
                 Ly=rectangular_hole_side_y*(hole_coordinates[i,2]+1)
                 theta,phi,hole_scattering_type=scattering_on_rectangular_holes(x,y,z,theta,phi,frequency,speed,x0,y0,Lx,Ly)  #Scattering on this hole
+            elif hole_shapes[i]=='triangle_down':
+                Lx=rectangular_hole_side_x*(hole_coordinates[i,2]+1)            # Correction of the hole size if there are holes of non standard size
+                Ly=rectangular_hole_side_y*(hole_coordinates[i,2]+1)
+                theta,phi,hole_scattering_type,all_scat_stat=scattering_on_triangle_down_holes(x,y,z,theta,phi,frequency,speed,x0,y0,Lx,Ly,all_scat_stat)  #Scattering on this hole
+            elif hole_shapes[i]=='triangle_up':
+                Lx=rectangular_hole_side_x*(hole_coordinates[i,2]+1)            # Correction of the hole size if there are holes of non standard size
+                Ly=rectangular_hole_side_y*(hole_coordinates[i,2]+1)
+                theta,phi,hole_scattering_type,all_scat_stat=scattering_on_triangle_up_holes(x,y,z,theta,phi,frequency,speed,x0,y0,Lx,Ly,all_scat_stat)  #Scattering on this hole
             if hole_scattering_type != 'no_scattering':                         # If there was any scattering, then break the loop
                 break
 
@@ -507,7 +612,7 @@ def surface_scattering(x, y, z, theta, phi, frequency, hole_coordinates, hole_sh
     theta,phi,bottom_scattering_type=bottom_scattering(x,y,z,theta,phi,frequency,speed)
     
     path_continues = (wall_scattering_type!='diffuse' and top_scattering_type!='diffuse' and bottom_scattering_type!='diffuse' and pillar_scattering_type!='diffuse' and hole_scattering_type!='diffuse')
-    return theta, phi, path_continues, wall_scattering_type, top_scattering_type, bottom_scattering_type, hole_scattering_type, pillar_scattering_type
+    return theta, phi, path_continues, wall_scattering_type, top_scattering_type, bottom_scattering_type, hole_scattering_type, pillar_scattering_type, all_scat_stat
 
 
 def reinitialization(x, y, z, theta, phi, speed):
@@ -519,7 +624,7 @@ def reinitialization(x, y, z, theta, phi, speed):
         #phi=arcsin(2*random()-1)      
         theta=0.5*pi*(2*random()-1)                                             # Reinitialize with random distribution
         phi=0.5*pi*(2*random()-1)
-        if lattice_type=='serpentine':
+        if hole_lattice_type=='serpentine':
             x=(-width/2+(155e-9)/2)+0.4*(155e-9)*(2*random()-1)
         else:
             x=0.4*width*(2*random()-1)                                          # Reinitialize in random place
@@ -623,7 +728,7 @@ def progress_bar(i, j, old_progress, scheme):
     return progress
 
 
-def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_angles,group_velocities,statistics_of_scattering_events,all_travel_times,thermal_map):
+def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_angles,group_velocities,statistics_of_scattering_events,all_travel_times,thermal_map,all_scat_stat):
     '''This function analyzes writes files with statistics'''
     os.chdir(output_folder_name)
     with open("All free paths.txt","w+") as f:
@@ -642,7 +747,9 @@ def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_an
         f.writelines(["%s\n" % i for i in statistics_of_scattering_events])
     with  open("All travel times.txt","w+") as f:
         f.writelines(["%s\n" % i for i in all_travel_times])
-    np.savetxt("Thermal Map.csv", thermal_map, delimiter=",")        
+    np.savetxt("Thermal Map.csv", thermal_map, delimiter=",")
+    with  open("All scattering angles.txt","w+") as f:
+        f.writelines(["%s\n" % i for i in all_scat_stat])       
     return
 
 
@@ -674,7 +781,7 @@ def output_thermal_map(thermal_map):
     cbar=plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
     plt.savefig("Thermal map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
-    plt.show
+    plt.show()
     return
 
 
@@ -748,7 +855,7 @@ def output_information(start_time, simulation_scheme):
         f.writelines(['\n \nLength = %s m' % length,'\nWidth = %s m' % width,'\nThickness = %s m' % thickness])
         f.writelines(['\n \nSide wall roughness = %s m' % side_wall_roughness,'\nHole roughness = %s m' % hole_roughness,'\nTop roughness = %s m' % top_roughness,'\nBottom roughness = %s m' % bottom_roughness])
 #        if hole_shape != 'none':
-#            f.writelines(['\n \nLattice type = % s' % lattice_type,'\nPeriod in x direction = %s m' % period_x,'\nPeriod in y direction = %s m' % period_y,'\nHole shape = % s' % hole_shape])        
+#            f.writelines(['\n \nLattice type = % s' % hole_lattice_type,'\nPeriod in x direction = %s m' % period_x,'\nPeriod in y direction = %s m' % period_y,'\nHole shape = % s' % hole_shape])        
 #            if hole_shape == 'circle':
 #                f.writelines(['\nDiameter of the holes = %s m' % circular_hole_diameter])
 #            elif hole_shape == 'rectangle':
@@ -794,7 +901,7 @@ def output_statistics_on_scattering_events():
     return
 
 
-def run_one_phonon(frequency, polarization, speed, statistics_of_scattering_events, thermal_map):
+def run_one_phonon(frequency, polarization, speed, statistics_of_scattering_events, thermal_map, all_scat_stat):
     '''This function runs one phonon through the system and returns its exit angle and its paths'''
     x=zeros((number_of_timesteps))
     y=zeros((number_of_timesteps))
@@ -814,7 +921,7 @@ def run_one_phonon(frequency, polarization, speed, statistics_of_scattering_even
         internal_scattering_type='none'
         reinitialization_scattering_type='none'                                           
         if y[i-1]<length:                                                       # If the phonon is still in the system, do the loop
-            theta,phi,path_continues,wall_scattering_type,top_scattering_type,bottom_scattering_type,hole_scattering_type,pillar_scattering_type = surface_scattering(x[i-1],y[i-1],z[i-1],theta,phi,frequency,hole_coordinates,hole_shapes,pillar_coordinates,speed)
+            theta,phi,path_continues,wall_scattering_type,top_scattering_type,bottom_scattering_type,hole_scattering_type,pillar_scattering_type,all_scat_stat = surface_scattering(x[i-1],y[i-1],z[i-1],theta,phi,frequency,hole_coordinates,hole_shapes,pillar_coordinates,speed,all_scat_stat)
             
             if path_continues:                                                  # Check the internal scattering
                 theta,phi,path_continues,internal_scattering_type = internal_scattering(theta, phi, time_since_previous_scattering, time_of_internal_scattering)
@@ -826,7 +933,7 @@ def run_one_phonon(frequency, polarization, speed, statistics_of_scattering_even
 
             if path_continues:                                                  # If there was no scattering, we keep measuring the phonon path
                 free_paths[path_num]+=speed*timestep
-                if lattice_type=='serpentine':
+                if hole_lattice_type=='serpentine':
                     if abs(x[i-1])<(width/2-155e-9):
                         free_paths_along_y[path_num]+=speed*timestep*abs(cos(phi))*abs(sin(theta))
                     else:
@@ -847,7 +954,7 @@ def run_one_phonon(frequency, polarization, speed, statistics_of_scattering_even
             exit_theta=theta
             travel_time=i*timestep                                                    
             break
-    return initial_theta, exit_theta, free_paths, free_paths_along_y, x, y, z, statistics_of_scattering_events, travel_time, thermal_map
+    return initial_theta, exit_theta, free_paths, free_paths_along_y, x, y, z, statistics_of_scattering_events, travel_time, thermal_map, all_scat_stat
 
 
 def main1():
@@ -864,6 +971,7 @@ def main1():
     all_frequencies=[]
     all_group_velocities=[]
     all_travel_times=[]
+    all_scat_stat=[]
     statistics_of_scattering_events=[0]*10
     thermal_map=zeros((number_of_pixels_y,number_of_pixels_x))
     
@@ -875,7 +983,7 @@ def main1():
             progress=progress_bar(i,j,progress,simulation_scheme) 
             frequency,polarization,speed=phonon_properties_assignment()             # We get initial phonon frequency, polarization, and speed
             
-            initial_theta,exit_theta,free_paths,free_paths_along_y,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,travel_time,thermal_map = run_one_phonon(frequency,polarization,speed,statistics_of_scattering_events,thermal_map)           
+            initial_theta,exit_theta,free_paths,free_paths_along_y,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,travel_time,thermal_map,all_scat_stat = run_one_phonon(frequency,polarization,speed,statistics_of_scattering_events,thermal_map,all_scat_stat)           
     
             all_initial_angles.append(initial_theta)    
             all_exit_angles.append(exit_theta)
@@ -885,12 +993,12 @@ def main1():
             all_group_velocities.append(speed)
             all_travel_times.append(travel_time)
             
-    write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,thermal_map)        
+    write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,thermal_map,all_scat_stat)        
     output_distributions()
-    output_information(start_time, simulation_scheme)
-    output_trajectories(x,y,z,number_of_phonons_in_a_group)
     output_thermal_map(thermal_map)
+    output_trajectories(x,y,z,number_of_phonons_in_a_group)
     output_statistics_on_scattering_events()
+    output_information(start_time, simulation_scheme)
     #coordinates=zeros((number_of_timesteps,number_of_phonons_in_a_group*3))
     return x,y,z
 
