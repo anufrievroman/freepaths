@@ -10,16 +10,16 @@ import time
 
 # SIMULATION PARAMETERS
 output_folder_name='test'                                                       # You must create this folder before you start the simulation
-number_of_phonons=100
+number_of_phonons=1000
 number_of_phonons_in_a_group=100                                               # To reduce the memory load, phonons are simulated in small groups
-number_of_timesteps=8000
+number_of_timesteps=30000
 number_of_nodes=400                                                             # Resolution of distribution plots
 timestep=0.5e-12                                                                # [s] Duration of one timestep
 T=4.0                                                                           # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
 width=300e-9    
-length=600e-9#2275e-9
+length=900e-9#2275e-9
 thickness=145e-9 
 
 # ROUGHNESS [m]                                                                                              
@@ -31,12 +31,12 @@ pillar_top_roughness=0.3e-9
 
 # SCATTER PARAMETERS [m]
 holes='yes'                                                             
-hole_lattice_type='square'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
+hole_lattice_type='diode'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
 pillars='no'
 pillar_lattice_type='square'
 circular_hole_diameter=250e-9#185e-9
-rectangular_hole_side_x=150e-9#545e-9
-rectangular_hole_side_y=300e-9#390e-9                                                        
+rectangular_hole_side_x=200e-9#545e-9
+rectangular_hole_side_y=250e-9#390e-9                                                        
 period_x=300e-9#360e-9
 period_y=300e-9#period_x*np.sqrt(3)/2#300e-9#400e-9
 pillar_height=70e-9
@@ -92,7 +92,7 @@ def hole_positioning():
                 hole_number+=1
         for i in range(number_of_periods_y):
             hole_coordinates[hole_number,0]=0
-            hole_coordinates[hole_number,1]=(256.5e-9)+i*period_y#first_hole_coordinate
+            hole_coordinates[hole_number,1]=(156.5e-9)+i*period_y #first_hole_coordinate
             hole_coordinates[hole_number,2]=-0.4#-0.5625
             hole_number+=1
         hole_shapes=['triangle_down' for x in range(hole_coordinates.shape[0])]
@@ -378,7 +378,7 @@ def scattering_on_triangle_down_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx,
     beta=arctan(0.5*Lx/Ly)                                                      # Angle of the triangle (tip angle)
     if Ly/2-(y-y0)<=(Lx/2-abs(x-x0))/tan(beta) and abs(y-y0)<=Ly/2:
         if abs(y_previous-y0)<Ly/2:                                             # Sidewalls scattering 
-            a=arccos(cos(phi)*cos(theta+sign(x-x0)*(pi/2-beta)))                # Angle to the surface
+            a=arccos(cos(phi)*cos(theta-sign(x-x0)*(pi/2-beta)))                # Angle to the surface
             p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
             if random()<p:                                                      # Specular scattering
                 new_theta=-theta+sign(x-x0)*2*beta
