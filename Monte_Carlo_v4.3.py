@@ -10,33 +10,33 @@ import time
 
 # SIMULATION PARAMETERS
 output_folder_name='test'                                                       # You must create this folder before you start the simulation
-number_of_phonons=300
-number_of_phonons_in_a_group=300                                               # To reduce the memory load, phonons are simulated in small groups
-number_of_timesteps=8000
+number_of_phonons=2000      
+number_of_phonons_in_a_group=200                                                # To reduce the memory load, phonons are simulated in small groups
+number_of_timesteps=100000
 number_of_nodes=400                                                             # Resolution of distribution plots
 timestep=1.0e-12                                                                # [s] Duration of one timestep
 T=4.0                                                                           # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
-width=500e-9    
-length=1000e-9#2275e-9
-thickness=145e-9 
+width=1200e-9
+length=1250e-9#2275e-9
+thickness=145e-9
 
-# ROUGHNESS [m]                                                                                              
+# ROUGHNESS [m]
 side_wall_roughness=0.01e-9
 hole_roughness=2.0e-9
-top_roughness=0.2e-9   
-bottom_roughness=0.2e-9                              
+top_roughness=0.2e-9
+bottom_roughness=0.2e-9
 pillar_top_roughness=0.3e-9
 
 # SCATTER PARAMETERS [m]
 holes='yes'                                                             
-hole_lattice_type='square'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
+hole_lattice_type='staggered_triangles'#'square'                                                    # Choose between 'square', 'serpentine', 'cloak', 'turn' (or write your own in the 'hole_positioning') 
 pillars='no'
 pillar_lattice_type='square'
-circular_hole_diameter=250e-9#185e-9
-rectangular_hole_side_x=600e-9#545e-9
-rectangular_hole_side_y=300e-9#390e-9                                                        
+circular_hole_diameter=240e-9#185e-9
+rectangular_hole_side_x=150e-9#545e-9
+rectangular_hole_side_y=200e-9#390e-9                                                        
 period_x=300e-9#360e-9
 period_y=300e-9#period_x*np.sqrt(3)/2#300e-9#400e-9
 pillar_height=70e-9
@@ -66,7 +66,46 @@ def hole_positioning():
                 hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
                 hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
                 hole_number+=1
-                
+
+                             
+    if hole_lattice_type=='staggered':
+        first_hole_coordinate=300e-9
+        number_of_periods_x=5
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y*2+number_of_periods_y,3))
+        hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2
+                hole_number+=1
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x+1):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x-period_x/2
+                hole_coordinates[hole_number,1]=first_hole_coordinate+period_y+i*period_y*2
+                hole_number+=1
+
+
+    if hole_lattice_type=='staggered_triangles':
+        first_hole_coordinate=300e-9
+        number_of_periods_x=5
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y*2+number_of_periods_y,3))
+        hole_shapes=['triangle_up' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*1.0
+                hole_number+=1
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x+1):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x-period_x/2
+                hole_coordinates[hole_number,1]=first_hole_coordinate+period_y*0.5+i*period_y*1.0
+                hole_number+=1
+
+                              
     if hole_lattice_type=='serpentine':
         hole_coordinates=zeros((5,3))
         neck=155e-9
@@ -76,6 +115,7 @@ def hole_positioning():
             hole_coordinates[i,0]=sign(-0.5+i%2)*neck/2
             hole_coordinates[i,1]=(2*i-1)*(rectangular_hole_side_y)/2+neck*i
         hole_shapes=['rectangle' for x in range(hole_coordinates.shape[0])]
+
 
     if hole_lattice_type=='diode_with_wires':
         first_hole_coordinate=period_y
@@ -167,13 +207,14 @@ def hole_positioning():
             hole_coordinates[38,1]=first_hole_coordinate+period_y*6.5  
             hole_coordinates[38,2]=3.5
 
+
     if hole_lattice_type=='turn':
         first_hole_coordinate=300e-9
         turning_point=14 # This is an integer number N in Lx=N*period_x where Lx is the distance form the center to the center of the turn
         number_of_periods_y_in_turn=4                                           # Number of periods in the turning part
         number_of_periods_y_before_turn=4                                       # Number of periods before the turn
-        number_of_periods_x=7                                                   # Number of periods along x (should be odd number)
-        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y_before_turn+number_of_periods_y_in_turn*number_of_periods_x,3))
+        number_of_periods_x=5                                                   # Number of periods along x (should be odd number)
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y_before_turn+number_of_periods_y_in_turn*number_of_periods_x+4,3))
         hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
         hole_number=0
         for Ny in range(number_of_periods_y_before_turn):                       # This is the square lattice before the turn
@@ -191,7 +232,19 @@ def hole_positioning():
                 hole_coordinates[hole_number,1]=offset_y + (Nx+turning_point-(number_of_periods_x-1)/2)*period_x*sin(turning_angle*(Ny+1))  
                 #hole_coordinates[hole_number,2]=period_y*(-turning_point + (Nx+turning_point-(number_of_periods_x-1)/2))/(turning_point*period_x)
                 hole_number+=1
-
+        # Additional structures
+        hole_coordinates[hole_number,0]=-(number_of_periods_x/2+1)*period_x + 50e-9
+        hole_coordinates[hole_number,1]=rectangular_hole_side_y/2
+        hole_shapes[hole_number]='rectangle'
+        hole_coordinates[hole_number+1,0]=+(number_of_periods_x/2+1)*period_x - 50e-9
+        hole_coordinates[hole_number+1,1]=rectangular_hole_side_y/2
+        hole_shapes[hole_number+1]='rectangle'
+        hole_coordinates[hole_number+2,0]=-(number_of_periods_x/2+1)*period_x + 50e-9
+        hole_coordinates[hole_number+2,1]=3*rectangular_hole_side_y/2
+        hole_shapes[hole_number+2]='triangle_up'
+        hole_coordinates[hole_number+3,0]=+(number_of_periods_x/2+1)*period_x - period_x/2 - 150e-9
+        hole_coordinates[hole_number+3,1]=3*rectangular_hole_side_y/2 - 100e-9
+        hole_shapes[hole_number+3]='triangle_down'
     return hole_coordinates, hole_shapes
 
 
@@ -220,6 +273,8 @@ def initialization():
         x=-width/2+(155e-9)/2+0.4*(155e-9)*(2*random()-1)
     elif hole_lattice_type=='diode_with_wires':
         x=0.4*(period_x-rectangular_hole_side_x)*(2*random()-1)
+    elif hole_lattice_type=='turn':
+        x=0.4*(period_x*5)*(2*random()-1)
     else:
         x=0.4*width*(2*random()-1)                                              # Here 0.4 is to prevent initialization right next to a wall                                             
     y=1e-12
@@ -336,7 +391,6 @@ def scattering_on_circular_holes(x,y,z,theta,phi,f,speed,x0,y0,R):
         tangent_theta=arctan((x-x0)/(y-y0))                                           
         a=arccos(cos(phi)*cos(theta+sign(y-y0)*tangent_theta))                  # Angle to the surface (note that equation depends on the top/bottom side)
         p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2))      # Specular scatteing probability
-        #p=1
         if random()<p:                                                          # Specular scattering
             new_theta=-theta-pi+2*tangent_theta
             new_phi=phi
@@ -429,8 +483,8 @@ def scattering_on_triangle_up_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx, L
     x,y,z=move(x,y,z,theta,phi,speed)                                           # We make a step to check if the scattering occurs on the next step
     beta=arctan(0.5*Lx/Ly)                                                      # Angle of the triangle (tip angle)
     if Ly/2+(y-y0)<=(Lx/2-abs(x-x0))/tan(beta) and abs(y-y0)<Ly/2:
-        x1=Ly/2/tan(theta) - abs(y0-y)/tan(theta) + abs(x0-x)
-        if ((y-timestep*speed) < (y0-Ly/2)) and x1<=Lx/2 and (abs(theta)<pi/2):                  # Bottom scattering
+        #x1=Ly/2/tan(theta) - abs(y0-y)/tan(theta) + abs(x0-x)
+        if ((y-timestep*speed) < (y0-Ly/2)) and (abs(theta)<pi/2):                  # Bottom scattering
             a=arccos(cos(phi)*cos(theta))                                       # Angle to the surface
             p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
             if random()<p:                                                      # Specular scattering
@@ -643,6 +697,8 @@ def reinitialization(x, y, z, theta, phi, speed):
             x=(-width/2+(155e-9)/2)+0.4*(155e-9)*(2*random()-1)
         elif hole_lattice_type=='diode_with_wires':
             x=0.4*(period_x-rectangular_hole_side_x)*(2*random()-1)
+        elif hole_lattice_type=='turn':
+            x=0.4*(period_x*5)*(2*random()-1)
         else:
             x=0.4*width*(2*random()-1)                                          # Reinitialize in random place
         z=0.4*thickness*(2*random()-1)
