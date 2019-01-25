@@ -1,6 +1,5 @@
 from numpy import pi, cos, sin, tan, exp, arctan, arcsin, sign, zeros, log, sqrt, arccos
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import numpy as np
 from random import random, choice
 from scipy.constants import k, hbar
@@ -11,7 +10,7 @@ from Lattices import hole_positioning, pillar_positioning
 
 # SIMULATION PARAMETERS
 output_folder_name='test'                                                   # You must create this folder before you start the simulation
-number_of_phonons=20      
+number_of_phonons=1000      
 number_of_phonons_in_a_group=number_of_phonons#10                                               # To reduce the memory load, phonons are simulated in small groups
 number_of_timesteps=10000
 number_of_nodes=400                                                             # Resolution of distribution plots
@@ -24,7 +23,7 @@ length=1000e-9#2275e-9
 thickness=50e-9
 
 # ROUGHNESS [m]
-side_wall_roughness=0.001e-9
+side_wall_roughness=1.0e-9
 hole_roughness=2.0e-9
 top_roughness=0.2e-9
 bottom_roughness=0.2e-9
@@ -46,7 +45,6 @@ period_y=300e-9
 # ENERGY MAP PARAMETERS
 number_of_pixels_x=20#int(0.2*width*1e9)
 number_of_pixels_y=20#int(0.2*length*1e9)
-minimum_of_colorbar=1e-22                                                       # Cannot be zero!
 number_of_timeframes = 10
 
 # MATERIAL PARAMETERS
@@ -122,8 +120,8 @@ def phonon_properties_assignment_2(j, branch):
     speed=dw/dK                                                                 # Group velocity
     frequency=w/(2*pi)
     polarization='LA'*(branch == 0)*1+'TA'*(branch != 0)*1                      # Polarization according to the branch                                        
-    phonon_properties = [frequency, polarization, speed, w, K, dK]
-    return phonon_properties
+    phonon_properties = [frequency, polarization, speed]
+    return phonon_properties, w, K, dK
 
 
 def move(x, y, z, theta, phi, speed):
@@ -314,11 +312,11 @@ def internal_scattering_time_calculation(frequency, polarization):
     #    tau_umklapp=4/((3.28e-19)*(w**2)*T*exp(-140/T))                        # Ref. JAP 110, 034308 (2011)
     #if polarization=='LA':
     #    tau_umklapp=1/((3.28e-19)*(w**2)*T*exp(-140/T))    
-#    if polarization=='TA':
-#        tau_norm=1/(9.3e-13*w*(T**4))
-#    if polarization=='LA':
-#        tau_norm=1/((2.0e-24)*(w**2)*(T**3))
-#   tau_total=1/((1/tau_impurity)+(1/tau_norm)+(1/tau_umklapp)) 
+    #if polarization=='TA':
+    #    tau_norm=1/(9.3e-13*w*(T**4))
+    #if polarization=='LA':
+    #    tau_norm=1/((2.0e-24)*(w**2)*(T**3))
+    #tau_total=1/((1/tau_impurity)+(1/tau_norm)+(1/tau_umklapp)) 
     tau_internal=1/((1/tau_impurity)+(1/tau_umklapp))
     time_of_internal_scattering=-log(random())*tau_internal                     # Ref. PRB 94, 174303 (2016)
     return time_of_internal_scattering
@@ -330,8 +328,7 @@ def internal_scattering(theta, phi, time_since_previous_scattering, time_of_inte
         theta=-pi+random()*2*pi
         phi=-pi+random()*2*pi
         internal_scattering_type='diffuse'
-    path_continues=(time_since_previous_scattering <= time_of_internal_scattering)
-    return theta, phi, path_continues, internal_scattering_type
+    return theta, phi, internal_scattering_type
 
 
 def side_wall_scattering(x, y, z, theta, phi, frequency, speed):
@@ -468,8 +465,7 @@ def surface_scattering(x, y, z, theta, phi, frequency, hole_coordinates, hole_sh
     theta,phi,bottom_scattering_type=bottom_scattering(x,y,z,theta,phi,frequency,speed)
     theta = theta-sign(theta)*2*pi*(abs(theta) > pi)                            # Check if theta became more than -pi:pi and return it bactk to this range
     surface_scattering_types = [wall_scattering_type, top_scattering_type, bottom_scattering_type, hole_scattering_type, pillar_scattering_type]
-    path_continues = (all(surface_scattering_types)!='diffuse')
-    return theta, phi, path_continues, surface_scattering_types, all_scat_stat
+    return theta, phi, surface_scattering_types, all_scat_stat
 
 
 def reinitialization(x, y, z, theta, phi, speed):
@@ -491,8 +487,7 @@ def reinitialization(x, y, z, theta, phi, speed):
             x=0.4*width*(2*random()-1)                                          # Reinitialize in random place
         z=0.4*thickness*(2*random()-1)
         scattering_type='diffuse'
-    path_continues = (y1 >= 0)
-    return theta, phi, path_continues, scattering_type, x, y, z
+    return theta, phi, scattering_type, x, y, z
 
 
 def angle_distribution_calculation():
@@ -649,6 +644,8 @@ def output_trajectories(x, y, z, N):
 
 def output_thermal_map(thermal_map):
     '''This function outputs the thermal map'''
+    from matplotlib.colors import LogNorm
+    minimum_of_colorbar=1e-22                                                       # Cannot be zero!
     np.savetxt("Thermal Map.csv", thermal_map, delimiter=",")                   # First we write it into the file
     thermal_map=np.flipud(thermal_map)
     #plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6] )                # can also use interpolation='bicubic' and norm=LogNorm(vmin=0.01, vmax=np.amax(thermal_map))
@@ -673,21 +670,21 @@ def output_profiles(maps_and_profiles):
     np.savetxt("Temperature profiles y.csv", np.vstack((coordinates_y,T_profiles_y.T)).T, delimiter=",")
     np.savetxt("Heat flux profiles x.csv", np.vstack((coordinates_x,J_profiles_x.T)).T, delimiter=",")
     np.savetxt("Heat flux profiles y.csv", np.vstack((coordinates_y,J_profiles_y.T)).T, delimiter=",")
-    for i in range(T_profiles_x.shape[1]):                                      # Plotting and and saving the plots
-        plt.plot (coordinates_x[:],T_profiles_x[:,i], linewidth=1)
-    plt.xlabel('X (um)', fontsize=12)
-    plt.ylabel('Temperature (K)', fontsize=12)
-    plt.show()
+    #for i in range(T_profiles_x.shape[1]):                                      # Plotting and and saving the plots
+    #    plt.plot (coordinates_x[:],T_profiles_x[:,i], linewidth=1)
+    #plt.xlabel('X (um)', fontsize=12)
+    #plt.ylabel('Temperature (K)', fontsize=12)
+    #plt.show()
     for i in range(T_profiles_y.shape[1]):
         plt.plot (coordinates_y[:],T_profiles_y[:,i], linewidth=1)
     plt.xlabel('Y (um)', fontsize=12)
     plt.ylabel('Temperature (K)', fontsize=12)
     plt.show()
-    for i in range(J_profiles_x.shape[1]):
-        plt.plot (coordinates_x[:],J_profiles_x[:,i], linewidth=1)
-    plt.xlabel('X (um)', fontsize=12)
-    plt.ylabel('Heat flux (W/m^2)', fontsize=12)
-    plt.show()
+    #for i in range(J_profiles_x.shape[1]):
+    #    plt.plot (coordinates_x[:],J_profiles_x[:,i], linewidth=1)
+    #plt.xlabel('X (um)', fontsize=12)
+    #plt.ylabel('Heat flux (W/m^2)', fontsize=12)
+    #plt.show()
     for i in range(J_profiles_y.shape[1]):
         plt.plot (coordinates_y[:],J_profiles_y[:,i], linewidth=1)
     plt.xlabel('Y (um)', fontsize=12)
@@ -826,18 +823,15 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
     for i in range(1,number_of_timesteps): 
         internal_scattering_type='none'
         reinitialization_scattering_type='none'                                           
-        if y[i-1]<length:                                                       # If the phonon is still in the system, do the loop
-            theta,phi,path_continues,surface_scattering_types,all_scat_stat = surface_scattering(x[i-1],y[i-1],z[i-1],theta,phi,frequency,hole_coordinates,hole_shapes,pillar_coordinates,speed,all_scat_stat)
+        if y[i-1]<length:                                                       # If the phonon is still in the system
             
-            if path_continues:                                                  # Check the internal scattering
-                theta,phi,path_continues,internal_scattering_type = internal_scattering(theta, phi, time_since_previous_scattering, time_of_internal_scattering)
-
-            if path_continues:                                                  # Check if the phonon did not return the the hot side
-                theta,phi,path_continues,reinitialization_scattering_type,x[i-1],y[i-1],z[i-1] = reinitialization(x[i-1],y[i-1],z[i-1],theta,phi,speed)
+            theta,phi,internal_scattering_type = internal_scattering(theta, phi, time_since_previous_scattering, time_of_internal_scattering)           
+            theta,phi,surface_scattering_types,all_scat_stat = surface_scattering(x[i-1],y[i-1],z[i-1],theta,phi,frequency,hole_coordinates,hole_shapes,pillar_coordinates,speed,all_scat_stat)
+            theta,phi,reinitialization_scattering_type,x[i-1],y[i-1],z[i-1] = reinitialization(x[i-1],y[i-1],z[i-1],theta,phi,speed)
 
             statistics_of_scattering_events = scattering_events_statistics_calculation(statistics_of_scattering_events,surface_scattering_types,reinitialization_scattering_type,internal_scattering_type)
 
-            if path_continues:                                                  # If there was no scattering, we keep measuring the phonon path
+            if internal_scattering_type != 'diffuse' and reinitialization_scattering_type != 'diffuse' and all(surface_scattering_types) != 'diffuse' :                                                  # If there was no scattering, we keep measuring the phonon path
                 free_paths[path_num]+=speed*timestep
                 if hole_lattice_type=='serpentine':
                     if abs(x[i-1])<(width/2-155e-9):
@@ -861,8 +855,8 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
             exit_theta=theta
             travel_time=i*timestep                                         
             break
-    phonon_flight_characteristics = [initial_theta, exit_theta, free_paths, free_paths_along_y, travel_time]
-    return phonon_flight_characteristics, x, y, z, statistics_of_scattering_events, maps_and_profiles, all_scat_stat
+    flight_characteristics = [initial_theta, exit_theta, free_paths, free_paths_along_y, travel_time]
+    return flight_characteristics, x, y, z, statistics_of_scattering_events, maps_and_profiles, all_scat_stat
 
 
 def main1():
@@ -887,14 +881,15 @@ def main1():
         for j in range(number_of_phonons_in_a_group):                                              
             progress=progress_bar(i,j,progress,simulation_scheme) 
             phonon_properties=phonon_properties_assignment()                    # We get initial phonon properties: frequency, polarization, and speed
+            phonon_properties.append(i*number_of_phonons_in_a_group+j)          #we add phonon number to phonon properties
             
-            phonon_flight_characteristics,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,maps_and_profiles,all_scat_stat = run_one_phonon(phonon_properties,statistics_of_scattering_events,maps_and_profiles,all_scat_stat)           
+            flight_characteristics,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,maps_and_profiles,all_scat_stat = run_one_phonon(phonon_properties,statistics_of_scattering_events,maps_and_profiles,all_scat_stat)           
     
-            all_initial_angles.append(phonon_flight_characteristics[0])    
-            all_exit_angles.append(phonon_flight_characteristics[1])
-            all_free_paths.extend(phonon_flight_characteristics[2])
-            all_free_paths_along_y.extend(phonon_flight_characteristics[3])
-            all_travel_times.append(phonon_flight_characteristics[4])
+            all_initial_angles.append(flight_characteristics[0])    
+            all_exit_angles.append(flight_characteristics[1])
+            all_free_paths.extend(flight_characteristics[2])
+            all_free_paths_along_y.extend(flight_characteristics[3])
+            all_travel_times.append(flight_characteristics[4])
             all_frequencies.append(phonon_properties[0])
             all_group_velocities.append(phonon_properties[2])
             
@@ -918,6 +913,11 @@ def main2():
     all_initial_angles,all_exit_angles,all_free_paths,all_free_paths_along_y,all_frequencies,all_group_velocities,all_travel_times,all_scat_stat=([] for i in range(8))
     statistics_of_scattering_events=[0]*10
     thermal_map=zeros((number_of_pixels_y,number_of_pixels_x))
+    heat_flux_profile_x=zeros((number_of_pixels_x,number_of_timeframes))
+    heat_flux_profile_y=zeros((number_of_pixels_y,number_of_timeframes))
+    temperature_profile_x=zeros((number_of_pixels_x,number_of_timeframes))
+    temperature_profile_y=zeros((number_of_pixels_y,number_of_timeframes))
+    maps_and_profiles=[thermal_map,heat_flux_profile_x,heat_flux_profile_y,temperature_profile_x,temperature_profile_y]
     
     mean_free_path=zeros((number_of_phonons))
     thermal_conductivity=0
@@ -927,28 +927,28 @@ def main2():
         for j in range(0,number_of_phonons):    
             progress=progress_bar(branch,j,progress,simulation_scheme)                                          
                                                    
-            phonon_properties = phonon_properties_assignment_2(j,branch)
+            phonon_properties, w, K, dK  = phonon_properties_assignment_2(j,branch)
             
-            initial_theta,exit_theta,free_paths,free_paths_along_y,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,travel_time,thermal_map,all_scat_stat = run_one_phonon(phonon_properties,statistics_of_scattering_events,thermal_map,all_scat_stat)
+            flight_characteristics,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,maps_and_profiles,all_scat_stat = run_one_phonon(phonon_properties,statistics_of_scattering_events,maps_and_profiles,all_scat_stat)
             
-            all_initial_angles.append(initial_theta)    
-            all_exit_angles.append(exit_theta)
-            all_free_paths.extend(free_paths)
-            all_free_paths_along_y.extend(free_paths_along_y)
+            all_initial_angles.append(flight_characteristics[0])    
+            all_exit_angles.append(flight_characteristics[1])
+            all_free_paths.extend(flight_characteristics[2])
+            all_free_paths_along_y.extend(flight_characteristics[3])
+            all_travel_times.append(flight_characteristics[4])
             all_frequencies.append(phonon_properties[0])
             all_group_velocities.append(phonon_properties[2])
-            all_travel_times.append(travel_time)
             
             
-            frequency, polarization, speed, w, K, dK = phonon_properties
-            mean_free_path[j]=sum(free_paths)/len(free_paths)                       # Average of all free paths for this phonon
+            frequency, polarization, speed = phonon_properties
+            mean_free_path[j]=sum(flight_characteristics[2])/len(flight_characteristics[2])                       # Average of all free paths for this phonon
             heat_capacity=k*((hbar*w/(k*T))**2)*exp(hbar*w/(k*T))/((exp(hbar*w/(k*T))-1)**2) # Ref. PRB 88 155318 (2013)
             thermal_conductivity+=(1/(6*(pi**2)))*heat_capacity*(speed**2)*(mean_free_path[j]/speed)*(K**2)*dK   # Eq.3 from Physical Review 132 2461 (1963)
             
             cummulative_conductivity[j,branch]=speed/frequency
             cummulative_conductivity[j,branch+3]=(1/(6*(pi**2)))*heat_capacity*(speed**2)*(mean_free_path[j]/speed)*(K**2)*dK
             
-    write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,thermal_map,all_scat_stat) 
+    write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,all_scat_stat) 
     output_trajectories(x,y,z,number_of_phonons)
     output_thermal_map(thermal_map)
     output_distributions()
