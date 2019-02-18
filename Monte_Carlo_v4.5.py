@@ -9,17 +9,17 @@ from Lattices import hole_positioning, pillar_positioning
 
 
 # SIMULATION PARAMETERS
-output_folder_name='pillars'                                                   # You must create this folder before you start the simulation
-number_of_phonons=100      
-number_of_phonons_in_a_group=100                                               # To reduce the memory load, phonons are simulated in small groups
-number_of_timesteps=40000
+output_folder_name='Black_050K'                                                   # You must create this folder before you start the simulation
+number_of_phonons=2000      
+number_of_phonons_in_a_group=200                                               # To reduce the memory load, phonons are simulated in small groups
+number_of_timesteps=100000
 number_of_nodes=400                                                             # Resolution of distribution plots
 timestep=0.5e-12                                                                # [s] Duration of one timestep
-T=300.0                                                                           # [K] Temperature of the system
+T=50.0                                                                           # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
-width=400e-9
-length=400e-9#2275e-9
+width=5*70e-9
+length=10*70e-9#2275e-9
 thickness=50e-9
 
 # ROUGHNESS [m]
@@ -32,24 +32,24 @@ pillar_top_roughness=2.0e-9
 
 # SCATTER PARAMETERS [m]
 holes='no'                                                             
-hole_lattice_type='square'#'square'                                # Choose between 'square', 'serpentine', 'cloak', 'turn' etc
+hole_lattice_type='square'#'square'
 pillars='yes'
-pillar_lattice_type='square'
-circular_hole_diameter=50e-9#185e-9
+pillar_lattice_type='black_silicon'
+circular_hole_diameter=40e-9#185e-9
 rectangular_hole_side_x=150e-9#545e-9
 rectangular_hole_side_y=200e-9#390e-9                                                        
-pillar_height=30e-9
-pillar_wall_angle=pi/3                                                          # DO NOT CHANGE
+pillar_height=40e-9
+pillar_wall_angle=pi/3.0                                                          
 period_x=70e-9
 period_y=70e-9
 
 # ENERGY MAP PARAMETERS
-number_of_pixels_x=40#int(0.2*width*1e9)
-number_of_pixels_y=40#int(0.2*length*1e9)
+number_of_pixels_x=20#int(0.2*width*1e9)
+number_of_pixels_y=20#int(0.2*length*1e9)
 number_of_timeframes=20
 
 # MATERIAL PARAMETERS
-specific_heat_capacity=700 #[J/kg/K]
+specific_heat_capacity=78.5#0.0176 #714 #[J/kg/K]
 material_density=2330 #[kg/m^3]
 
 def initialization():
@@ -196,21 +196,21 @@ def scattering_on_circular_holes(x,y,z,theta,phi,f,speed,x0,y0,R):
     return new_theta, new_phi, scattering_type
 
 
-def scattering_on_circular_pillars(x,y,z,theta,phi,frequency,speed,x0,y0,R):
+def scattering_on_circular_pillars(x,y,z,theta,phi,frequency,speed,x0,y0,R_base):
     '''This function checks if a phonon strikes a circular pillar and what is the new direction after the scattering'''
     x_previous=x
     y_previous=y
     x,y,z=move(x,y,z,theta,phi,speed)
-    R=(circular_hole_diameter/2)-(z-thickness/2)/tan(pillar_wall_angle)         # Cone radius at a given z coordinate
+    R=R_base-(z-thickness/2)/tan(pillar_wall_angle)                             # Cone radius at a given z coordinate
     phi = phi-sign(phi)*pi*(abs(phi) > pi/2)
-    if (x-x0)**2+(y-y0)**2 >= R**2 and (x-x0)**2+(y-y0)**2 < (R+2*speed*timestep)**2 and z > thickness/2: # i.e. if it at the boundary inside the pillar                                 
+    if ((x-x0)**2+(y-y0)**2 >= R**2) and (z > thickness/2) and ((x-x0)**2+(y-y0)**2 < (R+2*speed*timestep)**2): # i.e. if phonon crosses the pillar boundary. Third condition is to exclude all other pillars                                 
         tangent_theta=arctan((x-x0)/(y-y0))
         lam=speed/frequency                                                 
         a=arctan(tan((pi/2-theta)+tangent_theta)*cos(phi-(pi/2-pillar_wall_angle))) # Angle to the surface (Check if it's correctly corrected with pillar angle)
         p=exp(-16*(pi**2)*(pillar_roughness**2)*((cos(pi/2-a))**2)/(lam**2))      # Specular scatteing probability
         #p=1.0
         if random()<p:                                                          # Specular scattering            
-            if sqrt((x-x0)**2+(y-y0)**2) >= sqrt((x_previous-x0)**2+(y_previous-y0)**2) :   # if phonon moves from the center of the pillar to the wall 
+            if sqrt((abs(x)-abs(x0))**2+(abs(y)-abs(y0))**2) >= sqrt((abs(x_previous)-abs(x0))**2+(abs(y_previous)-abs(y0))**2) :   # if phonon moves from the center of the pillar to the wall 
                 if (phi < pi/2-2*pillar_wall_angle):                             # If theta does not reflect back
                     #new_phi=phi+2*pillar_wall_angle
                     new_phi=phi-(pi/2-pillar_wall_angle)                        # Pillar wall inclination is taken into account
@@ -225,7 +225,7 @@ def scattering_on_circular_pillars(x,y,z,theta,phi,frequency,speed,x0,y0,R):
                 new_phi=-sign(phi)*phi-2*pillar_wall_angle
                 new_theta=theta
                 #print "3"
-                 
+
             scattering_type='specular'                      
         else:                                                                   # Diffuse scattering
             if y>=y0:                                                           # Scattering on the top surface of a hole
@@ -588,16 +588,18 @@ def maps_and_profiles_calculation(x,y,maps_and_profiles,phonon_properties,timest
     
     index_x = int(((x+width/2)*number_of_pixels_x) // width)                    # Calculate pixel numbers
     index_y = int((y*number_of_pixels_y) // length)
+    
     Vcell_x=length*thickness*width/number_of_pixels_x                           # Volume of a unit cell
     Vcell_y=width*thickness*length/number_of_pixels_y
+
+    if pillars=='yes':                                                          # here we arbitraraly correct the volume of the unit cells
+        Vcell_x+=2.5*0.3333*pillar_height*(circular_hole_diameter/2)**2
+        Vcell_y+=2.5*0.3333*pillar_height*(circular_hole_diameter/2)**2
     
     if (index_x<number_of_pixels_x) and (index_y<number_of_pixels_y):           # This is to prevent error if the phonon is outside the structure 
         thermal_map[index_y,index_x] +=hbar*2*pi*frequency                      # Here we add the energy h*w to the pixel of the map
-        
-        #timeframe_number = int((timestep_number*timestep*number_of_timeframes) // (number_of_timesteps*timestep))
-        
-        timeframe_number = int(((timestep_number+randint(0, number_of_timesteps))*timestep*number_of_timeframes) // (number_of_timesteps*timestep))
-        
+
+        timeframe_number = int(((timestep_number+randint(0, number_of_timesteps))*timestep*number_of_timeframes) // (number_of_timesteps*timestep))        
         if timeframe_number < number_of_timeframes:
             heat_flux_profile_x[index_x,timeframe_number] += hbar*2*pi*frequency*cos(theta)*abs(cos(phi))*speed/Vcell_x
             heat_flux_profile_y[index_y,timeframe_number] += hbar*2*pi*frequency*cos(theta)*abs(cos(phi))*speed/Vcell_y
@@ -665,7 +667,7 @@ def output_trajectories(x, y, z, N):
 def output_thermal_map(thermal_map):
     '''This function outputs the thermal map'''
     from matplotlib.colors import LogNorm
-    minimum_of_colorbar=1e-20                                                       # Cannot be zero!
+    minimum_of_colorbar=1e-20                                                   # Cannot be zero!
     np.savetxt("Thermal Map.csv", thermal_map, delimiter=",")                   # First we write it into the file
     thermal_map=np.flipud(thermal_map)
     #plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6] )                # can also use interpolation='bicubic' and norm=LogNorm(vmin=0.01, vmax=np.amax(thermal_map))
@@ -680,19 +682,23 @@ def output_thermal_map(thermal_map):
 
 
 def output_thermal_conductivity(maps_and_profiles):
-    '''This function calculates the thermal conductivity from heat flux and temperature profiles'''
+    '''This function calculates the thermal conductivity for each time interval from heat flux and temperature profiles accumulated in that interval'''
     thermal_map, J_profiles_x, J_profiles_y, T_profiles_x, T_profiles_y = maps_and_profiles
-    thermal_conductivity=zeros((T_profiles_y.shape[1],2))
-    thermal_conductivity[:,0]=range(T_profiles_y.shape[1])
-    for i in range(T_profiles_y.shape[1]):
-        dT=max(T_profiles_y[:,i])-min(T_profiles_y[:,i])
-        J=sum(J_profiles_y[:,i])/J_profiles_y.shape[0]
-        thermal_conductivity[i,1]=length*J/dT
+    thermal_conductivity=zeros((number_of_timeframes,2))
+    thermal_conductivity[:,0]=range(number_of_timeframes)
+    thermal_conductivity[:,0]*=number_of_timesteps*timestep/number_of_timeframes
+    for i in range(number_of_timeframes):
+        dT=T_profiles_y[1,i] - T_profiles_y[(number_of_pixels_y-1),i]
+        J=sum(J_profiles_y[1:number_of_pixels_y,i])/(number_of_pixels_y-1)
+        dL=(number_of_pixels_y-2)*length/number_of_pixels_y                     # Here dL is shorted then aclual length because we ignore 1st pixel and lose one more due to averaging.
+        thermal_conductivity[i,1]=J*dL/dT                                       # By definiton of the thermal conductivity J=-K*gradT
     
-    plt.plot (thermal_conductivity[:,0],thermal_conductivity[:,1], linewidth=1)
+    plt.plot (thermal_conductivity[:,0]*1e9,thermal_conductivity[:,1], linewidth=1)
     plt.ylabel('Thermal conductivity (W/mK)', fontsize=12)
-    plt.xlabel('Timestep', fontsize=12)
+    plt.xlabel('Time (ns)', fontsize=12)
+    plt.savefig("Thermal conductivity.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     plt.show()
+    np.savetxt('Thermal conductivity.csv', thermal_conductivity, delimiter=",")
     return 
 
 
@@ -712,8 +718,8 @@ def output_profiles(maps_and_profiles):
     #plt.xlabel('X (um)', fontsize=12)
     #plt.ylabel('Temperature (K)', fontsize=12)
     #plt.show()
-    for i in range(T_profiles_y.shape[1]):
-        plt.plot (coordinates_y[:],T_profiles_y[:,i], linewidth=1)
+    for i in range(number_of_timeframes):
+        plt.plot (coordinates_y[1:number_of_pixels_y],T_profiles_y[1:number_of_pixels_y,i], linewidth=1)
     plt.xlabel('Y (um)', fontsize=12)
     plt.ylabel('Temperature (K)', fontsize=12)
     plt.show()
@@ -722,8 +728,8 @@ def output_profiles(maps_and_profiles):
     #plt.xlabel('X (um)', fontsize=12)
     #plt.ylabel('Heat flux (W/m^2)', fontsize=12)
     #plt.show()
-    for i in range(J_profiles_y.shape[1]):
-        plt.plot (coordinates_y[:],J_profiles_y[:,i], linewidth=1)
+    for i in range(number_of_timeframes):
+        plt.plot (coordinates_y[1:number_of_pixels_y],J_profiles_y[1:number_of_pixels_y,i], linewidth=1)
     plt.xlabel('Y (um)', fontsize=12)
     plt.ylabel('Heat flux (W/m^2)', fontsize=12)
     plt.show()
