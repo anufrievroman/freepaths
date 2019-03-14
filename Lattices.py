@@ -1,4 +1,5 @@
 from numpy import cos, sin, sign, zeros, arcsin, sqrt
+from random import random
 
 def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, period_y):
     '''This function places holes in space, depending on the lattice type, 
@@ -9,8 +10,8 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
     
     if hole_lattice_type=='square':
         first_hole_coordinate=300e-9
-        number_of_periods_x=1
-        number_of_periods_y=2
+        number_of_periods_x=5
+        number_of_periods_y=5
         hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
         hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
         hole_number=0
@@ -60,13 +61,17 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
 
                               
     if hole_lattice_type=='serpentine':
-        hole_coordinates=zeros((5,3))
+        hole_coordinates=zeros((7,3))
         neck=155e-9
         hole_coordinates[0,0]=neck/2
         hole_coordinates[0,1]=0.0
+        hole_coordinates[1,0]=neck/2
+        hole_coordinates[1,1]=(rectangular_hole_side_y+1*neck)/4
+        hole_coordinates[2,0]=neck/2
+        hole_coordinates[2,1]=(rectangular_hole_side_y+2.5*neck)/4
         for i in range(1,5):
-            hole_coordinates[i,0]=sign(-0.5+i%2)*neck/2
-            hole_coordinates[i,1]=(2*i-1)*(rectangular_hole_side_y)/2+neck*i
+            hole_coordinates[i+2,0]=sign(-0.5+i%2)*neck/2
+            hole_coordinates[i+2,1]=(2*i-1)*(rectangular_hole_side_y)/2+neck*i
         hole_shapes=['rectangle' for x in range(hole_coordinates.shape[0])]
 
 
@@ -288,13 +293,39 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
 def pillar_positioning(pillar_lattice_type,period_x,period_y):
     '''This function places pillars in space, depending on the lattice type, 
     and returns coordinates of their centers and changes in their size (if any).
-    In the pillar_coordinates array, column 0 is X, column 1 is Y, column 2 is correction of the size, 
+    In the pillar_coordinates array, column 0 is X, column 1 is Y, column 2 is correction of the base diameter. 
     i.e. 0 is no correction, 1 means the pillar will be +100% larger, -0.5 means 50% smaller.'''
 
     if pillar_lattice_type=='square':
-        number_of_periods_x=4
-        number_of_periods_y=9
-        first_pillar_coordinate=70e-9
+        number_of_periods_x=5
+        number_of_periods_y=5
+        first_pillar_coordinate=period_y/2.0##70e-9
+        pillar_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                pillar_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                pillar_coordinates[hole_number,1]=first_pillar_coordinate+i*period_y
+                hole_number+=1
+
+    if pillar_lattice_type=='black_silicon':
+        number_of_periods_x=5
+        number_of_periods_y=5
+        disorder=0.15
+        first_pillar_coordinate=period_y/2.0##70e-9
+        pillar_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                pillar_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x+disorder*(1.0-2.0*random())*period_x
+                pillar_coordinates[hole_number,1]=(first_pillar_coordinate+i*period_y)+disorder*(1.0-2.0*random())*period_y
+                pillar_coordinates[hole_number,2]=disorder*(1.0-2.0*random())
+                hole_number+=1
+                
+    if pillar_lattice_type=='square_test':
+        number_of_periods_x=1
+        number_of_periods_y=2
+        first_pillar_coordinate=period_y/2.0#70e-9
         pillar_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
         hole_number=0
         for i in range(number_of_periods_y):
