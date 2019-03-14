@@ -9,21 +9,21 @@ from Lattices import hole_positioning, pillar_positioning
 
 
 # SIMULATION PARAMETERS
-output_folder_name='Black_050K'                                                   # You must create this folder before you start the simulation
-number_of_phonons=2000      
-number_of_phonons_in_a_group=200                                               # To reduce the memory load, phonons are simulated in small groups
+output_folder_name='Serp_400nm_4K'                                                       # You must create this folder before you start the simulation
+number_of_phonons=5000      
+number_of_phonons_in_a_group=50                                                 # To reduce the memory load, phonons are simulated in small groups
 number_of_timesteps=100000
 number_of_nodes=400                                                             # Resolution of distribution plots
-timestep=0.5e-12                                                                # [s] Duration of one timestep
-T=50.0                                                                           # [K] Temperature of the system
+timestep=1e-12                                                                # [s] Duration of one timestep
+T=4.0                                                                           # [K] Temperature of the system
 
 # SYSTEM DIMENSIONS [m]
-width=5*70e-9
-length=10*70e-9#2275e-9
-thickness=50e-9
+width=400e-9
+length=4*400e-9 - 3*155e-9
+thickness=145e-9
 
 # ROUGHNESS [m]
-side_wall_roughness=1.0e-9
+side_wall_roughness=2.0e-9
 hole_roughness=2.0e-9
 pillar_roughness=2.0e-9
 top_roughness=0.2e-9
@@ -31,25 +31,25 @@ bottom_roughness=0.2e-9
 pillar_top_roughness=2.0e-9
 
 # SCATTER PARAMETERS [m]
-holes='no'                                                             
-hole_lattice_type='square'#'square'
-pillars='yes'
+holes='yes'                                                             
+hole_lattice_type='serpentine'#'square'
+pillars='no'
 pillar_lattice_type='black_silicon'
 circular_hole_diameter=40e-9#185e-9
-rectangular_hole_side_x=150e-9#545e-9
-rectangular_hole_side_y=200e-9#390e-9                                                        
+rectangular_hole_side_x=400e-9 - 155e-9
+rectangular_hole_side_y=400e-9 - 2*155e-9                                                        
 pillar_height=40e-9
 pillar_wall_angle=pi/3.0                                                          
 period_x=70e-9
 period_y=70e-9
 
 # ENERGY MAP PARAMETERS
-number_of_pixels_x=20#int(0.2*width*1e9)
-number_of_pixels_y=20#int(0.2*length*1e9)
+number_of_pixels_x=int(0.2*width*1e9)
+number_of_pixels_y=int(0.2*length*1e9)
 number_of_timeframes=20
 
 # MATERIAL PARAMETERS
-specific_heat_capacity=78.5#0.0176 #714 #[J/kg/K]
+specific_heat_capacity=0.0176 #714 #[J/kg/K]
 material_density=2330 #[kg/m^3]
 
 def initialization():
@@ -436,6 +436,11 @@ def bottom_scattering(x, y, z, theta,phi, frequency, speed):
             scattering_type='diffuse'
     return theta, phi, scattering_type
 
+
+def path_continues_check(internal,reinitialization,surface):
+    '''This function checks if one of the scattering was diffusive, thus if path continues of not'''
+    path_continues = (internal != 'diffuse')*(reinitialization != 'diffuse')*(surface[0] != 'diffuse')*(surface[1] != 'diffuse')*(surface[2] != 'diffuse')*(surface[3] != 'diffuse')*(surface[4] != 'diffuse')
+    return bool(path_continues)
 
 def surface_scattering(x, y, z, theta, phi, frequency, hole_coordinates, hole_shapes, pillar_coordinates, speed, all_scat_stat):
     '''This function checks if there will be a surface scattering on this timestep and returns a new vector'''       
@@ -873,8 +878,10 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
             theta,phi,reinitialization_scattering_type,x[i-1],y[i-1],z[i-1] = reinitialization(x[i-1],y[i-1],z[i-1],theta,phi,speed)
 
             statistics_of_scattering_events = scattering_events_statistics_calculation(statistics_of_scattering_events,surface_scattering_types,reinitialization_scattering_type,internal_scattering_type)
-
-            if internal_scattering_type != 'diffuse' and reinitialization_scattering_type != 'diffuse' and all(surface_scattering_types) != 'diffuse' :                                                  # If there was no scattering, we keep measuring the phonon path
+            
+            path_continues = path_continues_check(internal_scattering_type,reinitialization_scattering_type,surface_scattering_types)
+            if path_continues:                                                  # i.e. if there was no diffuse scattering even, then we keep measuring the paths
+            #if internal_scattering_type != 'diffuse' and reinitialization_scattering_type != 'diffuse' and all(surface_scattering_types) != 'diffuse' :                                                  # If there was no scattering, we keep measuring the phonon path
                 free_paths[path_num]+=speed*timestep
                 if hole_lattice_type=='serpentine':
                     if abs(x[i-1])<(width/2-155e-9):
