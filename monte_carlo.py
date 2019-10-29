@@ -81,6 +81,18 @@ def phonon_properties_assignment_2(j, branch):
     phonon_properties = [frequency, polarization, speed]
     return phonon_properties, w, K, dK
 
+def heat_capacity_calculation():
+    '''This function calculated heat capacity from the phonon dispersion'''
+    cummulative_heat_capacity=0
+    for branch in range(3):                                                            # For each phonon branch
+        for j in range(0,number_of_phonons):    
+            phonon_properties, w, K, dK  = phonon_properties_assignment_2(j,branch)
+            
+            frequency, polarization, speed = phonon_properties
+            heat_capacity=k*((hbar*w/(k*T))**2)*exp(hbar*w/(k*T))/((exp(hbar*w/(k*T))-1)**2)                        # Ref. PRB 88 155318 (2013)
+            specific_heat_capacity += heat_capacity
+
+    return specific_heat_capacity
 
 def move(x, y, z, theta, phi, speed):
     '''This function moves a phonon in one timestep and returns new coordinates'''
@@ -602,6 +614,8 @@ def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_an
     '''This function analyzes writes files with statistics'''
     sys.stdout.write('\r'+'Progress: 100%')
     sys.stdout.write("\n")        
+    if not os.path.exists(output_folder_name):
+	os.makedirs(output_folder_name)
     os.chdir(output_folder_name)
     with open("All free paths.txt","w+") as f:
         f.writelines(["%s\n" % i for i in free_paths])
@@ -629,16 +643,16 @@ def output_trajectories(x, y, z, N):
     plt.figure(1)
     for i in range(N): 
         plt.plot (np.trim_zeros(x[:,i])*1e6,np.trim_zeros(y[:,i])*1e6, linewidth=0.1)
-    plt.xlabel('X (um)', fontsize=12)
-    plt.ylabel('Y (um)', fontsize=12)
+    plt.xlabel('X ($mu$m)', fontsize=12)
+    plt.ylabel('Y ($mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
     plt.savefig("Phonon paths XY.pdf",dpi=900, format = 'pdf', bbox_inches="tight")  
     if output_in_terminal: plt.show()    
     plt.figure(2)
     for i in range(N): 
         plt.plot (np.trim_zeros(y[:,i])*1e6,np.trim_zeros(z[:,i])*1e6, linewidth=0.1)
-    plt.xlabel('Y (um)', fontsize=12)
-    plt.ylabel('Z (um)', fontsize=12)
+    plt.xlabel('Y ($mu$m)', fontsize=12)
+    plt.ylabel('Z ($mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
     plt.savefig("Phonon paths YZ.pdf",dpi=300, format = 'pdf', bbox_inches="tight")  
     if output_in_terminal: plt.show()
@@ -648,14 +662,15 @@ def output_trajectories(x, y, z, N):
 def output_thermal_map(thermal_map):
     '''This function outputs the thermal map'''
     from matplotlib.colors import LogNorm
-    minimum_of_colorbar=1e-20                                                   # Cannot be zero!
-    np.savetxt("Thermal Map.csv", thermal_map, delimiter=",")                   # First we write it into the file
+    minimum_of_colorbar=1e-20                                     # Cannot be zero!
+    if output_raw_thermal_map:
+	np.savetxt("Thermal Map.csv", thermal_map, delimiter=",") # Writing data into the file
     thermal_map=np.flipud(thermal_map)
     #plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6] )                # can also use interpolation='bicubic' and norm=LogNorm(vmin=0.01, vmax=np.amax(thermal_map))
     plt.figure(3)
     plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6], norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(thermal_map)) )
-    plt.xlabel('X (um)', fontsize=12)
-    plt.ylabel('Y (um)', fontsize=12)
+    plt.xlabel('X ($mu$m)', fontsize=12)
+    plt.ylabel('Y ($mu$m)', fontsize=12)
     cbar=plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
     plt.savefig("Thermal map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
@@ -669,8 +684,8 @@ def output_scattering_maps(scattering_maps):
     plt.plot (scattering_maps[2][:], scattering_maps[3][:], 'o', color='g', markersize=0.2, alpha=0.2)
     plt.plot (scattering_maps[4][:], scattering_maps[5][:], 'o', color='r', markersize=0.2, alpha=0.2)
     plt.plot (scattering_maps[0][:], scattering_maps[1][:], 'o', color='b', markersize=0.2, alpha=0.2)
-    plt.xlabel('X (um)', fontsize=12)
-    plt.ylabel('Y (um)', fontsize=12)
+    plt.xlabel('X ($mu$m)', fontsize=12)
+    plt.ylabel('Y ($mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
     plt.savefig("Scattering map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
@@ -719,24 +734,24 @@ def output_profiles(maps_and_profiles):
     np.savetxt("Heat flux profiles y.csv", np.vstack((coordinates_y,J_profiles_y.T)).T, delimiter=",")
     #for i in range(T_profiles_x.shape[1]):                                      # Plotting and and saving the plots
     #    plt.plot (coordinates_x[:],T_profiles_x[:,i], linewidth=1)
-    #plt.xlabel('X (um)', fontsize=12)
+    #plt.xlabel('X ($mu$m)', fontsize=12)
     #plt.ylabel('Temperature (K)', fontsize=12)
     #plt.show()
     plt.figure(6)
     for i in range(number_of_timeframes):
         plt.plot (coordinates_y[1:number_of_pixels_y],T_profiles_y[1:number_of_pixels_y,i], linewidth=1)
-    plt.xlabel('Y (um)', fontsize=12)
+    plt.xlabel('Y ($mu$m)', fontsize=12)
     plt.ylabel('Temperature (K)', fontsize=12)
     plt.savefig("Temperature profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     #for i in range(J_profiles_x.shape[1]):
     #    plt.plot (coordinates_x[:],J_profiles_x[:,i], linewidth=1)
-    #plt.xlabel('X (um)', fontsize=12)
+    #plt.xlabel('X ($mu$m)', fontsize=12)
     #plt.ylabel('Heat flux (W/m^2)', fontsize=12)
     #plt.show()
     for i in range(number_of_timeframes):
         plt.plot (coordinates_y[1:number_of_pixels_y],J_profiles_y[1:number_of_pixels_y,i], linewidth=1)
-    plt.xlabel('Y (um)', fontsize=12)
+    plt.xlabel('Y ($mu$m)', fontsize=12)
     plt.ylabel('Heat flux (W/m^2)', fontsize=12)
     plt.savefig("Heat flux profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
@@ -762,7 +777,7 @@ def output_distributions():
     
     plt.figure(8)
     plt.plot (free_path_distribution[:,0]*1e6,free_path_distribution[:,1])
-    plt.xlabel('Free flights (um)', fontsize = 12)
+    plt.xlabel('Free flights ($mu$m)', fontsize = 12)
     plt.ylabel('Number of flights', fontsize=12)
     plt.savefig("Distribution of free paths.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
@@ -903,8 +918,9 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
                 path_num+=1
                 time_since_previous_scattering=0.0                               # And we reset the time without diffuse scattering 
                 time_of_internal_scattering=internal_scattering_time_calculation(frequency, polarization)
-            
-            scattering_maps = scattering_map_calculation(x[i-1],y[i-1],scattering_maps,internal_scattering_type,surface_scattering_types)
+
+            if output_scattering_map: 
+		scattering_maps = scattering_map_calculation(x[i-1],y[i-1],scattering_maps,internal_scattering_type,surface_scattering_types)
             maps_and_profiles=maps_and_profiles_calculation(x[i-1],y[i-1],maps_and_profiles,phonon_properties,i,theta,phi)
 
             x[i],y[i],z[i]=move(x[i-1],y[i-1],z[i-1],theta,phi,speed)           # Phonon makes a step forward              
@@ -961,7 +977,7 @@ def main1():
     write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,all_scat_stat)        
     output_distributions()
     output_thermal_map(maps_and_profiles[0])
-    output_scattering_maps(scattering_maps)
+    if output_scattering_map: output_scattering_maps(scattering_maps)
     output_profiles(maps_and_profiles)
     output_thermal_conductivity(maps_and_profiles)
     output_trajectories(x,y,z,number_of_phonons_in_a_group)
