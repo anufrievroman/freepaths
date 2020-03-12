@@ -226,6 +226,7 @@ def scattering_on_triangle_down_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx,
                 new_theta=arcsin(2*random()-1)                                  # Lambert cosine distribution
                 new_phi=arcsin(2*random()-1)
                 scattering_type='diffuse'
+		all_scat_stat.append(new_theta) 
         else:                                                                   # Sidewalls scattering 
             a=arccos(cos(phi)*cos(theta-sign(x-x0)*(pi/2-beta)))                # Angle to the surface
             p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
@@ -233,8 +234,8 @@ def scattering_on_triangle_down_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx,
                 new_theta=-theta+sign(x-x0)*2*beta
                 new_phi=phi
                 scattering_type='specular'  
-                if x>x0:
-                    all_scat_stat.append(new_theta)                                       
+                #if x>x0:
+                #    all_scat_stat.append(new_theta)                                       
             else:                                                               # Diffuse scattering                                                       
                 rand_sign=sign((2*random()-1))
                 new_theta=rand_sign*pi-rand_sign*arcsin(random())-sign(x-x0)*(pi/2-beta)  # Lambert cosine distribution
@@ -253,7 +254,7 @@ def scattering_on_triangle_up_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx, L
     beta=arctan(0.5*Lx/Ly)                                                      # Angle of the triangle (tip angle)
     if Ly/2+(y-y0)<=(Lx/2-abs(x-x0))/tan(beta) and abs(y-y0)<Ly/2:
         #x1=Ly/2/tan(theta) - abs(y0-y)/tan(theta) + abs(x0-x)
-        if ((y-timestep*speed) < (y0-Ly/2)) and (abs(theta)<pi/2):                  # Bottom scattering
+        if ((y-timestep*speed) < (y0-Ly/2)) and (abs(theta)<pi/2):              # Bottom scattering
             a=arccos(cos(phi)*cos(theta))                                       # Angle to the surface
             p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
             if random()<p:                                                      # Specular scattering
@@ -288,7 +289,7 @@ def scattering_on_triangle_up_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx, L
 def internal_scattering_time_calculation(frequency, polarization):
     '''This function determines time after which this phonon will undegro internal scattering'''
     w=2*pi*frequency
-    deb_temp=152                                                                # [K] Debay temperature
+    deb_temp=152.0                                                                # [K] Debay temperature
     tau_impurity=1/((2.95e-45)*(w**4))
     tau_umklapp=1/((0.95e-19)*(w**2)*T*exp(-deb_temp/T))
     #if polarization=='TA':
@@ -309,7 +310,7 @@ def internal_scattering(theta, phi, time_since_previous_scattering, time_of_inte
     '''This function is checking is the time passed since previous diffuse scattering event 
     reached the time until an internal scatteringevent, and if yes, scatters randomly'''
     internal_scattering_type='none'    
-    if time_since_previous_scattering > time_of_internal_scattering:
+    if time_since_previous_scattering > time_of_internal_scattering and internal_scattering_on:
         theta=-pi+random()*2*pi
         phi=-pi+random()*2*pi
         internal_scattering_type='diffuse'
@@ -495,7 +496,7 @@ def angle_distribution_calculation():
 
 def free_path_distribution_calculation():
     '''This function analyses measured phonon free paths and creates their distribution'''
-    with open("All free paths.txt","r") as f:
+    with open("All free paths in plane.txt","r") as f:
         free_paths = np.loadtxt(f, dtype='float')
     dist=zeros((number_of_nodes,2))
     dist[:,0]=[i*length/number_of_nodes for i in range(number_of_nodes)]  
@@ -619,7 +620,7 @@ def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_an
     os.chdir(output_folder_name)
     with open("All free paths.txt","w+") as f:
         f.writelines(["%s\n" % i for i in free_paths])
-    with open("All free paths along y.txt","w+") as f:
+    with open("All free paths in plane.txt","w+") as f:
         f.writelines(["%s\n" % i for i in free_paths_along_y])
     with open("All frequencies.txt","w+") as f:
         f.writelines(["%s\n" % i for i in frequencies])
@@ -643,16 +644,16 @@ def output_trajectories(x, y, z, N):
     plt.figure(1)
     for i in range(N): 
         plt.plot (np.trim_zeros(x[:,i])*1e6,np.trim_zeros(y[:,i])*1e6, linewidth=0.1)
-    plt.xlabel('X ($mu$m)', fontsize=12)
-    plt.ylabel('Y ($mu$m)', fontsize=12)
+    plt.xlabel('X ($\mu$m)', fontsize=12)
+    plt.ylabel('Y ($\mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
     plt.savefig("Phonon paths XY.pdf",dpi=900, format = 'pdf', bbox_inches="tight")  
     if output_in_terminal: plt.show()    
     plt.figure(2)
     for i in range(N): 
         plt.plot (np.trim_zeros(y[:,i])*1e6,np.trim_zeros(z[:,i])*1e6, linewidth=0.1)
-    plt.xlabel('Y ($mu$m)', fontsize=12)
-    plt.ylabel('Z ($mu$m)', fontsize=12)
+    plt.xlabel('Y ($\mu$m)', fontsize=12)
+    plt.ylabel('Z ($\mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
     plt.savefig("Phonon paths YZ.pdf",dpi=300, format = 'pdf', bbox_inches="tight")  
     if output_in_terminal: plt.show()
@@ -669,8 +670,8 @@ def output_thermal_map(thermal_map):
     #plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6] )                # can also use interpolation='bicubic' and norm=LogNorm(vmin=0.01, vmax=np.amax(thermal_map))
     plt.figure(3)
     plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6], norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(thermal_map)) )
-    plt.xlabel('X ($mu$m)', fontsize=12)
-    plt.ylabel('Y ($mu$m)', fontsize=12)
+    plt.xlabel('X ($\mu$m)', fontsize=12)
+    plt.ylabel('Y ($\mu$m)', fontsize=12)
     cbar=plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
     plt.savefig("Thermal map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
@@ -684,8 +685,8 @@ def output_scattering_maps(scattering_maps):
     plt.plot (scattering_maps[2][:], scattering_maps[3][:], 'o', color='g', markersize=0.2, alpha=0.2)
     plt.plot (scattering_maps[4][:], scattering_maps[5][:], 'o', color='r', markersize=0.2, alpha=0.2)
     plt.plot (scattering_maps[0][:], scattering_maps[1][:], 'o', color='b', markersize=0.2, alpha=0.2)
-    plt.xlabel('X ($mu$m)', fontsize=12)
-    plt.ylabel('Y ($mu$m)', fontsize=12)
+    plt.xlabel('X ($\mu$m)', fontsize=12)
+    plt.ylabel('Y ($\mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
     plt.savefig("Scattering map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
@@ -734,24 +735,24 @@ def output_profiles(maps_and_profiles):
     np.savetxt("Heat flux profiles y.csv", np.vstack((coordinates_y,J_profiles_y.T)).T, delimiter=",")
     #for i in range(T_profiles_x.shape[1]):                                      # Plotting and and saving the plots
     #    plt.plot (coordinates_x[:],T_profiles_x[:,i], linewidth=1)
-    #plt.xlabel('X ($mu$m)', fontsize=12)
+    #plt.xlabel('X ($\mu$m)', fontsize=12)
     #plt.ylabel('Temperature (K)', fontsize=12)
     #plt.show()
     plt.figure(6)
     for i in range(number_of_timeframes):
         plt.plot (coordinates_y[1:number_of_pixels_y],T_profiles_y[1:number_of_pixels_y,i], linewidth=1)
-    plt.xlabel('Y ($mu$m)', fontsize=12)
+    plt.xlabel('Y ($\mu$m)', fontsize=12)
     plt.ylabel('Temperature (K)', fontsize=12)
     plt.savefig("Temperature profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     #for i in range(J_profiles_x.shape[1]):
     #    plt.plot (coordinates_x[:],J_profiles_x[:,i], linewidth=1)
-    #plt.xlabel('X ($mu$m)', fontsize=12)
+    #plt.xlabel('X ($\mu$m)', fontsize=12)
     #plt.ylabel('Heat flux (W/m^2)', fontsize=12)
     #plt.show()
     for i in range(number_of_timeframes):
         plt.plot (coordinates_y[1:number_of_pixels_y],J_profiles_y[1:number_of_pixels_y,i], linewidth=1)
-    plt.xlabel('Y ($mu$m)', fontsize=12)
+    plt.xlabel('Y ($\mu$m)', fontsize=12)
     plt.ylabel('Heat flux (W/m^2)', fontsize=12)
     plt.savefig("Heat flux profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
@@ -777,11 +778,11 @@ def output_distributions():
     
     plt.figure(8)
     plt.plot (free_path_distribution[:,0]*1e6,free_path_distribution[:,1])
-    plt.xlabel('Free flights ($mu$m)', fontsize = 12)
+    plt.xlabel('Free flights ($\mu$m)', fontsize = 12)
     plt.ylabel('Number of flights', fontsize=12)
-    plt.savefig("Distribution of free paths.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    plt.savefig("Distribution of free paths in plane.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
-    np.savetxt('Distribution of free paths.csv', free_path_distribution, delimiter=",")
+    np.savetxt('Distribution of free paths in plane.csv', free_path_distribution, delimiter=",")
     
     plt.figure(9)
     plt.plot (frequency_distribution[:,0],frequency_distribution[:,1])
@@ -797,7 +798,7 @@ def output_distributions():
     plt.ylabel('Number of phonons', fontsize=12)
     plt.savefig("Distribution of wavelengths.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
-    np.savetxt('Distribution of wavelengths.csv', frequency_distribution, delimiter=",")
+    np.savetxt('Distribution of wavelengths.csv', wavelength_distribution, delimiter=",")
     
     plt.figure(11)
     plt.plot (travel_time_distribution[:,0]*1e9,travel_time_distribution[:,1])
@@ -890,7 +891,12 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
     travel_time=0.0
     hole_coordinates,hole_shapes=hole_positioning(hole_lattice_type, rectangular_hole_side_y, width, period_x, period_y)
     pillar_coordinates=pillar_positioning(pillar_lattice_type, period_x, period_y)
-    time_of_internal_scattering=internal_scattering_time_calculation(frequency,polarization)
+
+    if use_gray_approximation_mfp:
+        time_of_internal_scattering=gray_approximation_mfp/speed
+    else:
+        time_of_internal_scattering=internal_scattering_time_calculation(frequency, polarization)
+
     for i in range(1,number_of_timesteps): 
         internal_scattering_type='none'
         reinitialization_scattering_type='none'                                           
@@ -911,13 +917,20 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
                         free_paths_along_y[path_num]+=speed*timestep*abs(cos(phi))*abs(cos(theta))
                 else:
                     free_paths_along_y[path_num]+=speed*timestep*abs(cos(phi))*abs(cos(theta))
+                    #free_paths_along_y[path_num]+=speed*timestep*abs(cos(phi))
+#                if quickfix:
+#                    time_since_previous_scattering+=timestep*abs(cos(phi))
+#                else:
                 time_since_previous_scattering+=timestep
             else:                                                               # Otherwise, we start measuring phonon path from the beginning
                 free_paths.append(0.0)
                 free_paths_along_y.append(0.0)
                 path_num+=1
                 time_since_previous_scattering=0.0                               # And we reset the time without diffuse scattering 
-                time_of_internal_scattering=internal_scattering_time_calculation(frequency, polarization)
+                if use_gray_approximation_mfp:
+                    time_of_internal_scattering=gray_approximation_mfp/speed
+                else:
+                    time_of_internal_scattering=internal_scattering_time_calculation(frequency, polarization)
 
             if output_scattering_map: 
 		scattering_maps = scattering_map_calculation(x[i-1],y[i-1],scattering_maps,internal_scattering_type,surface_scattering_types)
@@ -1054,4 +1067,7 @@ def main2():
     return
 
 if __name__ == "__main__":
-    main1()
+    if simulation_mode == 1:
+        main1()
+    elif simulation_mode == 2:
+        main2()
