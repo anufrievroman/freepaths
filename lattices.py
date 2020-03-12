@@ -9,7 +9,69 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
     hole_shapes list contains shapes of hole e.g. 'rectangle', 'circle', 'triangle_up' or 'triangle_down' '''
     
     if hole_lattice_type=='square':
+        '''Regular square lattice of holes'''
         first_hole_coordinate=300e-9
+        number_of_periods_x=6
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
+        hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
+                hole_number+=1
+
+    if hole_lattice_type=='source':
+        '''Lattice similar to staggered, but with a passage in the middle'''
+        first_hole_coordinate=300e-9
+        #passage=100e-9
+        number_of_periods_x=5
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y*4 + number_of_periods_y*2 ,3))
+        hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                # Aligned rows
+                hole_coordinates[hole_number,0]=j*period_x+period_x/2.0
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2
+                hole_coordinates[hole_number+1,0]=-j*period_x-period_x/2.0
+                hole_coordinates[hole_number+1,1]=first_hole_coordinate+i*period_y*2
+                # Staggered rows
+                hole_coordinates[hole_number+2,0]=j*period_x+period_x
+                hole_coordinates[hole_number+2,1]=first_hole_coordinate+i*period_y*2.0+period_y
+                hole_coordinates[hole_number+3,0]=-j*period_x-period_x
+                hole_coordinates[hole_number+3,1]=first_hole_coordinate+i*period_y*2.0+period_y
+                hole_number+=4
+
+        for i in range(number_of_periods_y):
+                # Additional holes
+                hole_coordinates[hole_number,0]=period_x/2
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2.0+period_y
+                hole_coordinates[hole_number+1,0]=-period_x/2
+                hole_coordinates[hole_number+1,1]=first_hole_coordinate+i*period_y*2.0+period_y
+                hole_number+=2
+
+
+    if hole_lattice_type=='slits':
+        '''This lattece is array of slits from PRB 101, 115301 (2020)'''
+        first_hole_coordinate=500e-9 - 75e-9
+        number_of_periods_x=13
+        number_of_periods_y=4
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
+        hole_shapes=['rectangle' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
+                hole_number+=1
+
+
+    if hole_lattice_type=='slit':
+        '''Single slit from Hao et al.'''
+        first_hole_coordinate=500e-9
         number_of_periods_x=2
         number_of_periods_y=1
         hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
@@ -20,7 +82,21 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
                 hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
                 hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
                 hole_number+=1
+		
 
+    if hole_lattice_type=='fishbone':
+        '''Fishbone lattice, similar to the one in Maire et al. Scientific Report 8, 4452 (2018)'''
+        first_hole_coordinate=300e-9
+        number_of_periods_x=2
+        number_of_periods_y=4
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
+        hole_shapes=['rectangle' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y
+                hole_number+=1
                              
     if hole_lattice_type=='staggered':
         first_hole_coordinate=300e-9
@@ -41,8 +117,27 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
                 hole_number+=1
 
 
-    if hole_lattice_type=='staggered_triangles':
-        first_hole_coordinate=300e-9
+    if hole_lattice_type=='staggered_triangles_down':
+        first_hole_coordinate=600e-9
+        number_of_periods_x=5
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y*2+number_of_periods_y,3))
+        hole_shapes=['triangle_down' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*1.0
+                hole_number+=1
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x+1):
+                hole_coordinates[hole_number,0]=-(number_of_periods_x-1)*period_x/2+j*period_x-period_x/2
+                hole_coordinates[hole_number,1]=first_hole_coordinate+period_y*0.5+i*period_y*1.0
+                hole_number+=1
+    
+    
+    if hole_lattice_type=='staggered_triangles_up':
+        first_hole_coordinate=600e-9
         number_of_periods_x=5
         number_of_periods_y=3
         hole_coordinates=zeros((number_of_periods_x*number_of_periods_y*2+number_of_periods_y,3))
