@@ -1,24 +1,27 @@
 # GENERAL PARAMETERS
-output_folder_name = 'Source n_200nm'      # This folder will be created 
-number_of_phonons = 40000            # Total number of phonons that will be simulated
-number_of_phonons_in_a_group = 100  # To reduce the memory usage, phonons are simulated in small groups
-number_of_timesteps = 150000	    # Maximum number of timesteps
-number_of_nodes = 400		    # Resolution of distribution plots
-timestep = 1.0e-12                  # [s] Duration of one timestep
-T = 4.0		                    # [K] Temperature of the system
-output_in_terminal = False	    # Prevents showing plots directly in the terminal
-output_scattering_map = False	    # Prevents calculating and outputing heavy scattering map
-output_raw_thermal_map = False	    # Prevents outputing heavy raw data for thermal map
+output_folder_name = 'time test'
+number_of_phonons = 20
+number_of_phonons_in_a_group = 20
+number_of_timesteps = 150000
+number_of_nodes = 400
+timestep = 1.0e-12      
+T = 4.0		         
+output_in_terminal = False
+output_scattering_map = False
+output_raw_thermal_map = True
+calculate_mfp_spectrum = False
+calculate_travel_times = False
+cold_side_on_top = True
 simulation_mode = 1
 
 # INTERNAL SCATTERING
 internal_scattering_on = True      
-use_gray_approximation_mfp = False   # Do you want to use frequency indepenednt MFP specified below?
-gray_approximation_mfp = 1.5e-6      # [m] Frequency independent internal MFP
+use_gray_approximation_mfp = False
+gray_approximation_mfp = 1.5e-6
 
 # SYSTEM DIMENSIONS [m]
-width = 4*300e-9
-length = 12*300e-9 
+width = 1200e-9
+length = 3200e-9 
 thickness = 145e-9
 
 # ROUGHNESS [m]
@@ -34,9 +37,9 @@ holes = 'yes'
 hole_lattice_type = 'source'
 pillars = 'no'
 pillar_lattice_type = 'square'
-circular_hole_diameter = 100e-9
-rectangular_hole_side_x = 250e-9
-rectangular_hole_side_y = 20e-9
+circular_hole_diameter = 50e-9
+rectangular_hole_side_x = 2400e-9
+rectangular_hole_side_y = 1200e-9
 pillar_height = 30e-9
 from math import pi
 pillar_wall_angle = pi/2.0
@@ -44,7 +47,7 @@ period_x = 300e-9
 period_y = 300e-9
 
 # ENERGY MAP PARAMETERS
-number_of_pixels_x = 300	
+number_of_pixels_x = 300
 number_of_pixels_y = 300
 number_of_timeframes = 10
 
