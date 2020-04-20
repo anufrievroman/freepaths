@@ -11,8 +11,8 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
     if hole_lattice_type=='square':
         '''Regular square lattice of holes'''
         first_hole_coordinate=300e-9
-        number_of_periods_x=6
-        number_of_periods_y=3
+        number_of_periods_x=5
+        number_of_periods_y=6
         hole_coordinates=zeros((number_of_periods_x*number_of_periods_y,3))
         hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
         hole_number=0
@@ -46,13 +46,48 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
                 hole_number+=4
 
         for i in range(number_of_periods_y):
-                # Additional holes
-                hole_coordinates[hole_number,0]=period_x/2
-                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2.0+period_y
-                hole_coordinates[hole_number+1,0]=-period_x/2
-                hole_coordinates[hole_number+1,1]=first_hole_coordinate+i*period_y*2.0+period_y
-                hole_number+=2
+            # Additional holes
+            hole_coordinates[hole_number,0]=period_x/2
+            hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2.0+period_y
+            hole_coordinates[hole_number+1,0]=-period_x/2
+            hole_coordinates[hole_number+1,1]=first_hole_coordinate+i*period_y*2.0+period_y
+            hole_number+=2
 
+    if hole_lattice_type=='source_with_mirror':
+        '''Lattice similar to staggered, but with a passage in the middle plus a mirror'''
+        first_hole_coordinate=300e-9
+        #passage=100e-9
+        number_of_periods_x=5
+        number_of_periods_y=3
+        hole_coordinates=zeros((number_of_periods_x*number_of_periods_y*4 + number_of_periods_y*2 + 1 ,3))
+        hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
+        hole_number=0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                # Aligned rows
+                hole_coordinates[hole_number,0]=j*period_x+period_x/2.0
+                hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2
+                hole_coordinates[hole_number+1,0]=-j*period_x-period_x/2.0
+                hole_coordinates[hole_number+1,1]=first_hole_coordinate+i*period_y*2
+                # Staggered rows
+                hole_coordinates[hole_number+2,0]=j*period_x+period_x
+                hole_coordinates[hole_number+2,1]=first_hole_coordinate+i*period_y*2.0+period_y
+                hole_coordinates[hole_number+3,0]=-j*period_x-period_x
+                hole_coordinates[hole_number+3,1]=first_hole_coordinate+i*period_y*2.0+period_y
+                hole_number+=4
+
+        for i in range(number_of_periods_y):
+            # Additional holes
+            hole_coordinates[hole_number,0]=period_x/2
+            hole_coordinates[hole_number,1]=first_hole_coordinate+i*period_y*2.0+period_y
+            hole_coordinates[hole_number+1,0]=-period_x/2
+            hole_coordinates[hole_number+1,1]=first_hole_coordinate+i*period_y*2.0+period_y
+            hole_number+=2
+
+        # Mirror triangle
+        hole_coordinates[hole_number,0]=-600e-9
+        hole_coordinates[hole_number,1]=3200e-9 - rectangular_hole_side_y/2
+        hole_shapes[hole_number]='triangle_down'
 
     if hole_lattice_type=='slits':
         '''This lattece is array of slits from PRB 101, 115301 (2020)'''
@@ -267,7 +302,7 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
         period_y=(sqrt(3)/2)*period_x
         total_number_of_holes=54
         hole_in_the_center=False
-        total_number_of_holes+=hole_in_the_center*1                             # i.e. if there is hole in the center, than there is one more hole
+        total_number_of_holes+=hole_in_the_center*1 # i.e. if there is hole in the center, than there is one more hole
         hole_coordinates=zeros((total_number_of_holes,3))
         hole_shapes=['circle' for x in range(hole_coordinates.shape[0])]
         hole_coordinates[0,0]=0.0
@@ -304,13 +339,13 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
             
         # Holes at the sides
         for i in range(9):
-            hole_coordinates[28+i,0]=3.4*period_x
+            hole_coordinates[28+i,0]=3.35*period_x
             hole_coordinates[28+i,1]=first_hole_coordinate+period_x*0.1+period_x*i 
         for i in range(9):
-            hole_coordinates[37+i,0]=-3.4*period_x
+            hole_coordinates[37+i,0]=-3.35*period_x
             hole_coordinates[37+i,1]=first_hole_coordinate+period_x*0.1+period_x*i
             
-        #Additional holes right
+        # Additional holes right
         hole_coordinates[46,0]=period_x*sqrt(3)/2+1.1*period_x/2
         hole_coordinates[46,1]=first_hole_coordinate+period_y/2
         hole_coordinates[46,2]=-0.2
@@ -320,7 +355,7 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
         hole_coordinates[48,0]=period_x*sqrt(3)/2+2.9*period_x/2
         hole_coordinates[48,1]=first_hole_coordinate+period_y/2+2*period_x*sqrt(3)/2
         hole_coordinates[48,2]=-0.2
-        #Additional holes left
+        # Additional holes left
         hole_coordinates[49,0]=-period_x*sqrt(3)/2-1.1*period_x/2
         hole_coordinates[49,1]=first_hole_coordinate+period_y/2
         hole_coordinates[49,2]=-0.2
@@ -330,11 +365,12 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
         hole_coordinates[51,0]=-period_x*sqrt(3)/2-2.9*period_x/2
         hole_coordinates[51,1]=first_hole_coordinate+period_y/2+2*period_x*sqrt(3)/2
         hole_coordinates[51,2]=-0.2
-
-        hole_coordinates[52,0]=3.4*period_x-period_x
+        
+        # Small holes at the beginning
+        hole_coordinates[52,0]=3.35*period_x-period_x
         hole_coordinates[52,1]=first_hole_coordinate+period_x*0.1
         hole_coordinates[52,2]=-0.15
-        hole_coordinates[53,0]=-3.4*period_x+period_x
+        hole_coordinates[53,0]=-3.35*period_x+period_x
         hole_coordinates[53,1]=first_hole_coordinate+period_x*0.1
         hole_coordinates[53,2]=-0.15
             
@@ -347,7 +383,7 @@ def hole_positioning(hole_lattice_type,rectangular_hole_side_y,width, period_x, 
             
     if hole_lattice_type=='turn':
         first_hole_coordinate=300e-9
-        turning_point=14 # This is an integer number N in Lx=N*period_x where Lx is the distance form the center to the center of the turn
+        turning_point=35 # This is an integer number N in Lx=N*period_x where Lx is the distance form the center to the center of the turn
         number_of_periods_y_in_turn=4                                           # Number of periods in the turning part
         number_of_periods_y_before_turn=4                                       # Number of periods before the turn
         number_of_periods_x=5                                                   # Number of periods along x (should be odd number)
