@@ -598,6 +598,16 @@ def maps_and_profiles_calculation(x,y,maps_and_profiles,phonon_properties,timest
     return maps_and_profiles
 
 
+def phonon_in_system_check(x, y):
+    '''This function checks if the phonon at this timestep is still in the system and did not reach the cold side'''
+    small_offset = 10e-9
+    if cold_side_on_top:
+        phonon_is_in_system = (y < length)
+    else:
+        phonon_is_in_system = ((y < length-1.1e-6) or (y > length-1.1e-6 and x < width/2.0-small_offset))
+    return phonon_is_in_system
+
+
 def progress_bar(i, j, old_progress, scheme):
     '''This is a progress bar that outputs the progress each percent but not more often'''
     if scheme==1:
@@ -643,7 +653,7 @@ def output_trajectories(x, y, z, N):
     '''This function outputs the phonon trajectories of N phonons'''
     plt.figure(1)
     for i in range(N): 
-        plt.plot (np.trim_zeros(x[:,i])*1e6,np.trim_zeros(y[:,i])*1e6, linewidth=0.1)
+        plt.plot (np.trim_zeros(x[:,i])*1e6,np.trim_zeros(y[:,i])*1e6, linewidth=0.2)
     plt.xlabel('X ($\mu$m)', fontsize=12)
     plt.ylabel('Y ($\mu$m)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
@@ -762,10 +772,8 @@ def output_profiles(maps_and_profiles):
 def output_distributions():
     '''This function outputs the distributions into the terminal and the folder'''
     angle_distributions=angle_distribution_calculation()             
-    free_path_distribution=free_path_distribution_calculation()
     frequency_distribution=frequency_distribution_calculation()
     wavelength_distribution=wavelength_distribution_calculation()
-    travel_time_distribution=travel_time_distribution_calculation()
     
     plt.figure(7)
     plt.plot (angle_distributions[:,0],angle_distributions[:,1],'b')
@@ -775,14 +783,16 @@ def output_distributions():
     plt.savefig("Distribution of angles.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     np.savetxt('Distribution of angles.csv', angle_distributions, delimiter=",")
-    
-    plt.figure(8)
-    plt.plot (free_path_distribution[:,0]*1e6,free_path_distribution[:,1])
-    plt.xlabel('Free flights ($\mu$m)', fontsize = 12)
-    plt.ylabel('Number of flights', fontsize=12)
-    plt.savefig("Distribution of free paths in plane.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
-    if output_in_terminal: plt.show()
-    np.savetxt('Distribution of free paths in plane.csv', free_path_distribution, delimiter=",")
+   
+    if calculate_mfp_spectrum:
+        free_path_distribution=free_path_distribution_calculation()
+        plt.figure(8)
+        plt.plot (free_path_distribution[:,0]*1e6,free_path_distribution[:,1])
+        plt.xlabel('Free flights ($\mu$m)', fontsize = 12)
+        plt.ylabel('Number of flights', fontsize=12)
+        plt.savefig("Distribution of free paths in plane.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+        if output_in_terminal: plt.show()
+        np.savetxt('Distribution of free paths in plane.csv', free_path_distribution, delimiter=",")
     
     plt.figure(9)
     plt.plot (frequency_distribution[:,0],frequency_distribution[:,1])
@@ -800,13 +810,15 @@ def output_distributions():
     if output_in_terminal: plt.show()
     np.savetxt('Distribution of wavelengths.csv', wavelength_distribution, delimiter=",")
     
-    plt.figure(11)
-    plt.plot (travel_time_distribution[:,0]*1e9,travel_time_distribution[:,1])
-    plt.xlabel('Travel time (ns)', fontsize=12)
-    plt.ylabel('Number of phonons', fontsize=12)
-    plt.savefig("Distribution of travel times.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
-    if output_in_terminal: plt.show()
-    np.savetxt('Distribution of travel times.csv', travel_time_distribution, delimiter=",")
+    if calculate_travel_times:
+        travel_time_distribution=travel_time_distribution_calculation()
+        plt.figure(11)
+        plt.plot (travel_time_distribution[:,0]*1e9,travel_time_distribution[:,1])
+        plt.xlabel('Travel time (ns)', fontsize=12)
+        plt.ylabel('Number of phonons', fontsize=12)
+        plt.savefig("Distribution of travel times.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+        if output_in_terminal: plt.show()
+        np.savetxt('Distribution of travel times.csv', travel_time_distribution, delimiter=",")
     
     with open("All group velocities.txt","r") as f:
         speeds = np.loadtxt(f, dtype='float')    
@@ -897,11 +909,13 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
     else:
         time_of_internal_scattering=internal_scattering_time_calculation(frequency, polarization)
 
+
     for i in range(1,number_of_timesteps): 
         internal_scattering_type='none'
         reinitialization_scattering_type='none'                                           
-        if y[i-1]<length:                                                       # If the phonon is still in the system
-            
+        phonon_is_in_system = phonon_in_system_check(x[i-1],y[i-1])
+
+        if phonon_is_in_system:
             theta,phi,internal_scattering_type = internal_scattering(theta, phi, time_since_previous_scattering, time_of_internal_scattering)           
             theta,phi,surface_scattering_types,all_scat_stat = surface_scattering(x[i-1],y[i-1],z[i-1],theta,phi,frequency,hole_coordinates,hole_shapes,pillar_coordinates,speed,all_scat_stat)
             theta,phi,reinitialization_scattering_type,x[i-1],y[i-1],z[i-1] = reinitialization(x[i-1],y[i-1],z[i-1],theta,phi,speed)
