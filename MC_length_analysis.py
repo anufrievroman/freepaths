@@ -1,34 +1,32 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+import time
 
-file_name_1='600nm.txt'
-file_name_2='600nm_50K.txt'
-file_name_3='600nm_100K.txt'
+path = ["Length analysis/Different segments/400nm.txt",
+        "Length analysis/Different segments/600nm.txt",
+        "Length analysis/Different segments/800nm.txt"]
 
-number_of_nodes=800
-path_length_range=4000e-9
-os.chdir('Length analysis')
+number_of_nodes = 400
+path_length_range = 10000e-9
 
-def distribution_calculation(file_name):
-    '''This function calculates the free path distribution from the raw free path data'''
-    print '\n',file_name, 'is being processed'
-    f = open(file_name,"r")
-    data = np.loadtxt(f, dtype='float')
-    f.close()
-    distribution=np.zeros((number_of_nodes,2))
-    distribution[:,0]=[i*path_length_range/(number_of_nodes) for i in range(number_of_nodes)]
-    distribution[:,1]=[len(filter(lambda x: x>=j-0.5*path_length_range/number_of_nodes and x<j+0.5*path_length_range/number_of_nodes and x!=0, data)) for j in distribution[:,0]]
+
+def distribution_calculation(filename, data_range, number_of_nodes):
+    '''This function calculates distribution of numbers in a given file'''
+    data = np.loadtxt(filename)
+    distribution = np.zeros((number_of_nodes, 2))
+    distribution[:,0] = np.linspace(0, data_range, number_of_nodes)
+    distribution[:,1], _ = np.histogram(data, number_of_nodes, range=(0, data_range))
     return distribution
 
-dist1=distribution_calculation(file_name_1)
-dist2=distribution_calculation(file_name_2)
-dist3=distribution_calculation(file_name_3)
 
-plt.semilogy(dist1[:,0]*1e9,dist1[:,1],'b')
-plt.semilogy(dist2[:,0]*1e9,dist2[:,1],'r')
-plt.semilogy(dist3[:,0]*1e9,dist3[:,1],'g')
+for filename in path:
+    dist = distribution_calculation(filename, path_length_range, number_of_nodes)
+    plt.plot(dist[:,0]*1e9, dist[:,1], 'b')
+
+
 plt.ylabel('Number of phonons', fontsize=12)
-plt.xlabel('Flight length along y (nm)', fontsize=12)
+plt.xlabel('Flight length along (nm)', fontsize=12)
 plt.savefig("Data analysis.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
 plt.show()
+
+print ("Mean free path is", np.mean(data)*1e9, "nm")
