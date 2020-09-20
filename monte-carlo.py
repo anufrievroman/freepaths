@@ -1,13 +1,14 @@
-from numpy import pi, cos, sin, tan, exp, arctan, arcsin, sign, zeros, log, sqrt, arccos
+from numpy import pi, cos, sin, tan, exp, arctan, arcsin, sign, log, sqrt, arccos
 import matplotlib.pyplot as plt
 import numpy as np
-from random import random, choice, randint
+from random import random, choice, randint 
 from scipy.constants import k, hbar
 import os
 import time
+import sys
 from lattices import hole_positioning, pillar_positioning
 from parameters import *
-import sys
+
 
 def initialization():
     '''This function initializes position and angles of a phonon'''
@@ -17,20 +18,28 @@ def initialization():
         x=0.4*(period_x-rectangular_hole_side_x)*(2*random()-1)
     elif hole_lattice_type=='turn':
         x=0.4*(period_x*5)*(2*random()-1)
+    elif hole_lattice_type=='turn90':
+        x=0.4*width/2.0*(2*random()-1)-period_x*3.5
+    elif hole_lattice_type=='directional_source':
+        x=(2*random()-1)*50e-9
     else:
         x=0.4*width*(2*random()-1)     # Here 0.4 is to prevent initialization right next to a wall                                             
     y=1e-12
     z=0.4*thickness*(2*random()-1)
     #theta[:]=arcsin(2*random()-1)                                              # Lambert cosine distribution
     #phi[:]=arcsin(2*random()-1)   
-    theta=-pi/2+pi*random()                                                     # Random distribution
+
+    if hole_lattice_type=='directional_source':
+        theta=1*pi/6.0
+    else:
+        theta=-pi/2+pi*random()                                                     # Random distribution
     phi=-pi/2+pi*random()          
     return x, y, z, theta, phi
 
 
 def bulk_phonon_dispersion(N):
     '''This function returns phonon dispersion calculated for N wavevectors over the G-X direction'''
-    dispersion=zeros((N,4))                                                
+    dispersion=np.zeros((N,4))                                                
     dispersion[:,0]=[k*12e9/(N-1) for k in range(N)]                                                                # Ref. APL 95 161901 (2009)
     dispersion[:,1]=[abs(1369.42*k-2.405e-8*(k**2)-9.70e-19*(k**3)) for k in dispersion[:,0]]                       # LA branch
     dispersion[:,2]=[abs(1081.74*k-7.711e-8*(k**2)+5.674e-19*(k**3)+7.967e-29*(k**4)) for k in dispersion[:,0]]     # TA branch
@@ -46,8 +55,7 @@ def phonon_properties_assignment():
     DOS_max=3*((2*pi*f_max)**2)/(2*(pi**2)*(default_speed**3))                  # DOS for f_max in Debye approximation
     bose_einstein_max=1/(exp((hbar*2*pi*f_max)/(k*T))-1)                        # Bose-Einstein destribution for f_max
     plank_distribution_max=DOS_max*hbar*2*pi*f_max*bose_einstein_max            # Peak of the distribution (needed for normalization)
-    i=0
-    while i==0:                                                                 # Until we obtain the frequency
+    while True:                                                                 # Until we obtain the frequency
         f=f_max*5*random()                                                      # Let's draw a random frequency in the 0 - 5*f_max range
         DOS=3*((2*pi*f)**2)/(2*(pi**2)*(default_speed**3))                      # Calculate the DOS in Debye approximation
         bose_einstein=1/(exp((hbar*2*pi*f)/(k*T))-1)                            # And the Bose-Einstein destribution
@@ -77,22 +85,23 @@ def phonon_properties_assignment_2(j, branch):
     dw=2*pi*abs(dispersion[j+1,branch+1]-dispersion[j,branch+1])                # Delta angular freequency        
     speed=dw/dK                                                                 # Group velocity
     frequency=w/(2*pi)
-    polarization='LA'*(branch == 0)*1+'TA'*(branch != 0)*1                      # Polarization according to the branch                                        
+    polarization='LA' if branch == 0 else 'TA'                                  
     phonon_properties = [frequency, polarization, speed]
     return phonon_properties, w, K, dK
 
-def heat_capacity_calculation():
-    '''This function calculated heat capacity from the phonon dispersion'''
-    cummulative_heat_capacity=0
-    for branch in range(3):                                                            # For each phonon branch
-        for j in range(0,number_of_phonons):    
-            phonon_properties, w, K, dK  = phonon_properties_assignment_2(j,branch)
-            
-            frequency, polarization, speed = phonon_properties
-            heat_capacity=k*((hbar*w/(k*T))**2)*exp(hbar*w/(k*T))/((exp(hbar*w/(k*T))-1)**2)                        # Ref. PRB 88 155318 (2013)
-            specific_heat_capacity += heat_capacity
 
-    return specific_heat_capacity
+# def heat_capacity_calculation():
+#     '''This function calculated heat capacity from the phonon dispersion'''
+#     specific_heat_capacity=0
+#     for branch in range(3):                                                            # For each phonon branch
+#         for j in range(number_of_phonons):    
+#             phonon_properties, w, K, dK  = phonon_properties_assignment_2(j,branch)
+            
+#             frequency, polarization, speed = phonon_properties
+#             heat_capacity=k*((hbar*w/(k*T))**2)*exp(hbar*w/(k*T))/((exp(hbar*w/(k*T))-1)**2)    # Ref. PRB 88 155318 (2013)
+#             specific_heat_capacity += heat_capacity
+#     return specific_heat_capacity
+
 
 def move(x, y, z, theta, phi, speed):
     '''This function moves a phonon in one timestep and returns new coordinates'''
@@ -184,16 +193,13 @@ def scattering_on_circular_pillars(x,y,z,theta,phi,frequency,speed,x0,y0,R_base)
                     #new_phi=phi+2*pillar_wall_angle
                     new_phi=phi-(pi/2-pillar_wall_angle)                        # Pillar wall inclination is taken into account
                     new_theta=theta
-                    #print "1"
                 else:                                                           # Regular reflection
                     #new_phi=phi+2*pillar_wall_angle
                     new_theta=-theta-pi+2*tangent_theta
                     new_phi=phi-(pi/2-pillar_wall_angle)
-                    #print "2"
             else:                                                               # Otherwise, if phonon strikes the wall as it goes towards the center
                 new_phi=-sign(phi)*phi-2*pillar_wall_angle
                 new_theta=theta
-                #print "3"
 
             scattering_type='specular'                      
         else:                                                                   # Diffuse scattering
@@ -226,7 +232,7 @@ def scattering_on_triangle_down_holes(x, y, z, theta, phi, f, speed, x0, y0, Lx,
                 new_theta=arcsin(2*random()-1)                                  # Lambert cosine distribution
                 new_phi=arcsin(2*random()-1)
                 scattering_type='diffuse'
-		all_scat_stat.append(new_theta) 
+                all_scat_stat.append(new_theta) 
         else:                                                                   # Sidewalls scattering 
             a=arccos(cos(phi)*cos(theta-sign(x-x0)*(pi/2-beta)))                # Angle to the surface
             p=exp(-16*(pi**2)*(hole_roughness**2)*((cos(a))**2)/((speed/f)**2)) # Specular scattering probability
@@ -481,78 +487,55 @@ def reinitialization(x, y, z, theta, phi, speed):
     return theta, phi, scattering_type, x, y, z
 
 
+def distribution_calculation(filename, data_range, number_of_nodes):
+    '''This function calculates distribution of numbers in a given file'''
+    data = np.loadtxt(filename)
+    if data_range == None: 
+        data_range = np.max(data)
+    distribution = np.zeros((number_of_nodes, 2))
+    distribution[:,0] = np.linspace(0, data_range, number_of_nodes)
+    distribution[:,1], _ = np.histogram(data, number_of_nodes, range=(0, data_range))
+    return distribution
+
+
 def angle_distribution_calculation():
     '''This function analyses measured phonon angles and creates their distribution'''
-    with open("All exit angles.txt", "r") as f:
-        exit_angles = np.loadtxt(f, dtype='float')
-    with open("All initial angles.txt", "r") as f:
-        initial_angles = np.loadtxt(f, dtype='float')
-    dist=zeros((180,3))
-    dist[:,0]=range(-90,90)
-    dist[:,1]=[len(filter(lambda x: x*180/pi >= j-0.5 and x*180/pi < j+0.5 and x!=0, exit_angles)) for j in dist[:,0]]
-    dist[:,2]=[len(filter(lambda x: x*180/pi >= j-0.5 and x*180/pi < j+0.5 and x!=0, initial_angles)) for j in dist[:,0]]
-    return dist
+    exit_angles = np.loadtxt("All exit angles.txt", dtype='float')
+    initial_angles = np.loadtxt("All initial angles.txt", dtype='float')
+    distribution=np.zeros((180,3))
+    distribution[:,0]=range(-90,90)
+    distribution[:,1], _ = np.histogram(np.degrees(exit_angles), 180, range=(-90, 90))
+    distribution[:,2], _ = np.histogram(np.degrees(initial_angles), 180, range=(-90, 90))
+    return distribution
 
 
-def free_path_distribution_calculation():
-    '''This function analyses measured phonon free paths and creates their distribution'''
-    with open("All free paths in plane.txt","r") as f:
-        free_paths = np.loadtxt(f, dtype='float')
-    dist=zeros((number_of_nodes,2))
-    dist[:,0]=[i*length/number_of_nodes for i in range(number_of_nodes)]  
-    dist[:,1]=[len(filter(lambda x: x>=j-0.5*length/number_of_nodes and x<j+0.5*length/number_of_nodes and x!=0, free_paths)) for j in dist[:,0]]
-    return dist
-
-
-def travel_time_distribution_calculation():
-    '''This function analyses measured travel times and creates their distribution'''
-    with open("All travel times.txt","r") as f:
-        travel_times = np.loadtxt(f, dtype='float')
-    dist=zeros((number_of_nodes,2))
-    dist[:,0]=[i*max(travel_times)/number_of_nodes for i in range(number_of_nodes)]  
-    dist[:,1]=[len(filter(lambda x: x>=j-0.5*max(travel_times)/number_of_nodes and x<j+0.5*max(travel_times)/number_of_nodes and x!=0, travel_times)) for j in dist[:,0]]
-    return dist
-
-
-def frequency_distribution_calculation():
-    '''This function analyses initial phonon frequncies and creates the frequancy spectrum'''
-    with open("All frequencies.txt","r") as f:
-        frequencies = np.loadtxt(f, dtype='float')
-    max_f=np.amax(frequencies)
-    dist=zeros((number_of_nodes,2))
-    dist[:,0]=[i*max_f/number_of_nodes for i in range(number_of_nodes)]  
-    dist[:,1]=[len(filter(lambda x: x>=j-0.5*max_f/number_of_nodes and x<j+0.5*max_f/number_of_nodes and x!=0, frequencies)) for j in dist[:,0]]
-    return dist
-
-
-def wavelength_distribution_calculation():
-    '''This function calculates phonon wavelengths from their frequencies and velocities, and creates the wavelength spectrum'''
-    with open("All frequencies.txt","r") as f:
-        frequencies = np.loadtxt(f, dtype='float')
-    with open("All group velocities.txt","r") as f:
-        speeds = np.loadtxt(f, dtype='float')
-    wavelengths=zeros((len(speeds)))
+def wavelength_distribution_calculation(number_of_nodes):
+    '''This function calculates phonon wavelength distribution from their frequencies and velocities'''
+    frequencies = np.loadtxt("All frequencies.txt")
+    speeds = np.loadtxt("All group velocities.txt")
+    wavelengths=np.zeros((len(speeds)))
     wavelengths[:]=speeds[:]/frequencies[:]
-    max_l=np.amax(wavelengths)
-    dist=zeros((number_of_nodes,2))
-    dist[:,0]=[i*max_l/number_of_nodes for i in range(number_of_nodes)]    
-    dist[:,1]=[len(filter(lambda x: x>=j-0.5*max_l/number_of_nodes and x<j+0.5*max_l/number_of_nodes and x!=0, wavelengths)) for j in dist[:,0]]
-    return dist
+    data_range=np.amax(wavelengths)
+    distribution = np.zeros((number_of_nodes, 2))
+    distribution[:,0] = np.linspace(0, data_range, number_of_nodes)
+    distribution[:,1], _ = np.histogram(wavelengths, number_of_nodes, range=(0, data_range))
+    return distribution
 
 
 def scattering_events_statistics_calculation(statistics_of_scattering_events,surface_scattering_types,reinitialization_scattering_type,internal_scattering_type):
-    '''This function analyzes type of scettering events and this timestep and adds them to the statistics'''
-    statistics_of_scattering_events[0] += (surface_scattering_types[0] == 'diffuse')*1
-    statistics_of_scattering_events[1] += (surface_scattering_types[0] == 'specular')*1   
-    statistics_of_scattering_events[2] += (surface_scattering_types[1] == 'diffuse' or surface_scattering_types[2] == 'diffuse')*1
-    statistics_of_scattering_events[3] += (surface_scattering_types[1] == 'specular' or surface_scattering_types[2] == 'specular')*1
-    statistics_of_scattering_events[4] += (surface_scattering_types[3] == 'diffuse')*1
-    statistics_of_scattering_events[5] += (surface_scattering_types[3] == 'specular')*1 
-    statistics_of_scattering_events[6] += (reinitialization_scattering_type == 'diffuse')*1
-    statistics_of_scattering_events[7] += (internal_scattering_type == 'diffuse')*1
-    statistics_of_scattering_events[8] += (surface_scattering_types[4] == 'diffuse')*1
-    statistics_of_scattering_events[9] += (surface_scattering_types[4] == 'specular')*1 
+    '''This function analyzes type of scettering events at the current timestep and adds them to the statistics'''
+    statistics_of_scattering_events[0] += 1 if surface_scattering_types[0] == 'diffuse' else 0
+    statistics_of_scattering_events[1] += 1 if surface_scattering_types[0] == 'specular' else 0   
+    statistics_of_scattering_events[2] += 1 if surface_scattering_types[1] == 'diffuse' or surface_scattering_types[2] == 'diffuse' else 0
+    statistics_of_scattering_events[3] += 1 if surface_scattering_types[1] == 'specular' or surface_scattering_types[2] == 'specular' else 0
+    statistics_of_scattering_events[4] += 1 if surface_scattering_types[3] == 'diffuse' else 0
+    statistics_of_scattering_events[5] += 1 if surface_scattering_types[3] == 'specular' else 0 
+    statistics_of_scattering_events[6] += 1 if reinitialization_scattering_type == 'diffuse' else 0
+    statistics_of_scattering_events[7] += 1 if internal_scattering_type == 'diffuse' else 0
+    statistics_of_scattering_events[8] += 1 if surface_scattering_types[4] == 'diffuse' else 0
+    statistics_of_scattering_events[9] += 1 if surface_scattering_types[4] == 'specular' else 0
     return statistics_of_scattering_events
+
 
 def scattering_map_calculation(x,y,scattering_maps,internal_scattering_type,surface_scattering_types):
     '''This function records the place where a scattering event occured according to the event type'''
@@ -574,8 +557,8 @@ def maps_and_profiles_calculation(x,y,maps_and_profiles,phonon_properties,timest
     thermal_map, heat_flux_profile_x, heat_flux_profile_y, temperature_profile_x, temperature_profile_y = maps_and_profiles
     frequency, polarization, speed = phonon_properties[0:3]
     
-    index_x = int(((x+width/2)*number_of_pixels_x) // width)                    # Calculate pixel numbers
-    index_y = int((y*number_of_pixels_y) // length)
+    index_x=int(((x+width/2)*number_of_pixels_x) // width)                    # Calculate pixel numbers
+    index_y=int((y*number_of_pixels_y) // length)
     
     Vcell_x=length*thickness*width/number_of_pixels_x                           # Volume of a unit cell
     Vcell_y=width*thickness*length/number_of_pixels_y
@@ -598,13 +581,34 @@ def maps_and_profiles_calculation(x,y,maps_and_profiles,phonon_properties,timest
     return maps_and_profiles
 
 
+def create_empty_maps():
+    '''This function creates empty maps'''
+    thermal_map=np.zeros((number_of_pixels_y,number_of_pixels_x))
+    heat_flux_profile_x=np.zeros((number_of_pixels_x,number_of_timeframes))
+    heat_flux_profile_y=np.zeros((number_of_pixels_y,number_of_timeframes))
+    temperature_profile_x=np.zeros((number_of_pixels_x,number_of_timeframes))
+    temperature_profile_y=np.zeros((number_of_pixels_y,number_of_timeframes))
+    maps_and_profiles=[thermal_map,heat_flux_profile_x,heat_flux_profile_y,temperature_profile_x,temperature_profile_y]
+    
+    diffuse_scattering_map_x=[]
+    diffuse_scattering_map_y=[]
+    specular_scattering_map_x=[]
+    specular_scattering_map_y=[]
+    internal_scattering_map_x=[]
+    internal_scattering_map_y=[]
+    scattering_maps = [diffuse_scattering_map_x,diffuse_scattering_map_y,specular_scattering_map_x,specular_scattering_map_y,internal_scattering_map_x,internal_scattering_map_y]
+    return maps_and_profiles, scattering_maps
+
+
 def phonon_in_system_check(x, y):
     '''This function checks if the phonon at this timestep is still in the system and did not reach the cold side'''
     small_offset = 10e-9
-    if cold_side_on_top:
+    if cold_side == 'top':
         phonon_is_in_system = (y < length)
-    else:
+    elif cold_side == 'right':
         phonon_is_in_system = ((y < length-1.1e-6) or (y > length-1.1e-6 and x < width/2.0-small_offset))
+    elif cold_side == 'top and right':
+        phonon_is_in_system = ((y < 1.0e-6) or (y > 1.0e-6 and x < width/2.0-small_offset and y < length))
     return phonon_is_in_system
 
 
@@ -615,18 +619,17 @@ def progress_bar(i, j, old_progress, scheme):
     elif scheme==2:
         progress=100*(i*number_of_phonons+j)//(number_of_phonons*3)
     if progress>old_progress:
-        #print progress, '%'
-	sys.stdout.write('\r'+'Progress: '+str(progress)+'%')
-	sys.stdout.flush()
+        sys.stdout.write('\r'+'Progress: '+str(progress)+'%')
+        sys.stdout.flush()
     return progress
 
 
-def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_angles,group_velocities,statistics_of_scattering_events,all_travel_times,all_scat_stat):
+def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_angles,group_velocities,statistics_of_scattering_events,all_travel_times,all_scat_stat, all_detected_frequencies):
     '''This function analyzes writes files with statistics'''
     sys.stdout.write('\r'+'Progress: 100%')
     sys.stdout.write("\n")        
     if not os.path.exists(output_folder_name):
-	os.makedirs(output_folder_name)
+        os.makedirs(output_folder_name)
     os.chdir(output_folder_name)
     with open("All free paths.txt","w+") as f:
         f.writelines(["%s\n" % i for i in free_paths])
@@ -634,6 +637,8 @@ def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_an
         f.writelines(["%s\n" % i for i in free_paths_along_y])
     with open("All frequencies.txt","w+") as f:
         f.writelines(["%s\n" % i for i in frequencies])
+    with open("All detected frequencies.txt","w+") as f:
+        f.writelines(["%s\n" % i for i in all_detected_frequencies])
     with open("All exit angles.txt","w+") as f:
         f.writelines(["%s\n" % i for i in exit_angles])
     with open("All initial angles.txt","w+") as f:
@@ -651,21 +656,21 @@ def write_files(free_paths,free_paths_along_y,frequencies,exit_angles,initial_an
 
 def output_trajectories(x, y, z, N):
     '''This function outputs the phonon trajectories of N phonons'''
-    plt.figure(1)
+    fig, ax = plt.subplots()
     for i in range(N): 
-        plt.plot (np.trim_zeros(x[:,i])*1e6,np.trim_zeros(y[:,i])*1e6, linewidth=0.2)
-    plt.xlabel('X ($\mu$m)', fontsize=12)
-    plt.ylabel('Y ($\mu$m)', fontsize=12)
-    plt.axes().set_aspect('equal', 'datalim')
-    plt.savefig("Phonon paths XY.pdf",dpi=900, format = 'pdf', bbox_inches="tight")  
+        ax.plot (np.trim_zeros(x[:,i])*1e6,np.trim_zeros(y[:,i])*1e6, linewidth=0.2)
+    ax.set_xlabel('X ($\mu$m)', fontsize=12)
+    ax.set_ylabel('Y ($\mu$m)', fontsize=12)
+    ax.set_aspect('equal', 'datalim')
+    fig.savefig("Phonon paths XY.pdf", dpi=300, format = 'pdf', bbox_inches="tight")  
     if output_in_terminal: plt.show()    
-    plt.figure(2)
+    fig, ax = plt.subplots()
     for i in range(N): 
-        plt.plot (np.trim_zeros(y[:,i])*1e6,np.trim_zeros(z[:,i])*1e6, linewidth=0.1)
-    plt.xlabel('Y ($\mu$m)', fontsize=12)
-    plt.ylabel('Z ($\mu$m)', fontsize=12)
-    plt.axes().set_aspect('equal', 'datalim')
-    plt.savefig("Phonon paths YZ.pdf",dpi=300, format = 'pdf', bbox_inches="tight")  
+        ax.plot (np.trim_zeros(y[:,i])*1e6,np.trim_zeros(z[:,i])*1e6, linewidth=0.1)
+    ax.set_xlabel('Y ($\mu$m)', fontsize=12)
+    ax.set_ylabel('Z ($\mu$m)', fontsize=12)
+    ax.set_aspect('equal', 'datalim')
+    fig.savefig("Phonon paths YZ.pdf", dpi=300, format = 'pdf', bbox_inches="tight")  
     if output_in_terminal: plt.show()
     return
 
@@ -675,30 +680,30 @@ def output_thermal_map(thermal_map):
     from matplotlib.colors import LogNorm
     minimum_of_colorbar=1e-20                                     # Cannot be zero!
     if output_raw_thermal_map:
-	np.savetxt("Thermal Map.csv", thermal_map, delimiter=",") # Writing data into the file
+        np.savetxt("Thermal map.csv", thermal_map, delimiter=",") # Writing data into the file
     thermal_map=np.flipud(thermal_map)
     #plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6] )                # can also use interpolation='bicubic' and norm=LogNorm(vmin=0.01, vmax=np.amax(thermal_map))
-    plt.figure(3)
+    fig = plt.figure()
     plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=[(-width/2)*1e6,(width/2)*1e6,0,length*1e6], norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(thermal_map)) )
     plt.xlabel('X ($\mu$m)', fontsize=12)
     plt.ylabel('Y ($\mu$m)', fontsize=12)
     cbar=plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
-    plt.savefig("Thermal map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
+    fig.savefig("Thermal map.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     return
 
 
 def output_scattering_maps(scattering_maps):
     '''This function outputs scattering map of diffusive, specular, and internal scattering events'''
-    plt.figure(4)
-    plt.plot (scattering_maps[2][:], scattering_maps[3][:], 'o', color='g', markersize=0.2, alpha=0.2)
-    plt.plot (scattering_maps[4][:], scattering_maps[5][:], 'o', color='r', markersize=0.2, alpha=0.2)
-    plt.plot (scattering_maps[0][:], scattering_maps[1][:], 'o', color='b', markersize=0.2, alpha=0.2)
-    plt.xlabel('X ($\mu$m)', fontsize=12)
-    plt.ylabel('Y ($\mu$m)', fontsize=12)
-    plt.axes().set_aspect('equal', 'datalim')
-    plt.savefig("Scattering map.pdf",dpi=300, format = 'pdf', bbox_inches="tight")
+    fig, ax = plt.subplots()
+    ax.plot (scattering_maps[2][:], scattering_maps[3][:], 'o', color='g', markersize=0.2, alpha=0.2)
+    ax.plot (scattering_maps[4][:], scattering_maps[5][:], 'o', color='r', markersize=0.2, alpha=0.2)
+    ax.plot (scattering_maps[0][:], scattering_maps[1][:], 'o', color='b', markersize=0.2, alpha=0.2)
+    ax.set_xlabel('X ($\mu$m)', fontsize=12)
+    ax.set_ylabel('Y ($\mu$m)', fontsize=12)
+    ax.set_aspect('equal', 'datalim')
+    fig.savefig("Scattering map.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     
     N=max(len(scattering_maps[i]) for i in range(6))                            # Maximal number of scattering event of any type
@@ -713,7 +718,7 @@ def output_scattering_maps(scattering_maps):
 def output_thermal_conductivity(maps_and_profiles):
     '''This function calculates the thermal conductivity for each time interval from heat flux and temperature profiles accumulated in that interval'''
     thermal_map, J_profiles_x, J_profiles_y, T_profiles_x, T_profiles_y = maps_and_profiles
-    thermal_conductivity=zeros((number_of_timeframes,2))
+    thermal_conductivity=np.zeros((number_of_timeframes,2))
     thermal_conductivity[:,0]=range(number_of_timeframes)
     thermal_conductivity[:,0]*=number_of_timesteps*timestep/number_of_timeframes
     for i in range(number_of_timeframes):
@@ -722,11 +727,11 @@ def output_thermal_conductivity(maps_and_profiles):
         dL=(number_of_pixels_y-2)*length/number_of_pixels_y                     # Here dL is shorted then aclual length because we ignore 1st pixel and lose one more due to averaging.
         thermal_conductivity[i,1]=J*dL/dT                                       # By definiton of the thermal conductivity J=-K*gradT
     
-    plt.figure(5)
-    plt.plot (thermal_conductivity[:,0]*1e9,thermal_conductivity[:,1], linewidth=1)
-    plt.ylabel('Thermal conductivity (W/mK)', fontsize=12)
-    plt.xlabel('Time (ns)', fontsize=12)
-    plt.savefig("Thermal conductivity.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    fig, ax = plt.subplots()
+    ax.plot (thermal_conductivity[:,0]*1e9,thermal_conductivity[:,1], linewidth=1)
+    ax.set_ylabel('Thermal conductivity (W/mK)', fontsize=12)
+    ax.set_xlabel('Time (ns)', fontsize=12)
+    fig.savefig("Thermal conductivity.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     np.savetxt('Thermal conductivity.csv', thermal_conductivity, delimiter=",")
     return 
@@ -743,28 +748,21 @@ def output_profiles(maps_and_profiles):
     np.savetxt("Temperature profiles y.csv", np.vstack((coordinates_y,T_profiles_y.T)).T, delimiter=",")
     np.savetxt("Heat flux profiles x.csv", np.vstack((coordinates_x,J_profiles_x.T)).T, delimiter=",")
     np.savetxt("Heat flux profiles y.csv", np.vstack((coordinates_y,J_profiles_y.T)).T, delimiter=",")
-    #for i in range(T_profiles_x.shape[1]):                                      # Plotting and and saving the plots
-    #    plt.plot (coordinates_x[:],T_profiles_x[:,i], linewidth=1)
-    #plt.xlabel('X ($\mu$m)', fontsize=12)
-    #plt.ylabel('Temperature (K)', fontsize=12)
-    #plt.show()
-    plt.figure(6)
+
+    fig, ax = plt.subplots()
     for i in range(number_of_timeframes):
-        plt.plot (coordinates_y[1:number_of_pixels_y],T_profiles_y[1:number_of_pixels_y,i], linewidth=1)
-    plt.xlabel('Y ($\mu$m)', fontsize=12)
-    plt.ylabel('Temperature (K)', fontsize=12)
-    plt.savefig("Temperature profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+        ax.plot (coordinates_y[1:number_of_pixels_y],T_profiles_y[1:number_of_pixels_y,i], linewidth=1)
+    ax.set_xlabel('Y ($\mu$m)', fontsize=12)
+    ax.set_ylabel('Temperature (K)', fontsize=12)
+    fig.savefig("Temperature profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
-    #for i in range(J_profiles_x.shape[1]):
-    #    plt.plot (coordinates_x[:],J_profiles_x[:,i], linewidth=1)
-    #plt.xlabel('X ($\mu$m)', fontsize=12)
-    #plt.ylabel('Heat flux (W/m^2)', fontsize=12)
-    #plt.show()
+
+    fig, ax = plt.subplots()
     for i in range(number_of_timeframes):
-        plt.plot (coordinates_y[1:number_of_pixels_y],J_profiles_y[1:number_of_pixels_y,i], linewidth=1)
-    plt.xlabel('Y ($\mu$m)', fontsize=12)
-    plt.ylabel('Heat flux (W/m^2)', fontsize=12)
-    plt.savefig("Heat flux profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+        ax.plot (coordinates_y[1:number_of_pixels_y],J_profiles_y[1:number_of_pixels_y,i], linewidth=1)
+    ax.set_xlabel('Y ($\mu$m)', fontsize=12)
+    ax.set_ylabel('Heat flux (W/m^2)', fontsize=12)
+    fig.savefig("Heat flux profile.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     return
 
@@ -772,74 +770,78 @@ def output_profiles(maps_and_profiles):
 def output_distributions():
     '''This function outputs the distributions into the terminal and the folder'''
     angle_distributions=angle_distribution_calculation()             
-    frequency_distribution=frequency_distribution_calculation()
-    wavelength_distribution=wavelength_distribution_calculation()
+    frequency_distribution=distribution_calculation("All frequencies.txt", None, number_of_nodes)
+    detected_frequency_distribution=distribution_calculation("All detected frequencies.txt", None, number_of_nodes)
+    wavelength_distribution=wavelength_distribution_calculation(number_of_nodes)
     
-    plt.figure(7)
-    plt.plot (angle_distributions[:,0],angle_distributions[:,1],'b')
-    plt.plot (angle_distributions[:,0],angle_distributions[:,2],'r')
-    plt.xlabel('Angle (degree)', fontsize=12)
-    plt.ylabel('Number of phonons', fontsize=12)
-    plt.savefig("Distribution of angles.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    fig, ax = plt.subplots()
+    ax.plot (angle_distributions[:,0],angle_distributions[:,1],'b')
+    ax.plot (angle_distributions[:,0],angle_distributions[:,2],'r')
+    ax.set_xlabel('Angle (degree)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of angles.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     np.savetxt('Distribution of angles.csv', angle_distributions, delimiter=",")
    
-    if calculate_mfp_spectrum:
-        free_path_distribution=free_path_distribution_calculation()
-        plt.figure(8)
-        plt.plot (free_path_distribution[:,0]*1e6,free_path_distribution[:,1])
-        plt.xlabel('Free flights ($\mu$m)', fontsize = 12)
-        plt.ylabel('Number of flights', fontsize=12)
-        plt.savefig("Distribution of free paths in plane.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
-        if output_in_terminal: plt.show()
-        np.savetxt('Distribution of free paths in plane.csv', free_path_distribution, delimiter=",")
-    
-    plt.figure(9)
-    plt.plot (frequency_distribution[:,0],frequency_distribution[:,1])
-    plt.xlabel('Frequency (Hz)', fontsize=12)
-    plt.ylabel('Number of phonons', fontsize=12)
-    plt.savefig("Distribution of frequencies.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    free_path_distribution=distribution_calculation("All free paths in plane.txt", length, number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot (free_path_distribution[:,0]*1e6,free_path_distribution[:,1])
+    ax.set_xlabel('Free flights ($\mu$m)', fontsize = 12)
+    ax.set_ylabel('Number of flights', fontsize=12)
+    fig.savefig("Distribution of free paths in plane.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
-    np.savetxt('Distribution of frequencies.csv', frequency_distribution, delimiter=",")
+    np.savetxt('Distribution of free paths in plane.csv', free_path_distribution, delimiter=",")
     
-    plt.figure(10)
-    plt.plot (wavelength_distribution[:,0]*1e9,wavelength_distribution[:,1])
-    plt.xlabel('Wavelength (nm)', fontsize=12)
-    plt.ylabel('Number of phonons', fontsize=12)
-    plt.savefig("Distribution of wavelengths.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    fig, ax = plt.subplots()
+    ax.plot (frequency_distribution[:,0],frequency_distribution[:,1])
+    ax.set_xlabel('Frequency (Hz)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of initial frequencies.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    if output_in_terminal: plt.show()
+    np.savetxt('Distribution of initial frequencies.csv', frequency_distribution, delimiter=",")
+    
+    fig, ax = plt.subplots()
+    ax.plot (wavelength_distribution[:,0]*1e9,wavelength_distribution[:,1])
+    ax.set_xlabel('Wavelength (nm)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of wavelengths.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     np.savetxt('Distribution of wavelengths.csv', wavelength_distribution, delimiter=",")
     
-    if calculate_travel_times:
-        travel_time_distribution=travel_time_distribution_calculation()
-        plt.figure(11)
-        plt.plot (travel_time_distribution[:,0]*1e9,travel_time_distribution[:,1])
-        plt.xlabel('Travel time (ns)', fontsize=12)
-        plt.ylabel('Number of phonons', fontsize=12)
-        plt.savefig("Distribution of travel times.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
-        if output_in_terminal: plt.show()
-        np.savetxt('Distribution of travel times.csv', travel_time_distribution, delimiter=",")
-    
-    with open("All group velocities.txt","r") as f:
-        speeds = np.loadtxt(f, dtype='float')    
-    with open("All frequencies.txt","r") as f:
-        frequencies = np.loadtxt(f, dtype='float')
-    plt.figure(12)
-    plt.plot (frequencies,speeds,'.')
-    plt.xlabel('Frequency (Hz)', fontsize=12)
-    plt.ylabel('Group velocity (m/s)', fontsize=12)
-    plt.savefig("Group velocities.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    travel_time_distribution=distribution_calculation("All travel times.txt", None, number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot (travel_time_distribution[:,0]*1e9,travel_time_distribution[:,1])
+    ax.set_xlabel('Travel time (ns)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of travel times.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    if output_in_terminal: plt.show()
+    np.savetxt('Distribution of travel times.csv', travel_time_distribution, delimiter=",")
+
+    fig, ax = plt.subplots()
+    ax.plot (detected_frequency_distribution[:,0],detected_frequency_distribution[:,1])
+    ax.set_xlabel('Frequency (Hz)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of detected frequencies.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
+    if output_in_terminal: plt.show()
+    np.savetxt('Distribution of detected frequencies.csv', detected_frequency_distribution, delimiter=",")
+
+    speeds = np.loadtxt("All group velocities.txt")    
+    frequencies = np.loadtxt("All frequencies.txt")
+    fig, ax = plt.subplots()
+    ax.plot (frequencies,speeds,'.')
+    ax.set_xlabel('Frequency (Hz)', fontsize=12)
+    ax.set_ylabel('Group velocity (m/s)', fontsize=12)
+    fig.savefig("Group velocities.pdf", dpi=300, format = 'pdf', bbox_inches="tight")
     if output_in_terminal: plt.show()
     return
 
 
 def output_information(start_time, simulation_scheme):
     '''This function outputs the simulation information into the file in the folder'''
-    with open("All exit angles.txt", "r") as f:
-        exit_angles = np.loadtxt(f, dtype='float')
+    exit_angles = np.loadtxt("All exit angles.txt")
     percentage=100*np.count_nonzero(exit_angles)/(number_of_phonons+2*number_of_phonons*((simulation_scheme==2)*1))
-    print "\n\r", percentage, '% of phonons reached the end of the system'
-    print "The simulation took about", int((time.time()-start_time)//60), "min. to run"
+    print ("\n\r", percentage, '% of phonons reached the end of the system')
+    print ("The simulation took about", int((time.time()-start_time)//60), "min. to run")
     with open("Information.txt","w+") as f:
         f.writelines(['The simulation finished on %s' % time.strftime("%d %B %Y"),' at %s' % time.strftime("%H:%M"),' and took about %s min to run.' % int((time.time()-start_time)//60)])
         f.writelines(['\n \nNumber of phonons = %s' % number_of_phonons,'\nNumber of timesteps = %s' % number_of_timesteps,'\nLength of a timestep = %s s' % timestep,'\nTemperature = %s K' % T, ])
@@ -854,8 +856,7 @@ def output_information(start_time, simulation_scheme):
 
 def output_statistics_on_scattering_events():
     '''This function calculated and outputs statistics on scattering events'''
-    with open("Statistics.txt","r") as f:
-        stat = np.loadtxt(f, dtype='float')
+    stat = np.loadtxt("Statistics.txt", dtype='float')
     with open("Information.txt","a") as f:
         avg_scat=np.sum(stat)/number_of_phonons
         scat_on_walls=100*(stat[0]+stat[1])/np.sum(stat)
@@ -889,9 +890,9 @@ def output_statistics_on_scattering_events():
 
 def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_profiles, all_scat_stat, scattering_maps):
     '''This function runs one phonon through the system and returns its exit angle and its paths'''
-    x=zeros((number_of_timesteps))
-    y=zeros((number_of_timesteps))
-    z=zeros((number_of_timesteps))
+    x=np.zeros((number_of_timesteps))
+    y=np.zeros((number_of_timesteps))
+    z=np.zeros((number_of_timesteps))
     frequency, polarization, speed = phonon_properties[0:3]
     x[0],y[0],z[0],theta,phi=initialization()                                   # We get initial x and z coordinates and angles for the phonon
     path_num=0
@@ -901,7 +902,8 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
     initial_theta=theta
     exit_theta=0.0
     travel_time=0.0
-    hole_coordinates,hole_shapes=hole_positioning(hole_lattice_type, rectangular_hole_side_y, width, period_x, period_y)
+    detected_frequency=0.0
+    hole_coordinates,hole_shapes=hole_positioning(hole_lattice_type, rectangular_hole_side_y, rectangular_hole_side_x, width, period_x, period_y)
     pillar_coordinates=pillar_positioning(pillar_lattice_type, period_x, period_y)
 
     if use_gray_approximation_mfp:
@@ -913,7 +915,7 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
     for i in range(1,number_of_timesteps): 
         internal_scattering_type='none'
         reinitialization_scattering_type='none'                                           
-        phonon_is_in_system = phonon_in_system_check(x[i-1],y[i-1])
+        phonon_is_in_system=phonon_in_system_check(x[i-1],y[i-1])
 
         if phonon_is_in_system:
             theta,phi,internal_scattering_type = internal_scattering(theta, phi, time_since_previous_scattering, time_of_internal_scattering)           
@@ -947,51 +949,40 @@ def run_one_phonon(phonon_properties, statistics_of_scattering_events, maps_and_
                     time_of_internal_scattering=internal_scattering_time_calculation(frequency, polarization)
 
             if output_scattering_map: 
-		scattering_maps = scattering_map_calculation(x[i-1],y[i-1],scattering_maps,internal_scattering_type,surface_scattering_types)
+                scattering_maps = scattering_map_calculation(x[i-1],y[i-1],scattering_maps,internal_scattering_type,surface_scattering_types)
             maps_and_profiles=maps_and_profiles_calculation(x[i-1],y[i-1],maps_and_profiles,phonon_properties,i,theta,phi)
 
             x[i],y[i],z[i]=move(x[i-1],y[i-1],z[i-1],theta,phi,speed)           # Phonon makes a step forward              
         else:                                                                   # If the phonon has reached the end of the system, break the loop
             exit_theta=theta
             travel_time=i*timestep                                         
+            detected_frequency = frequency*(abs(x[i-1]) < frequency_detector_size/2.0)
             break
+
     flight_characteristics = [initial_theta, exit_theta, free_paths, free_paths_along_y, travel_time]
-    return flight_characteristics, x, y, z, statistics_of_scattering_events, maps_and_profiles, all_scat_stat, scattering_maps
+    return flight_characteristics, x, y, z, statistics_of_scattering_events, maps_and_profiles, all_scat_stat, scattering_maps, detected_frequency
 
 
 def main1():
     '''This is the main function, which works under Debye approximation and should be used to simulate phonon paths at low temperatures'''
-    print 'Simulation for',output_folder_name,'	'
+    print ('Simulation for',output_folder_name,' ')
     simulation_scheme=1
     start_time=time.time()
     progress=-1
     
-    all_initial_angles,all_exit_angles,all_free_paths,all_free_paths_along_y,all_frequencies,all_group_velocities,all_travel_times,all_scat_stat=([] for i in range(8)) 
+    all_initial_angles,all_exit_angles,all_free_paths,all_free_paths_along_y,all_frequencies,all_detected_frequencies,all_group_velocities,all_travel_times,all_scat_stat=([] for i in range(9)) 
 
     statistics_of_scattering_events=[0]*10
-    thermal_map=zeros((number_of_pixels_y,number_of_pixels_x))
-    heat_flux_profile_x=zeros((number_of_pixels_x,number_of_timeframes))
-    heat_flux_profile_y=zeros((number_of_pixels_y,number_of_timeframes))
-    temperature_profile_x=zeros((number_of_pixels_x,number_of_timeframes))
-    temperature_profile_y=zeros((number_of_pixels_y,number_of_timeframes))
-    maps_and_profiles=[thermal_map,heat_flux_profile_x,heat_flux_profile_y,temperature_profile_x,temperature_profile_y]
-    
-    diffuse_scattering_map_x=[]
-    diffuse_scattering_map_y=[]
-    specular_scattering_map_x=[]
-    specular_scattering_map_y=[]
-    internal_scattering_map_x=[]
-    internal_scattering_map_y=[]
-    scattering_maps = [diffuse_scattering_map_x,diffuse_scattering_map_y,specular_scattering_map_x,specular_scattering_map_y,internal_scattering_map_x,internal_scattering_map_y]
-    
-    for i in range(number_of_phonons/number_of_phonons_in_a_group):             # To reduce the memory load phonon are simulated in small groups
-        x,y,z=(zeros((number_of_timesteps,number_of_phonons_in_a_group)) for i in range(3))
+    maps_and_profiles, scattering_maps=create_empty_maps()
+
+    for i in range(number_of_phonons//number_of_phonons_in_a_group):             # To reduce the memory load phonon are simulated in small groups
+        x,y,z=(np.zeros((number_of_timesteps,number_of_phonons_in_a_group)) for i in range(3))
         for j in range(number_of_phonons_in_a_group):                                              
             progress=progress_bar(i,j,progress,simulation_scheme) 
             phonon_properties=phonon_properties_assignment()                    # We get initial phonon properties: frequency, polarization, and speed
-            phonon_properties.append(i*number_of_phonons_in_a_group+j)          #we add phonon number to phonon properties
+            phonon_properties.append(i*number_of_phonons_in_a_group+j)          # We add phonon number to phonon properties
             
-            flight_characteristics,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,maps_and_profiles,all_scat_stat,scattering_maps = run_one_phonon(phonon_properties,statistics_of_scattering_events,maps_and_profiles,all_scat_stat,scattering_maps)           
+            flight_characteristics,x[:,j],y[:,j],z[:,j],statistics_of_scattering_events,maps_and_profiles,all_scat_stat,scattering_maps,detected_frequency = run_one_phonon(phonon_properties,statistics_of_scattering_events,maps_and_profiles,all_scat_stat,scattering_maps)           
     
             all_initial_angles.append(flight_characteristics[0])    
             all_exit_angles.append(flight_characteristics[1])
@@ -999,49 +990,38 @@ def main1():
             all_free_paths_along_y.extend(flight_characteristics[3])
             all_travel_times.append(flight_characteristics[4])
             all_frequencies.append(phonon_properties[0])
+            all_detected_frequencies.append(detected_frequency)
             all_group_velocities.append(phonon_properties[2])
 
-    write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,all_scat_stat)        
+    write_files(all_free_paths,all_free_paths_along_y,all_frequencies,all_exit_angles,all_initial_angles,all_group_velocities,statistics_of_scattering_events,all_travel_times,all_scat_stat,all_detected_frequencies)        
     output_distributions()
     output_thermal_map(maps_and_profiles[0])
-    if output_scattering_map: output_scattering_maps(scattering_maps)
+    if output_scattering_map: 
+        output_scattering_maps(scattering_maps)
     output_profiles(maps_and_profiles)
     output_thermal_conductivity(maps_and_profiles)
     output_trajectories(x,y,z,number_of_phonons_in_a_group)
     output_information(start_time, simulation_scheme)
     output_statistics_on_scattering_events()
-    #coordinates=zeros((number_of_timesteps,number_of_phonons_in_a_group*3))
-    return x,y,z
+    #coordinates=np.zeros((number_of_timesteps,number_of_phonons_in_a_group*3))
+    return
 
 
 def main2():
     '''This is the main function, which calculates thermal conductivity by integrating bulk dispersion'''
-    print 'Simulation for',output_folder_name,'has started'
+    print ('Simulation for',output_folder_name,'has started')
     simulation_scheme=2
     start_time=time.time()
     progress=-1
     all_initial_angles,all_exit_angles,all_free_paths,all_free_paths_along_y,all_frequencies,all_group_velocities,all_travel_times,all_scat_stat=([] for i in range(8))
     statistics_of_scattering_events=[0]*10
-    thermal_map=zeros((number_of_pixels_y,number_of_pixels_x))
-    heat_flux_profile_x=zeros((number_of_pixels_x,number_of_timeframes))
-    heat_flux_profile_y=zeros((number_of_pixels_y,number_of_timeframes))
-    temperature_profile_x=zeros((number_of_pixels_x,number_of_timeframes))
-    temperature_profile_y=zeros((number_of_pixels_y,number_of_timeframes))
-    maps_and_profiles=[thermal_map,heat_flux_profile_x,heat_flux_profile_y,temperature_profile_x,temperature_profile_y]
-
-    diffuse_scattering_map_x=[]
-    diffuse_scattering_map_y=[]
-    specular_scattering_map_x=[]
-    specular_scattering_map_y=[]
-    internal_scattering_map_x=[]
-    internal_scattering_map_y=[]
-    scattering_maps = [diffuse_scattering_map_x,diffuse_scattering_map_y,specular_scattering_map_x,specular_scattering_map_y,internal_scattering_map_x,internal_scattering_map_y]
+    maps_and_profiles, scattering_maps=create_empty_maps()
     
-    mean_free_path=zeros((number_of_phonons))
+    mean_free_path=np.zeros((number_of_phonons))
     thermal_conductivity=0
-    cummulative_conductivity=zeros((number_of_phonons,6))
-    for branch in range(3):                                                            # For each phonon branch
-        x,y,z=(zeros((number_of_timesteps,number_of_phonons_in_a_group)) for i in range(3)) 
+    cummulative_conductivity=np.zeros((number_of_phonons,6))
+    for branch in range(3):
+        x,y,z=(np.zeros((number_of_timesteps,number_of_phonons_in_a_group)) for i in range(3))
         for j in range(0,number_of_phonons):    
             progress=progress_bar(branch,j,progress,simulation_scheme)                                          
                                                    
@@ -1071,7 +1051,7 @@ def main2():
     output_distributions()
     output_information(start_time, simulation_scheme)
     output_statistics_on_scattering_events()
-    print 'Thermal conductivity =', thermal_conductivity
+    print ('Thermal conductivity =', thermal_conductivity)
         
     plt.figure(12)
     for i in range(3):
