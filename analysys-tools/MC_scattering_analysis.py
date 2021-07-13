@@ -14,13 +14,13 @@ def scattering_analysis(file_name):
     with open(file_name,"r") as f:
         scattering_maps = np.genfromtxt(f, dtype='float', delimiter=",")
     
-    plt.plot (scattering_maps[:,2], scattering_maps[:,3], 'o', color='#1adc00', markersize=0.5, alpha=0.015)
-    plt.plot (scattering_maps[:,4], scattering_maps[:,5], 'o', color='#ff00eb', markersize=0.5, alpha=0.02)
-    plt.plot (scattering_maps[:,0], scattering_maps[:,1], 'o', color='#0033e7', markersize=0.5, alpha=0.015)
+    plt.plot (scattering_maps[:,2], scattering_maps[:,3], 'o', color='#1adc00', markersize=0.5, alpha=0.05)
+    plt.plot (scattering_maps[:,4], scattering_maps[:,5], 'o', color='#ff00eb', markersize=0.5, alpha=0.05)
+    plt.plot (scattering_maps[:,0], scattering_maps[:,1], 'o', color='#0065fd', markersize=0.5, alpha=0.05)   #color='#0033e7'
     plt.xlabel('X (um)', fontsize=12)
     plt.ylabel('Y (um)', fontsize=12)
     plt.axes().set_aspect('equal', 'datalim')
-    #plt.savefig("100K.png",dpi=900, format = 'png', bbox_inches="tight")
+    plt.savefig("100K.png",dpi=900, format = 'png', bbox_inches="tight")
     #plt.savefig('testplot.png',dpi=300, format = 'pdf', bbox_inches="tight")
     plt.show()
     return
@@ -52,20 +52,19 @@ def histogram_calculation(file_name):
     plt.ylabel('Number of phonons', fontsize=12)
     plt.show()
     
-
+    
     
     plt.hist(data_diffuse,bins=30, color='#1d68ff')
     plt.hist(data_specular,bins=30, color='#00ac0a')
     plt.xlabel('X (um)', fontsize=12)
     plt.ylabel('Number of phonons', fontsize=12)
-    plt.savefig("4K_hist.png",dpi=900, format = 'png', bbox_inches="tight")
+    plt.savefig("100K_hist.png",dpi=900, format = 'png', bbox_inches="tight")
     plt.show()
     
-
     return dist
 
-scattering_analysis(file_name_1)
-scattering_analysis(file_name_2)
 scattering_analysis(file_name_3)
+#scattering_analysis(file_name_2)
+#scattering_analysis(file_name_3)
 
 #histogram_calculation(file_name_3)
