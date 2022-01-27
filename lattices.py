@@ -1,5 +1,6 @@
 from random import random
-from numpy import cos, sin, sign, zeros, arcsin, sqrt, pi, sign
+from numpy import sign, zeros, asin, sqrt, sign
+from math import pi, cos, sin, sqrt, asin
 import matplotlib.pyplot as plt
 from parameters import *
 
