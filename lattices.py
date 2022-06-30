@@ -1,7 +1,8 @@
 from random import random
-from numpy import sign, zeros, asin, sqrt, sign
+from numpy import sign, zeros
 from math import pi, cos, sin, sqrt, asin
 import matplotlib.pyplot as plt
+
 from parameters import *
 
 
@@ -19,16 +20,34 @@ def hole_positioning(hole_lattice_type, rectangular_hole_side_y, rectangular_hol
 
     if hole_lattice_type == 'square':
         '''Regular square lattice of holes'''
-        first_hole_coordinate = 1000e-9
-        number_of_periods_x = 1
-        number_of_periods_y = 2
-        hole_coordinates = zeros( (number_of_periods_x * number_of_periods_y, 3))
-        hole_shapes = ['rectangle' for x in range(hole_coordinates.shape[0])]
+        first_hole_coordinate = 500e-9
+        number_of_periods_x = 3
+        number_of_periods_y = 3
+        hole_coordinates = zeros((number_of_periods_x * number_of_periods_y, 3))
+        hole_coordinates = zeros((number_of_periods_x * number_of_periods_y, 3))
+        hole_shapes = ['circle' for x in range(hole_coordinates.shape[0])]
+        # hole_shapes = ['rectangle' for x in range(hole_coordinates.shape[0])]
+        # hole_shapes = ['triangle_up' for x in range(hole_coordinates.shape[0])]
         hole_number = 0
         for i in range(number_of_periods_y):
             for j in range(number_of_periods_x):
                 hole_coordinates[hole_number, 0] = -(number_of_periods_x - 1) * period_x / 2 + j * period_x
                 hole_coordinates[hole_number, 1] = first_hole_coordinate + i * period_y
+                hole_number += 1
+
+    if hole_lattice_type == 'diamond_particle':
+        '''Diamond shaped particle'''
+        number_of_periods_x = 2
+        number_of_periods_y = 2
+        hole_coordinates = zeros((number_of_periods_x * number_of_periods_y, 3))
+        hole_coordinates = zeros((number_of_periods_x * number_of_periods_y, 3))
+        hole_shapes = ['triangle_up' for x in range(hole_coordinates.shape[0])]
+        hole_number = 0
+        for i in range(number_of_periods_y):
+            for j in range(number_of_periods_x):
+                hole_coordinates[hole_number, 0] = -(number_of_periods_x - 1) * period_x / 2 + j * period_x
+                hole_coordinates[hole_number, 1] = period_y/2 + i * period_y
+                hole_shapes[hole_number] = 'triangle_up' if i == 0 else 'triangle_down'
                 hole_number += 1
 
     if hole_lattice_type == 'source':
@@ -631,7 +650,7 @@ def hole_positioning(hole_lattice_type, rectangular_hole_side_y, rectangular_hol
         offset_x = -period_x * turning_point
         offset_y = first_hole_coordinate + period_y * (
             number_of_periods_y_before_turn - 1)
-        turning_angle = 2.0 * arcsin(1.0 / (2.0 * turning_point))
+        turning_angle = 2.0 * asin(1.0 / (2.0 * turning_point))
         for Ny in range(
                 number_of_periods_y_in_turn):  # This is the turning part
             for Nx in range(number_of_periods_x):

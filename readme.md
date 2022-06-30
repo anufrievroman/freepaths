@@ -1,6 +1,6 @@
 # FreePaths - Free Phononic And THermal Simulator
 
-This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nanostructures, which consists of a box with holes or pillars of various shapes. The algorithm outputs phonon trjectories, heat fluxes, temperature maps and profiles, the thermal conductivity, scattering maps and statistics and other information. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) for the details of the simulation.
+This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nanostructures, which consists of a box with holes or pillars of various shapes. The algorithm outputs phonon trajectories, heat fluxes, temperature maps and profiles, the thermal conductivity, scattering maps and statistics and other information. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) for the details of the simulation.
 
 ![Screenshot](https://github.com/anufrievroman/Monte-Carlo/blob/master/screenshot.png)
 
@@ -8,11 +8,11 @@ This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nan
 
 - Install python 3
 - Clone this repository
-- Adjust parameters in `parameters.py` file and run the `monte-carlo.py` file. You will find the results in a newly created folder.
+- Adjust parameters in `parameters.py` file and run the `main.py` file. You will find the results in a newly created folder.
 
 ## Disclaimer
 
-The code is provided as is. Note that it likely contains bugs or might be inappropriate for your use case. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more detailes on the code.
+The code is provided as is. Note that it likely contains bugs or might be inappropriate for your use case. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more details on the code.
 
 ## References
 
