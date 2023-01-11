@@ -54,5 +54,6 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
 
         # If the phonon reached cold side, record a few parameters and break the loop:
         else:
+            flight.add_point_to_path()
             flight.finish(step_number)
             break
