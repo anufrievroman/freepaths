@@ -4,11 +4,17 @@ This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nan
 
 ![Screenshot](https://github.com/anufrievroman/Monte-Carlo/blob/master/screenshot.png)
 
-## Installation and usage
+## Installation
 
-- Install python 3 and a few libraries: `pip install numpy matplotlib scipy`
-- Download this repository
-- Adjust parameters in `parameters.py` file (see `Examples` folder) and run the `main.py` file as `python main.py`.
+- Install python 3. On Linux and MacOS is is probably already installed. On Windows, you may choose to install [Anaconda](https://www.anaconda.com).
+- Install a necessary libraries. On linux and MacOS `pip install numpy matplotlib scipy`, on Windows it is already installed with [Anaconda](https://www.anaconda.com).
+- Download this repository. Unzip it. You only need the `freepaths` folder.
+
+# Usage
+
+- Adjust parameters in `parameters.py` file.
+- See `Examples` folder for typical structures and how you may build arrays of holes.
+- Run the simulation by running `main.py` file. On Linux and MacOS `python main.py`, on Windows, open Spider that was installed with [Anaconda](https://www.anaconda.com), open `main.py` and run it.
 - See the results in a newly created `Results` folder.
 
 ## Disclaimer
