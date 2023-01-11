@@ -1,5 +1,13 @@
 """Module that provides phonon scattering types that occur on each step"""
 
+import enum
+
+
+class Scattering(enum.Enum):
+    """Possible scattering types"""
+    DIFFUSE = 1
+    SPECULAR = 2
+
 
 class ScatteringTypes:
     """Phonon scattering types"""
@@ -16,11 +24,11 @@ class ScatteringTypes:
     @property
     def is_diffuse(self):
         """Is any of the scattering types diffuse?"""
-        return any([self.holes == 'diffuse',
-                    self.pillars == 'diffuse',
-                    self.top_bottom == 'diffuse',
-                    self.walls == 'diffuse',
-                    self.hot_side == 'diffuse'])
+        return any([self.holes == Scattering.DIFFUSE,
+                    self.pillars == Scattering.DIFFUSE,
+                    self.top_bottom == Scattering.DIFFUSE,
+                    self.walls == Scattering.DIFFUSE,
+                    self.hot_side == Scattering.DIFFUSE])
 
     @property
     def is_internal(self):

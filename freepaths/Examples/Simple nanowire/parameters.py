@@ -1,6 +1,7 @@
 """Config file to simulate a simple nanowire"""
 
 import numpy as np
+from options import *
 
 
 # General parameters:
@@ -15,7 +16,7 @@ OUTPUT_SCATTERING_MAP          = False
 OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 50
 NUMBER_OF_LENGTH_SEGMENTS      = 10
-HOT_SIDE_ANGLE_DISTRIBUTION    = "random"
+HOT_SIDE_ANGLE_DISTRIBUTION    = Distributions.RANDOM
 
 
 # Map & profiles parameters:
@@ -25,7 +26,7 @@ NUMBER_OF_TIMEFRAMES           = 6
 
 
 # Material parameters:
-MEDIA                          = 'Si'
+MEDIA                          = Materials.SILICON
 SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
 #SPECIFIC_HEAT_CAPACITY        = 714     # [J/kg/K] for Si at 300 K
 
@@ -43,7 +44,7 @@ LENGTH                         = 2000e-9
 
 # Hot and cold sides [m]:
 FREQUENCY_DETECTOR_SIZE        = WIDTH
-COLD_SIZE_POSITION             = 'top'
+COLD_SIZE_POSITION             = Positions.TOP
 HOT_SIZE_X                     = 0
 HOT_SIZE_WIDTH                 = WIDTH
 

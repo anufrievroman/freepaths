@@ -5,7 +5,9 @@ from random import random
 from numpy import sign
 
 from move import move
+from events import Scattering
 from parameters import *
+from options import Shapes
 
 
 def specularity(angle, roughness, wavelength):
@@ -19,7 +21,7 @@ def internal_scattering(ph, flight, scattering_types):
     if flight.time_since_previous_scattering >= ph.time_of_internal_scattering:
         ph.theta = -pi + random()*2*pi
         ph.phi = asin(2*random() - 1)
-        scattering_types.internal = 'diffuse'
+        scattering_types.internal = Scattering.DIFFUSE
 
 
 def reinitialization(ph, scattering_types):
@@ -30,7 +32,7 @@ def reinitialization(ph, scattering_types):
     if y < 0:
         ph.assign_initial_coordinates()
         ph.assign_angles()
-        scattering_types.hot_side = 'diffuse'
+        scattering_types.hot_side = Scattering.DIFFUSE
 
 
 def scattering_on_circular_holes(ph, x0, y0, R, scattering_types, x, y, z):
@@ -48,11 +50,11 @@ def scattering_on_circular_holes(ph, x0, y0, R, scattering_types, x, y, z):
         # Specular scattering:
         if random() < p:
             ph.theta = - ph.theta - pi + 2*tangent_theta
-            scattering_types.holes = 'specular'
+            scattering_types.holes = Scattering.SPECULAR
 
         # Diffuse scattering:
         else:
-            scattering_types.holes = 'diffuse'
+            scattering_types.holes = Scattering.DIFFUSE
             attempt = 0
             while attempt < 10:
                 attempt += 1
@@ -88,12 +90,12 @@ def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
 
             # Specular scattering:
             if random() < p:
-                scattering_types.holes = 'specular'
+                scattering_types.holes = Scattering.SPECULAR
                 ph.theta = - ph.theta
 
             # Diffuse scattering:
             else:
-                scattering_types.holes = 'diffuse'
+                scattering_types.holes = Scattering.DIFFUSE
                 attempt = 0
                 while attempt < 10:
                     attempt += 1
@@ -114,12 +116,12 @@ def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
 
             # Specular scattering:
             if random() < p:
-                scattering_types.holes = 'specular'
+                scattering_types.holes = Scattering.SPECULAR
                 ph.theta = sign(ph.theta)*pi - ph.theta
 
             # Diffuse scattering:
             else:
-                scattering_types.holes = 'diffuse'
+                scattering_types.holes = Scattering.DIFFUSE
                 attempt = 0
                 while attempt < 10:
                     attempt += 1
@@ -175,13 +177,13 @@ def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types, x, y, z
             # If phonon strikes the wall as it goes towards the center:
             else:
                 ph.phi = -sign(ph.phi) * ph.phi - 2 * PILLAR_WALL_ANGLE
-            scattering_types.pillars = 'specular'
+            scattering_types.pillars = Scattering.SPECULAR
 
         # Diffuse scattering:
         else:
             ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
             ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - PILLAR_WALL_ANGLE)
-            scattering_types.pillars = 'diffuse'
+            scattering_types.pillars = Scattering.DIFFUSE
 
 
 def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z):
@@ -203,14 +205,14 @@ def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y
             # Specular scattering:
             if random() < p:
                 ph.theta = sign(ph.theta)*pi - ph.theta
-                scattering_types.holes = 'specular'
+                scattering_types.holes = Scattering.SPECULAR
 
             # Diffuse scattering:
             else:
                 # Lambert cosine distribution:
                 ph.theta = asin(2*random() - 1)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2))
-                scattering_types.holes = 'diffuse'
+                scattering_types.holes = Scattering.DIFFUSE
 
         # Scattering on the sidewalls of the triangle:
         else:
@@ -221,14 +223,14 @@ def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y
             # Specular scattering:
             if random() < p:
                 ph.theta = - ph.theta + sign(x - x0)*2*beta
-                scattering_types.holes = 'specular'
+                scattering_types.holes = Scattering.SPECULAR
 
             # Diffuse scattering:
             else:
                 rand_sign = sign((2*random() - 1))
                 ph.theta = rand_sign*pi - rand_sign*asin(random()) - sign(x-x0)*(pi/2 - beta)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2))
-                scattering_types.holes= 'diffuse'
+                scattering_types.holes= Scattering.DIFFUSE
 
 
 def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z):
@@ -251,7 +253,7 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
             # Specular scattering:
             if random() < p:
                 ph.theta = sign(ph.theta)*pi - ph.theta
-                scattering_types.holes = 'specular'
+                scattering_types.holes = Scattering.SPECULAR
 
             # Diffuse scattering:
             else:
@@ -259,7 +261,7 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
                 rand_sign = sign((2*random() - 1))
                 ph.theta = rand_sign*pi/2 + rand_sign*acos(random())
                 ph.phi = asin((asin(2*random() - 1))/(pi/2))
-                scattering_types.holes = 'diffuse'
+                scattering_types.holes = Scattering.DIFFUSE
 
         # Scattering on the sidewalls of the triangle:
         else:
@@ -271,14 +273,14 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
             # Specular scattering:
             if random() < p:
                 ph.theta = - ph.theta - sign(x - x0)*2*beta
-                scattering_types.holes = 'specular'
+                scattering_types.holes = Scattering.SPECULAR
 
             # Diffuse scattering:
             else:
                 # Lambert cosine distribution:
                 ph.theta = asin(2*random() - 1) + sign(x - x0)*(pi/2 - beta)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2))
-                scattering_types.holes = 'diffuse'
+                scattering_types.holes = Scattering.DIFFUSE
 
 
 def no_new_scattering(ph):
@@ -302,12 +304,12 @@ def side_wall_scattering(ph, scattering_types):
 
         # Specular scattering:
         if random() < p:
-            scattering_types.walls = 'specular'
+            scattering_types.walls = Scattering.SPECULAR
             ph.theta = - ph.theta
 
         # Diffuse scattering:
         else:
-            scattering_types.walls = 'diffuse'
+            scattering_types.walls = Scattering.DIFFUSE
             attempt = 0
             while attempt < 10:
                 attempt += 1
@@ -339,7 +341,7 @@ def top_scattering(ph, scattering_types):
         # Specular scattering:
         if random() < p:
             ph.phi = - ph.phi
-            scattering_types.top_bottom = 'specular'
+            scattering_types.top_bottom = Scattering.SPECULAR
 
         # Diffuse scattering:
         else:
@@ -350,7 +352,7 @@ def top_scattering(ph, scattering_types):
             # Lambert cosine distribution:
             ph.theta = - pi + random()*2*pi
             ph.phi = - random()*pi/2
-            scattering_types.top_bottom = 'diffuse'
+            scattering_types.top_bottom = Scattering.DIFFUSE
 
 
 def top_scattering_with_pillars(ph, scattering_types):
@@ -375,7 +377,7 @@ def top_scattering_with_pillars(ph, scattering_types):
             # Specular scattering:
             if random() < p:
                 ph.phi = - ph.phi
-                scattering_types.top_bottom = 'specular'
+                scattering_types.top_bottom = Scattering.SPECULAR
 
             # Diffuse scattering:
             else:
@@ -386,7 +388,7 @@ def top_scattering_with_pillars(ph, scattering_types):
                 # Lambert cosine distribution:
                 ph.theta = - pi + random()*2*pi
                 ph.phi = - random()*pi/2
-                scattering_types.top_bottom = 'diffuse'
+                scattering_types.top_bottom = Scattering.DIFFUSE
 
         # If it is the pillar top:
         elif z > PILLAR_HEIGHT + THICKNESS/2 and any((i > (CIRCULAR_HOLE_DIAMETER / 2)**2) for i in distances_from_centers):
@@ -395,7 +397,7 @@ def top_scattering_with_pillars(ph, scattering_types):
             # Specular scattering:
             if random() < p:
                 ph.phi = - ph.phi
-                scattering_types.top_bottom = 'specular'
+                scattering_types.top_bottom = Scattering.SPECULAR
 
             # Diffuse scattering:
             else:
@@ -406,7 +408,7 @@ def top_scattering_with_pillars(ph, scattering_types):
                 # Lambert cosine distribution:
                 ph.theta = - pi + random()*2*pi
                 ph.phi = - random()*pi/2
-                scattering_types.top_bottom = 'diffuse'
+                scattering_types.top_bottom = Scattering.DIFFUSE
 
 
 def bottom_scattering(ph, scattering_types):
@@ -423,7 +425,7 @@ def bottom_scattering(ph, scattering_types):
         # Specular scattering:
         if random() < p:
             ph.phi = -ph.phi
-            scattering_types.top_bottom = 'specular'
+            scattering_types.top_bottom = Scattering.SPECULAR
 
         # Diffuse scattering:
         else:
@@ -434,7 +436,7 @@ def bottom_scattering(ph, scattering_types):
             # Lambert cosine distribution:
             ph.theta = - pi + random()*2*pi
             ph.phi = random()*pi/2
-            scattering_types.top_bottom = 'diffuse'
+            scattering_types.top_bottom = Scattering.DIFFUSE
 
 
 def surface_scattering(ph, scattering_types):
@@ -465,25 +467,26 @@ def surface_scattering(ph, scattering_types):
             x0 = HOLE_COORDINATES[i, 0]
             y0 = HOLE_COORDINATES[i, 1]
 
-            if HOLE_SHAPES[i] == 'circle':
+            if HOLE_SHAPES[i] == Shapes.CIRCLE:
                 rad = CIRCULAR_HOLE_DIAMETER * (1 + HOLE_COORDINATES[i, 2]) / 2
                 scattering_on_circular_holes(ph, x0, y0, rad, scattering_types, x, y, z)
 
-            elif HOLE_SHAPES[i] == 'rectangle':
+            elif HOLE_SHAPES[i] == Shapes.RECTANGLE:
                 # Correction of the hole size if there are holes of non-standard size:
                 Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
                 Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
                 scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
-            elif HOLE_SHAPES[i] == 'triangle_down':
+            elif HOLE_SHAPES[i] == Shapes.TRIANGLE_UP:
+                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
+                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
+                scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
+
+            elif HOLE_SHAPES[i] == Shapes.TRIANGLE_DOWN:
                 Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
                 Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
                 scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
-            elif HOLE_SHAPES[i] == 'triangle_up':
-                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
-                scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
             # If there was any scattering, then no need to check other holes:
             if scattering_types.holes is not None:

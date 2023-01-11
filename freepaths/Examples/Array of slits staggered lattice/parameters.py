@@ -1,11 +1,12 @@
 """Config file to simulate a phononic crystal with square lattice of holes"""
 
 import numpy as np
+from options import *
 
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Array of slits'
-NUMBER_OF_PHONONS              = 100
+NUMBER_OF_PHONONS              = 50
 NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 0.5e-12
@@ -15,7 +16,7 @@ OUTPUT_SCATTERING_MAP          = False
 OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 50
 NUMBER_OF_LENGTH_SEGMENTS      = 10
-HOT_SIDE_ANGLE_DISTRIBUTION    = "random"
+HOT_SIDE_ANGLE_DISTRIBUTION    = Distributions.RANDOM
 
 
 # Map & profiles parameters:
@@ -25,7 +26,7 @@ NUMBER_OF_TIMEFRAMES           = 6
 
 
 # Material parameters:
-MEDIA                          = 'Si'
+MEDIA                          = Materials.SILICON
 SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
 #SPECIFIC_HEAT_CAPACITY        = 714  # [J/kg/K] for Si at 300 K
 # SPECIFIC_HEAT_CAPACITY       = 606  # [J/kg/K] for SiC at 300 K
@@ -44,7 +45,7 @@ LENGTH                         = 2200e-9
 
 # Hot and cold sides [m]:
 FREQUENCY_DETECTOR_SIZE        = WIDTH
-COLD_SIZE_POSITION             = 'top'
+COLD_SIZE_POSITION             = Positions.TOP
 HOT_SIZE_X                     = 0
 HOT_SIZE_WIDTH                 = WIDTH
 
@@ -72,7 +73,7 @@ FIRST_HOLE_COORDINATE = 300e-9
 NUMBER_OF_PERIODS_X = 5
 NUMBER_OF_PERIODS_Y = 3
 HOLE_COORDINATES = np.zeros((NUMBER_OF_PERIODS_X * NUMBER_OF_PERIODS_Y * 2, 3))
-HOLE_SHAPES = ['rectangle' for x in range(HOLE_COORDINATES.shape[0])]
+HOLE_SHAPES = [Shapes.RECTANGLE for x in range(HOLE_COORDINATES.shape[0])]
 hole_number = 0
 for i in range(NUMBER_OF_PERIODS_Y):
     for j in range(NUMBER_OF_PERIODS_X):

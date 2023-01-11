@@ -3,6 +3,7 @@
 import numpy as np
 
 from parameters import *
+from events import Scattering
 
 class PathData:
     """Paths of phonons in space"""
@@ -97,24 +98,24 @@ class ScatteringData:
         self.total[segment] += 1
 
         # Scattering on side walls:
-        self.wall_diffuse[segment]  += 1 if scattering_types.walls == 'diffuse' else 0
-        self.wall_specular[segment] += 1 if scattering_types.walls == 'specular' else 0
+        self.wall_diffuse[segment]  += 1 if scattering_types.walls == Scattering.DIFFUSE else 0
+        self.wall_specular[segment] += 1 if scattering_types.walls == Scattering.SPECULAR else 0
 
         # Scattering on top and bottom:
-        self.top_diffuse[segment]  += 1 if scattering_types.top_bottom == 'diffuse' else 0
-        self.top_specular[segment] += 1 if scattering_types.top_bottom == 'specular' else 0
+        self.top_diffuse[segment]  += 1 if scattering_types.top_bottom == Scattering.DIFFUSE else 0
+        self.top_specular[segment] += 1 if scattering_types.top_bottom == Scattering.SPECULAR else 0
 
         # Scattering on holes:
-        self.hole_diffuse[segment]  += 1 if scattering_types.holes == 'diffuse' else 0
-        self.hole_specular[segment] += 1 if scattering_types.holes == 'specular' else 0
+        self.hole_diffuse[segment]  += 1 if scattering_types.holes == Scattering.DIFFUSE else 0
+        self.hole_specular[segment] += 1 if scattering_types.holes == Scattering.SPECULAR else 0
 
         # Scattering on pillars:
-        self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == 'diffuse' else 0
-        self.pillar_specular[segment] += 1 if scattering_types.pillars == 'specular' else 0
+        self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == Scattering.DIFFUSE else 0
+        self.pillar_specular[segment] += 1 if scattering_types.pillars == Scattering.SPECULAR else 0
 
         # Internal scattering and rethermalization on hot side:
-        self.hot_side[segment] += 1 if scattering_types.hot_side == 'diffuse' else 0
-        self.internal[segment] += 1 if scattering_types.internal == 'diffuse' else 0
+        self.hot_side[segment] += 1 if scattering_types.hot_side == Scattering.DIFFUSE else 0
+        self.internal[segment] += 1 if scattering_types.internal == Scattering.DIFFUSE else 0
 
     def write_into_files(self):
         """Write data into a file"""
