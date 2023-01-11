@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import shutil
+import importlib
 
 # Modules:
 from parameters import *
@@ -74,6 +75,7 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
 def main():
     """This is the main function, which works under Debye approximation.
     It should be used to simulate phonon paths at low temperatures"""
+
     print(f'Simulation for {OUTPUT_FOLDER_NAME} started.')
     start_time = time.time()
     progress = Progress()
@@ -110,11 +112,11 @@ def main():
     thermal_maps.calculate_thermal_conductivity()
 
     # Create the folder if it does not exist and copy parameters.py there:
-    if not os.path.exists(OUTPUT_FOLDER_NAME):
-        os.makedirs(OUTPUT_FOLDER_NAME)
-        os.makedirs(OUTPUT_FOLDER_NAME + '/Data')
-    shutil.copy('parameters.py', OUTPUT_FOLDER_NAME)
-    os.chdir(OUTPUT_FOLDER_NAME)
+    if not os.path.exists("Results/" + OUTPUT_FOLDER_NAME):
+        os.makedirs("Results/" + OUTPUT_FOLDER_NAME)
+        os.makedirs("Results/" + OUTPUT_FOLDER_NAME + '/Data')
+    shutil.copy('parameters.py', "Results/" + OUTPUT_FOLDER_NAME)
+    os.chdir("Results/" + OUTPUT_FOLDER_NAME)
 
     # Save data into files:
     general_stats.write_into_files()

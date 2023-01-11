@@ -3,13 +3,13 @@
 import time
 import numpy as np
 
-import parameters as par
+from parameters import *
 
 
 def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     exit_angles = np.loadtxt("Data/All exit angles.csv")
-    percentage = int(100 * np.count_nonzero(exit_angles) / par.NUMBER_OF_PHONONS)
+    percentage = int(100 * np.count_nonzero(exit_angles) / NUMBER_OF_PHONONS)
     print(f'\r{percentage}% of phonons reached the cold side.')
     print(f'The simulation took about {int((time.time() - start_time)//60)} min. to run.')
 
@@ -17,23 +17,17 @@ def output_general_information(start_time):
         info = (
                 f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
                 f'\nIt took about {int((time.time()-start_time)//60)} min to run.\n',
-                f'\nNumber of phonons = {par.NUMBER_OF_PHONONS}',
-                f'\nNumber of timesteps = {par.NUMBER_OF_TIMESTEPS}',
-                f'\nLength of a timestep = {par.TIMESTEP} s',
-                f'\nTemperature = {par.T} K\n',
-                f'\nLength = {par.LENGTH * 1e9:.1f} nm',
-                f'\nWidth = {par.WIDTH * 1e9:.1f} nm',
-                f'\nThickness = {par.THICKNESS * 1e9:.1f} nm\n',
-                f'\nSide wall roughness = {par.SIDE_WALL_ROUGHNESS * 1e9:.1f} nm',
-                f'\nHole roughness = {par.HOLE_ROUGHNESS * 1e9:.1f} nm',
-                f'\nTop roughness = {par.TOP_ROUGHNESS * 1e9:.1f} nm',
-                f'\nBottom roughness = {par.BOTTOM_ROUGHNESS * 1e9:.1f} nm\n',
-                f'\nLattice type = {par.HOLE_LATTICE_TYPE}',
-                f'\nPeriod in x direction = {par.PERIOD_X * 1e9:.1f} nm',
-                f'\nPeriod in y direction = {par.PERIOD_Y * 1e9:.1f} nm',
-                f'\nDiameter of the holes = {par.CIRCULAR_HOLE_DIAMETER * 1e9:.1f} nm',
-                f'\nHorizontal dimension of the holes = {par.RECTANGULAR_HOLE_SIDE_X * 1e9:.1f} nm',
-                f'\nVertical dimension of the holes = {par.RECTANGULAR_HOLE_SIDE_Y * 1e9:.1f} nm\n',
+                f'\nNumber of phonons = {NUMBER_OF_PHONONS}',
+                f'\nNumber of timesteps = {NUMBER_OF_TIMESTEPS}',
+                f'\nLength of a timestep = {TIMESTEP} s',
+                f'\nTemperature = {T} K\n',
+                f'\nLength = {LENGTH * 1e9:.1f} nm',
+                f'\nWidth = {WIDTH * 1e9:.1f} nm',
+                f'\nThickness = {THICKNESS * 1e9:.1f} nm\n',
+                f'\nSide wall roughness = {SIDE_WALL_ROUGHNESS * 1e9:.1f} nm',
+                f'\nHole roughness = {HOLE_ROUGHNESS * 1e9:.1f} nm',
+                f'\nTop roughness = {TOP_ROUGHNESS * 1e9:.1f} nm',
+                f'\nBottom roughness = {BOTTOM_ROUGHNESS * 1e9:.1f} nm\n',
                 f'\n{percentage:.0f}% of phonons reached the cold side\n'
         )
         f.writelines(info)
@@ -59,13 +53,13 @@ def output_scattering_information(scatter_stats):
     scat_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
     scat_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
 
-    if par.INCLUDE_HOLES:
+    if INCLUDE_HOLES:
         scat_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
                              np.sum(scatter_stats.hole_specular)) / total
         scat_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
         scat_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
 
-    if par.INCLUDE_PILLARS:
+    if INCLUDE_PILLARS:
         scat_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
                             np.sum(scatter_stats.pillar_specular)) / total
         scat_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
@@ -86,14 +80,14 @@ def output_scattering_information(scatter_stats):
             f'\n{internal:.2f}% - internal scattering processes',
     )
 
-    if par.INCLUDE_HOLES:
+    if INCLUDE_HOLES:
         info2 = (
                 f'\n{scat_on_holes:.2f}% - scattering on hole walls ',
                 f'({scat_on_holes_diff:.2f}% - diffuse, ',
                 f'{scat_on_holes_spec:.2f}% - specular)',
         )
 
-    if par.INCLUDE_PILLARS:
+    if INCLUDE_PILLARS:
         info3 = (
                 f'\n{scat_on_pill:.2f}% - scattering on pillar walls ',
                 f'({scat_on_pill_diff:.2f}% - diffuse, ',
@@ -103,7 +97,7 @@ def output_scattering_information(scatter_stats):
     # Write info into a text file:
     with open("Information.txt", "a") as f:
         f.writelines(info1)
-        if par.INCLUDE_HOLES:
+        if INCLUDE_HOLES:
             f.writelines(info2)
-        if par.INCLUDE_PILLARS:
+        if INCLUDE_PILLARS:
             f.writelines(info3)

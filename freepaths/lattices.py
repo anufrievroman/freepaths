@@ -59,7 +59,6 @@ def hole_positioning(hole_lattice_type, rectangular_hole_side_y, rectangular_hol
         number_of_periods_x = 1
         number_of_periods_y = 7
         hole_coordinates = zeros((number_of_periods_x * number_of_periods_y, 3))
-        hole_coordinates = zeros((number_of_periods_x * number_of_periods_y, 3))
         hole_shapes = ['circle' for x in range(hole_coordinates.shape[0])]
         # hole_shapes = ['rectangle' for x in range(hole_coordinates.shape[0])]
         # hole_shapes = ['triangle_up' for x in range(hole_coordinates.shape[0])]

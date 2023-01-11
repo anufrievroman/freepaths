@@ -6,7 +6,6 @@ from numpy import sign
 
 from move import move
 from parameters import *
-from lattices import hole_coordinates, pillar_coordinates, hole_shapes
 
 
 def specularity(angle, roughness, wavelength):
@@ -359,16 +358,16 @@ def top_scattering(ph, scattering_types):
             scattering_types.top_bottom = 'diffuse'
 
 
-def top_scattering_with_pillars(ph, pillar_coordinates, scattering_types):
+def top_scattering_with_pillars(ph, PILLAR_COORDINATES, scattering_types):
     """Check if the phonon hits the top surface and if this place has a pillar and output new vector"""
     x, y, z = move(ph)
 
     # If phonon is below the bottom surface, scattering happens:
     if z > THICKNESS/2:
-        distances_from_centers = [0]*pillar_coordinates.shape[0]
-        for i in range(pillar_coordinates.shape[0]):                            # For each pillar
-            x0 = pillar_coordinates[i,0]                                          # Coordinates of the pillar center
-            y0 = pillar_coordinates[i,1]
+        distances_from_centers = [0]*PILLAR_COORDINATES.shape[0]
+        for i in range(PILLAR_COORDINATES.shape[0]):                            # For each pillar
+            x0 = PILLAR_COORDINATES[i,0]                                          # Coordinates of the pillar center
+            y0 = PILLAR_COORDINATES[i,1]
             distances_from_centers[i] = (x-x0)**2 + (y-y0)**2
 
         # Angle to the surface:
@@ -448,7 +447,7 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on top surface:
     if INCLUDE_PILLARS:
-        top_scattering_with_pillars(ph, pillar_coordinates, scattering_types)
+        top_scattering_with_pillars(ph, PILLAR_COORDINATES, scattering_types)
     else:
         top_scattering(ph, scattering_types)
 
@@ -461,30 +460,30 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on holes:
     if INCLUDE_HOLES:
-        for i in range(hole_coordinates.shape[0]):
+        for i in range(HOLE_COORDINATES.shape[0]):
 
             # Coordinates of the hole center:
-            x0 = hole_coordinates[i, 0]
-            y0 = hole_coordinates[i, 1]
+            x0 = HOLE_COORDINATES[i, 0]
+            y0 = HOLE_COORDINATES[i, 1]
 
-            if hole_shapes[i] == 'circle':
-                rad = CIRCULAR_HOLE_DIAMETER * (1 + hole_coordinates[i, 2]) / 2
+            if HOLE_SHAPES[i] == 'circle':
+                rad = CIRCULAR_HOLE_DIAMETER * (1 + HOLE_COORDINATES[i, 2]) / 2
                 scattering_on_circular_holes(ph, x0, y0, rad, scattering_types)
 
-            elif hole_shapes[i] == 'rectangle':
+            elif HOLE_SHAPES[i] == 'rectangle':
                 # Correction of the hole size if there are holes of non-standard size:
-                Lx = RECTANGULAR_HOLE_SIDE_X * (hole_coordinates[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (hole_coordinates[i, 2] + 1)
+                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
+                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
                 scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types)
 
-            elif hole_shapes[i] == 'triangle_down':
-                Lx = RECTANGULAR_HOLE_SIDE_X * (hole_coordinates[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (hole_coordinates[i, 2] + 1)
+            elif HOLE_SHAPES[i] == 'triangle_down':
+                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
+                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
                 scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types)
 
-            elif hole_shapes[i] == 'triangle_up':
-                Lx = RECTANGULAR_HOLE_SIDE_X * (hole_coordinates[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (hole_coordinates[i, 2] + 1)
+            elif HOLE_SHAPES[i] == 'triangle_up':
+                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
+                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
                 scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types)
 
             # If there was any scattering, then no need to check other holes:
@@ -493,12 +492,12 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on pillars:
     if INCLUDE_PILLARS:
-        for i in range(pillar_coordinates.shape[0]):
+        for i in range(PILLAR_COORDINATES.shape[0]):
 
             # Coordinates and radius of the given pillar:
-            x0 = pillar_coordinates[i, 0]
-            y0 = pillar_coordinates[i, 1]
-            rad = CIRCULAR_HOLE_DIAMETER * (1 + pillar_coordinates[i,2]) / 2
+            x0 = PILLAR_COORDINATES[i, 0]
+            y0 = PILLAR_COORDINATES[i, 1]
+            rad = CIRCULAR_HOLE_DIAMETER * (1 + PILLAR_COORDINATES[i,2]) / 2
 
             scattering_on_circular_pillars(ph, x0, y0, rad, scattering_types)
 
