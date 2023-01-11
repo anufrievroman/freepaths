@@ -370,6 +370,8 @@ def top_scattering_with_pillars(ph, pillar_coordinates, scattering_types):
             x0 = pillar_coordinates[i,0]                                          # Coordinates of the pillar center
             y0 = pillar_coordinates[i,1]
             distances_from_centers[i] = (x-x0)**2 + (y-y0)**2
+
+        # Angle to the surface:
         a = pi / 2 - abs(ph.phi)
 
         # If it is not under the pillar:
@@ -490,7 +492,7 @@ def surface_scattering(ph, scattering_types):
                 break
 
     # Scattering on pillars:
-    if INCLUDE_PILLARS == 'yes':
+    if INCLUDE_PILLARS:
         for i in range(pillar_coordinates.shape[0]):
 
             # Coordinates and radius of the given pillar:

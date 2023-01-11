@@ -9,22 +9,22 @@ class PathData:
 
     def __init__(self):
         """Initialize arrays to save phonon paths"""
-        self.all_phonon_paths = []
+        self.phonon_paths = []
 
     def save_phonon_path(self, flight):
         """Save the path to list of all paths"""
-        self.all_phonon_paths.append(flight.path)
+        self.phonon_paths.append(flight.path)
 
     @property
     def length_of_longest_path(self):
         """Calculate the number of points in the longest path"""
-        return max([path.number_of_path_points for path in self.all_phonon_paths])
+        return max([path.number_of_path_points for path in self.phonon_paths])
 
     def write_into_files(self):
         """Write all the path coordinates into a file"""
         filename = "Data/Phonon paths.csv"
-        data = np.zeros((self.length_of_longest_path, 3*len(self.all_phonon_paths)))
-        for index, path in enumerate(self.all_phonon_paths):
+        data = np.zeros((self.length_of_longest_path, 3*len(self.phonon_paths)))
+        for index, path in enumerate(self.phonon_paths):
             for point_n, (x, y, z) in enumerate(zip(path.x, path.y, path.z)):
                 data[point_n, 0 + index*3] = x*1e6
                 data[point_n, 1 + index*3] = y*1e6
@@ -37,39 +37,39 @@ class GeneralData:
 
     def __init__(self):
         """Initialize arrays for writing various properties"""
-        self.all_initial_angles = []
-        self.all_exit_angles = []
-        self.all_free_paths = []
-        self.all_free_paths_along_y = []
-        self.all_frequencies = []
-        self.all_detected_frequencies = []
-        self.all_group_velocities = []
-        self.all_travel_times = []
+        self.initial_angles = []
+        self.exit_angles = []
+        self.free_paths = []
+        self.free_paths_along_y = []
+        self.frequencies = []
+        self.detected_frequencies = []
+        self.group_velocities = []
+        self.travel_times = []
 
     def save_phonon_data(self, ph):
         """Add information about the phonon to the dataset"""
-        self.all_frequencies.append(ph.f)
-        self.all_group_velocities.append(ph.speed)
+        self.frequencies.append(ph.f)
+        self.group_velocities.append(ph.speed)
 
     def save_flight_data(self, flight):
         """Add information about the phonon flight to the dataset"""
-        self.all_initial_angles.append(flight.initial_theta)
-        self.all_exit_angles.append(flight.exit_theta)
-        self.all_free_paths.extend(flight.free_paths)
-        self.all_free_paths_along_y.extend(flight.free_paths_along_y)
-        self.all_travel_times.append(flight.travel_time)
-        self.all_detected_frequencies.append(flight.detected_frequency)
+        self.initial_angles.append(flight.initial_theta)
+        self.exit_angles.append(flight.exit_theta)
+        self.free_paths.extend(flight.free_paths)
+        self.free_paths_along_y.extend(flight.free_paths_along_y)
+        self.travel_times.append(flight.travel_time)
+        self.detected_frequencies.append(flight.detected_frequency)
 
     def write_into_files(self):
         """Write all the data into files"""
-        np.savetxt("Data/All free paths.csv", self.all_free_paths, fmt='%1.3e', delimiter=",", header="L [m]")
-        np.savetxt("Data/All free paths in plane.csv", self.all_free_paths_along_y, fmt='%1.3e', delimiter=",", header="Ly [m]")
-        np.savetxt("Data/All initial frequencies.csv", self.all_frequencies, fmt='%1.3e', delimiter=",", header="f [Hz]")
-        np.savetxt("Data/All detected frequencies.csv", self.all_detected_frequencies, fmt='%1.3e', delimiter=",", header="f [Hz]")
-        np.savetxt("Data/All exit angles.csv", self.all_exit_angles, fmt='%1.3e', delimiter=",", header="Angle [rad]")
-        np.savetxt("Data/All initial angles.csv", self.all_initial_angles, fmt='%1.3e', delimiter=",", header="Angle [rad]")
-        np.savetxt("Data/All group velocities.csv", self.all_group_velocities, fmt='%1.3e', delimiter=",", header="Vg [rad]")
-        np.savetxt("Data/All travel times.csv", self.all_travel_times, fmt='%1.3e', delimiter=",", header="Travel time [s]")
+        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%1.3e', delimiter=",", header="L [m]")
+        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%1.3e', delimiter=",", header="Ly [m]")
+        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%1.3e', delimiter=",", header="f [Hz]")
+        np.savetxt("Data/All detected frequencies.csv", self.detected_frequencies, fmt='%1.3e', delimiter=",", header="f [Hz]")
+        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%1.3e', delimiter=",", header="Angle [rad]")
+        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%1.3e', delimiter=",", header="Angle [rad]")
+        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%1.3e', delimiter=",", header="Vg [rad]")
+        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%1.3e', delimiter=",", header="Travel time [s]")
 
 
 class ScatteringData:
