@@ -6,10 +6,10 @@ This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nan
 
 ## Installation and usage
 
-- Install python 3.
-- Clone this repository.
-- Adjust parameters in `parameters.py` file and run the `main.py` file. 
-- See the results in a newly created folder.
+- Install python 3 and a few libraries: `pip install numpy matplotlib scipy`
+- Download this repository
+- Adjust parameters in `parameters.py` file (see `Examples` folder) and run the `main.py` file as `python main.py`.
+- See the results in a newly created `Results` folder.
 
 ## Disclaimer
 
