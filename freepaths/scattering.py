@@ -33,9 +33,8 @@ def reinitialization(ph, scattering_types):
         scattering_types.hot_side = 'diffuse'
 
 
-def scattering_on_circular_holes(ph, x0, y0, R, scattering_types):
+def scattering_on_circular_holes(ph, x0, y0, R, scattering_types, x, y, z):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
-    x, y, z = move(ph)
 
     # If phonon is inside the circle with radius R:
     if (x - x0)**2 + (y - y0)**2 <= R**2:
@@ -71,9 +70,8 @@ def scattering_on_circular_holes(ph, x0, y0, R, scattering_types):
                     break
 
 
-def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types):
+def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z):
     """Check if the phonon strikes a rectangular hole and calculate new direction"""
-    x, y, z = move(ph)
 
     # If the phonon is inside the rectangle:
     if (abs(x - x0) <= Lx / 2) and (abs(y - y0) <= Ly / 2):
@@ -144,9 +142,8 @@ def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types):
                         break
 
 
-def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types):
+def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types, x, y, z):
     """Check if a phonon strikes a circular pillar and calculate new direction"""
-    x, y, z = move(ph)
 
     # Cone radius at a given z coordinate:
     R = R_base - (z - THICKNESS / 2) / tan(PILLAR_WALL_ANGLE)
@@ -187,9 +184,8 @@ def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types):
             scattering_types.pillars = 'diffuse'
 
 
-def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types):
+def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z):
     """Check if the phonon strikes a reverse triangular hole and calculate new direction after the scattering"""
-    x, y, z = move(ph)
 
     # Angle of the triangle:
     beta = atan(0.5*Lx/Ly)
@@ -235,9 +231,8 @@ def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types):
                 scattering_types.holes= 'diffuse'
 
 
-def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types):
+def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z):
     """Check if the phonon strikes a reverse triangular hole and calculate new direction"""
-    x, y, z = move(ph)
 
     # Angle of the triangle:
     beta = atan(0.5*Lx/Ly)
@@ -358,7 +353,7 @@ def top_scattering(ph, scattering_types):
             scattering_types.top_bottom = 'diffuse'
 
 
-def top_scattering_with_pillars(ph, PILLAR_COORDINATES, scattering_types):
+def top_scattering_with_pillars(ph, scattering_types):
     """Check if the phonon hits the top surface and if this place has a pillar and output new vector"""
     x, y, z = move(ph)
 
@@ -447,7 +442,7 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on top surface:
     if INCLUDE_PILLARS:
-        top_scattering_with_pillars(ph, PILLAR_COORDINATES, scattering_types)
+        top_scattering_with_pillars(ph, scattering_types)
     else:
         top_scattering(ph, scattering_types)
 
@@ -460,6 +455,10 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on holes:
     if INCLUDE_HOLES:
+        # Prelimenary move to see if phonon would cross something:
+        x, y, z = move(ph)
+
+        # Check for each hole:
         for i in range(HOLE_COORDINATES.shape[0]):
 
             # Coordinates of the hole center:
@@ -468,23 +467,23 @@ def surface_scattering(ph, scattering_types):
 
             if HOLE_SHAPES[i] == 'circle':
                 rad = CIRCULAR_HOLE_DIAMETER * (1 + HOLE_COORDINATES[i, 2]) / 2
-                scattering_on_circular_holes(ph, x0, y0, rad, scattering_types)
+                scattering_on_circular_holes(ph, x0, y0, rad, scattering_types, x, y, z)
 
             elif HOLE_SHAPES[i] == 'rectangle':
                 # Correction of the hole size if there are holes of non-standard size:
                 Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
                 Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
-                scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types)
+                scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
             elif HOLE_SHAPES[i] == 'triangle_down':
                 Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
                 Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
-                scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types)
+                scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
             elif HOLE_SHAPES[i] == 'triangle_up':
                 Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
                 Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
-                scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types)
+                scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
             # If there was any scattering, then no need to check other holes:
             if scattering_types.holes is not None:
@@ -492,6 +491,10 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on pillars:
     if INCLUDE_PILLARS:
+
+        # Prelimenary move to see if phonon would cross something:
+        x, y, z = move(ph)
+
         for i in range(PILLAR_COORDINATES.shape[0]):
 
             # Coordinates and radius of the given pillar:
@@ -499,7 +502,7 @@ def surface_scattering(ph, scattering_types):
             y0 = PILLAR_COORDINATES[i, 1]
             rad = CIRCULAR_HOLE_DIAMETER * (1 + PILLAR_COORDINATES[i,2]) / 2
 
-            scattering_on_circular_pillars(ph, x0, y0, rad, scattering_types)
+            scattering_on_circular_pillars(ph, x0, y0, rad, scattering_types, x, y, z)
 
             # If there was any scattering, then no need to check other pillars:
             if scattering_types.pillars is not None:
