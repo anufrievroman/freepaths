@@ -30,7 +30,6 @@ def reinitialization(ph, scattering_types):
 
     # If phonon returns to the staring line y = 0, generate it again:
     if y < 0:
-        ph.assign_initial_coordinates()
         ph.assign_angles()
         scattering_types.hot_side = Scattering.DIFFUSE
 

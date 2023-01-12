@@ -31,7 +31,7 @@ class Phonon:
         self.theta = None
         self.speed = None
         self.polarization = choice([Polarization.TA, Polarization.TA, Polarization.LA])
-        self.assign_initial_coordinates()
+        self.assign_coordinates()
         self.assign_angles()
         self.assign_frequency(material)
         self.assign_speed(material)
@@ -58,7 +58,7 @@ class Phonon:
             return LENGTH > self.y > 0
         raise ValueError('Specified "cold_side" is not valid. Only TOP, RIGHT, TOP_AND_RIGH, TOP_AND_BOTTOM')
 
-    def assign_initial_coordinates(self):
+    def assign_coordinates(self):
         """Assign initial coordinates at the hot side"""
 
         self.x = HOT_SIZE_X + 0.49 * HOT_SIZE_WIDTH * (2 * random() - 1)

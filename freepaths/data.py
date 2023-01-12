@@ -63,14 +63,14 @@ class GeneralData:
 
     def write_into_files(self):
         """Write all the data into files"""
-        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%1.3e', delimiter=",", header="L [m]")
-        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%1.3e', delimiter=",", header="Ly [m]")
-        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%1.3e', delimiter=",", header="f [Hz]")
-        np.savetxt("Data/All detected frequencies.csv", self.detected_frequencies, fmt='%1.3e', delimiter=",", header="f [Hz]")
-        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%1.3e', delimiter=",", header="Angle [rad]")
-        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%1.3e', delimiter=",", header="Angle [rad]")
-        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%1.3e', delimiter=",", header="Vg [rad]")
-        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%1.3e', delimiter=",", header="Travel time [s]")
+        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', delimiter=",", header="L [m]")
+        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', delimiter=",", header="Ly [m]")
+        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]")
+        np.savetxt("Data/All detected frequencies.csv", self.detected_frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]")
+        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]")
+        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]")
+        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]")
+        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', delimiter=",", header="Travel time [s]")
 
 
 class ScatteringData:

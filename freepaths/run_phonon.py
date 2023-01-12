@@ -13,8 +13,6 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
 
     # Run the phonon step-by-step:
     for step_number in range(NUMBER_OF_TIMESTEPS):
-
-        # If phonon has not reached the cold side yet:
         if phonon.is_in_system:
 
             # Check if different scattering events happened during current time step:
@@ -23,37 +21,30 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
             surface_scattering(phonon, scattering_types)
             reinitialization(phonon, scattering_types)
 
-            # Record scattering events if any:
+            # If any scattering has occured, record it:
             if scattering_types.is_scattered:
+                flight.add_point_to_path()
                 scatter_stats.save_scattering_events(phonon.y, scattering_types)
-
-            # If no diffuse scattering event occurred, keep measuring the paths and time:
-            if not (scattering_types.is_diffuse or scattering_types.is_internal):
-                flight.add_step()
+                if OUTPUT_SCATTERING_MAP:
+                    scatter_maps.add_scattering_to_map(phonon, scattering_types)
 
             # If diffuse scattering has occurred, reset phonon free path:
-            else:
+            if scattering_types.is_diffuse or scattering_types.is_internal:
                 flight.save_free_paths()
                 flight.restart()
                 phonon.assign_internal_scattering_time(material)
+            else:
+                flight.add_step()
 
-            # Update scattering and energy maps:
-            if OUTPUT_SCATTERING_MAP and scattering_types.is_scattered:
-                scatter_maps.add_scattering_to_map(phonon, scattering_types)
+            # Record presence of the phonon at this timestep and move on:
             thermal_maps.add_energy_to_maps(phonon, step_number, material)
-
-            # Record time spent in the segment:
             segment_stats.record_time_in_segment(phonon.y)
-
-            # Phonon makes a step forward:
-            phonon.move()
-            flight.add_point_to_path()
-
-            # Reset scattering types for the next step:
             scattering_types.reset()
+            phonon.move()
 
-        # If the phonon reached cold side, record a few parameters and break the loop:
+        # If the phonon reached cold side, record it and break the loop:
         else:
             flight.add_point_to_path()
             flight.finish(step_number)
             break
+
