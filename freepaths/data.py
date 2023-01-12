@@ -30,7 +30,7 @@ class PathData:
                 data[point_n, 0 + index*3] = x*1e6
                 data[point_n, 1 + index*3] = y*1e6
                 data[point_n, 2 + index*3] = z*1e6
-        np.savetxt(filename, data, fmt='%1.2e', delimiter=",", header="X (μm), Y (μm), Z (μm)")
+        np.savetxt(filename, data, fmt='%2.4f', delimiter=",", header="X (μm), Y (μm), Z (μm)")
 
 
 class GeneralData:

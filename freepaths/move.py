@@ -1,6 +1,6 @@
 """Module that move a phonon in one timestep using cache of previous moves"""
 
-from math import cos, sin
+from numpy import cos, sin
 from functools import lru_cache
 
 from parameters import TIMESTEP

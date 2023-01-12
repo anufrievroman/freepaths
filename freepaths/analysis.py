@@ -227,7 +227,7 @@ def plot_trajectories():
     ax.set_xlabel('X (μm)', fontsize=12)
     ax.set_ylabel('Y (μm)', fontsize=12)
     ax.set_aspect('equal', 'datalim')
-    fig.savefig("Phonon paths XY.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    fig.savefig("Phonon paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     if PLOTS_IN_TERMINAL: plt.show()
 
     # Create YZ plot:

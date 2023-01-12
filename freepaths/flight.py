@@ -72,3 +72,4 @@ class Flight:
         self.free_path += step_length
         self.free_path_along_y += step_length * abs(cos(self.phonon.phi)) * abs(cos(self.phonon.theta))
         self.time_since_previous_scattering += TIMESTEP
+

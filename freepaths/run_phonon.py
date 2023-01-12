@@ -26,7 +26,6 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
             # Record scattering events if any:
             if scattering_types.is_scattered:
                 scatter_stats.save_scattering_events(phonon.y, scattering_types)
-                flight.add_point_to_path()
 
             # If no diffuse scattering event occurred, keep measuring the paths and time:
             if not (scattering_types.is_diffuse or scattering_types.is_internal):
@@ -48,6 +47,7 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
 
             # Phonon makes a step forward:
             phonon.move()
+            flight.add_point_to_path()
 
             # Reset scattering types for the next step:
             scattering_types.reset()

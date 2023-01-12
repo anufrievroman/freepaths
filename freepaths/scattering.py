@@ -287,8 +287,7 @@ def no_new_scattering(ph):
     """Check if new angles do not immediately lead to new top/bottom or sidewall scattering.
     This is necessary to prevent phonons leaving the structure boundaries."""
     x, y, z = move(ph)
-    accept_angles = True if (abs(z) < THICKNESS / 2 and abs(x) < WIDTH / 2 and y > 0) else False
-    return accept_angles
+    return True if (abs(z) < THICKNESS / 2 and abs(x) < WIDTH / 2 and y > 0) else False
 
 
 def side_wall_scattering(ph, scattering_types):
