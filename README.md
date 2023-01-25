@@ -4,34 +4,51 @@ This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nan
 
 ![Screenshot](https://github.com/anufrievroman/Monte-Carlo/blob/master/screenshot.png)
 
+
 ## Installation
 
-Program requires python 3. On Linux and MacOS it is probably already installed. On Windows, you may choose to install [Anaconda](https://www.anaconda.com).
+FreePATHS requires python 3. On Linux and MacOS, it is probably already installed. On Windows, you may choose to install [Anaconda](https://www.anaconda.com) package, which will install everything for you.
 
-Install from PyPi repository with:
+Install the package from PyPi repository by entering this command into a terminal or a python console:
 
 `pip install --upgrade freepaths`
 
 
 ## Usage
 
+There are two ways of using the program. One to trace large number of phonons through a structure and collect statistics about their paths. Another is to sample phonon mean free path (using a small number of phonons) and calculate the thermal conductivity by integrating phonon dispersion. 
+
+
+### Main mode
+
+In the main mode, the program traces large number of phonons through a structure and calculates various statistical distributions and maps. In this mode, the thermal conductivity will be calculated via Fourier law. Note that the thermal conductivity will be correct only in the absence of holes.
+
 Run the program as:
 
 `freepaths your_input_file.py`
 
-In the `examples` folder, you will find example input files. Try using one of them, for example:
+In the `examples` folder, you will find example input files. Try using one of them, for instance as:
 
 `freepaths simple_nanowire.py`
 
-If you wish to run it in the mean free path sampling mode to calculate the thermal conductivity, add `-s` flag:
+However, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
+
+After the simulation, see the results in a newly created `Results` folder.
+
+
+### MFP sampling mode
+
+Alternatively, you can run FreePATHS in the mean free path sampling mode, which is designed to calculate the thermal conductivity by integrating phonon dispersion. To run the program in this mode, reduce the number of phonons to about 30 and add `-s` flag in the command:
 
 `freepaths -s simple_nanowire.py`
 
-However, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation. After the simulation, see the results in a newly created `Results` folder.
+The thermal conductivity will be output in the terminal. However, other statistical quantities and plots will still be calculated and output in the `Results` folder.
+
 
 ## Disclaimer
 
 The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more details on the code.
+
 
 ## References
 
