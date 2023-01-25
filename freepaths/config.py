@@ -66,8 +66,8 @@ class Config:
         # Hot and cold sides:
         self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
         self.cold_side_position = COLD_SIDE_POSITION
-        self.hot_size_x = HOT_SIZE_X
-        self.hot_size_width = HOT_SIZE_WIDTH
+        self.hot_side_x = HOT_SIDE_X
+        self.hot_side_width = HOT_SIDE_WIDTH
 
         # Roughness:
         self.side_wall_roughness = SIDE_WALL_ROUGHNESS

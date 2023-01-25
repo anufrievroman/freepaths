@@ -38,8 +38,8 @@ LENGTH                         = 2200e-9
 # Hot and cold sides [m]:
 FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
-HOT_SIZE_X                     = 0
-HOT_SIZE_WIDTH                 = WIDTH
+HOT_SIDE_X                     = 0
+HOT_SIDE_WIDTH                 = WIDTH
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9

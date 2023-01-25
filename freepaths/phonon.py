@@ -54,7 +54,6 @@ class Phonon:
     def is_in_system(self):
         """Checks if the phonon at this timestep did not reach the cold side.
         Depending on where we set the cold side, we check if phonon crossed that line"""
-
         small_offset = 10e-9
         if cf.cold_side_position == Positions.TOP:
             return cf.length > self.y > 0
@@ -72,8 +71,7 @@ class Phonon:
 
     def assign_coordinates(self):
         """Assign initial coordinates at the hot side"""
-
-        self.x = cf.hot_size_x + 0.49 * cf.hot_size_width * (2 * random() - 1)
+        self.x = cf.hot_side_x + 0.49 * cf.hot_side_width * (2 * random() - 1)
         self.y = 1e-12
         self.z = 0.49 * cf.thickness * (2 * random() - 1)
 
@@ -88,7 +86,6 @@ class Phonon:
         if cf.hot_side_angle_distribution == Distributions.LAMBERT:
             self.theta = asin(2*random() - 1)
             self.phi = asin((asin(2*random() - 1))/(pi/2))
-
 
     def assign_frequency(self, material):
         """Assigning frequency with parobability according to Plankian distribution"""
@@ -116,7 +113,6 @@ class Phonon:
             if random() < plank_distribution/plank_distribution_max and self.f < max(material.dispersion[:, 1]):
                 break
 
-
     def assign_speed(self, material):
         """Calculate group velocity dw/dk according to the frequency and polarization"""
         if self.polarization == Polarization.TA and self.f < max(material.dispersion[:,2]):
@@ -127,7 +123,6 @@ class Phonon:
             d_w = 2*pi*abs(material.dispersion[point_num+1, 1] - material.dispersion[point_num, 1])
         d_k = abs(material.dispersion[point_num+1, 0] - material.dispersion[point_num, 0])
         self.speed = d_w/d_k
-
 
     def assign_internal_scattering_time(self, material):
         """Determine relaxation time after which this phonon will undergo internal scattering"""
@@ -146,8 +141,8 @@ class Phonon:
 
             elif material.name == Materials.SiC:    # Ref. Joshi et al, JAP 88, 265 (2000)
                 deb_temp = 1200
-                tau_impurity = 1/(8.46e-45 * (omega ** 4.0))
-                tau_umklapp = 1/(6.16e-20 * (omega ** 2.0) * cf.temp * exp(-deb_temp / cf.temp))
+                tau_impurity = 1/(8.46e-45 * (omega ** 4))
+                tau_umklapp = 1/(6.16e-20 * (omega ** 2) * cf.temp * exp(-deb_temp / cf.temp))
                 tau_4p = 1/(6.9e-23 * (cf.temp ** 2) * (omega ** 2))
                 tau_internal = 1/((1/tau_impurity) + (1/tau_umklapp) + (1/tau_4p))
 

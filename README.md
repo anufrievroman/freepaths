@@ -16,7 +16,9 @@ Install the package from PyPi repository by entering this command into a termina
 
 ## Usage
 
-There are two ways of using the program. One to trace large number of phonons through a structure and collect statistics about their paths. Another is to sample phonon mean free path (using a small number of phonons) and calculate the thermal conductivity by integrating phonon dispersion. 
+FreePATHS is a command line application, so it runs inside Linux, MacOS, or Windows terminal. It takes an input file from the user, which contains all the settings, and outputs the results in a new folder.
+
+There are two modes of using the program. Main mode traces a large number of phonons through a structure and collects statistics about their paths. The MFP sampling mode measures phonon mean free paths using a small number of phonons and calculates the thermal conductivity by integrating phonon dispersion. 
 
 
 ### Main mode
@@ -44,6 +46,13 @@ Alternatively, you can run FreePATHS in the mean free path sampling mode, which 
 
 The thermal conductivity will be output in the terminal. However, other statistical quantities and plots will still be calculated and output in the `Results` folder.
 
+
+## Troubleshooting
+
+- If during installation terminal says something like `pip is not found`, that means you need to install `pip` in your system.
+- If after installation the program does not run and the error says something like `freepaths is not a recognised command` or `freepaths is not found`, but the `freepaths` package was actually installed, try running everything with `python -m` prefix, for example: `python -m freepaths`. This error occurs when system can't find a path to installed packages, so you may need to restart the terminal or change PATH variable.
+- If installation fails, you can simply download this repository, start the terminal in its main directory (where license file is) and run the program as `python -m freepaths`. In this case, you'll always need to run the program from this folder and place your input files there.
+- Rarely, phonons may enter a hole in the structure or break out of structure boundaries. To reduce the impact of this bug, reduce the TIMESTEP parameter. However, this is usually happens once per many thousand collisions and bares not impact on the final statistics.
 
 ## Disclaimer
 
