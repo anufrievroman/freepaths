@@ -24,7 +24,7 @@ def internal_scattering(ph, flight, scattering_types):
 
 
 def reinitialization(ph, scattering_types):
-    """Rethermalize phonon if it comes back to the hot side"""
+    """Re-thermalize phonon if it comes back to the hot side"""
     _, y, _ = move(ph, cf.timestep)
 
     # If phonon returns to the staring line y = 0, generate it again:
@@ -154,7 +154,7 @@ def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types, x, y, z
 
         # Calculate angle to the surface and specular scattering probability:
         tangent_theta = atan((x - x0)/(y - y0))
-        a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi - (pi / 2 - cf.pillar_wall_angle)))  # Angle to the surface
+        a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi - (pi / 2 - cf.pillar_wall_angle)))
         p = specularity(a, cf.pillar_roughness, ph.wavelength)
 
         # Specular scattering:
@@ -239,7 +239,7 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
 
     # If phonon is inside the triangle:
     if (Ly/2 + (y - y0) <= (Lx/2 - abs(x - x0))/tan(beta)) and (abs(y - y0) < Ly/2):
-        #x1=Ly/2/tan(theta) - abs(y0-y)/tan(theta) + abs(x0-x)
+        # x1=Ly/2/tan(theta) - abs(y0-y)/tan(theta) + abs(x0-x)
 
         # Scattering on the bottom wall of the triangle:
         if ((y - cf.timestep * ph.speed) < (y0 - Ly / 2)) and (abs(ph.theta) < pi / 2):
@@ -454,7 +454,7 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on holes:
     if cf.include_holes:
-        # Prelimenary move to see if phonon would cross something:
+        # Preliminary move to see if phonon would cross something:
         x, y, z = move(ph, cf.timestep)
 
         # Check for each hole:
@@ -484,7 +484,6 @@ def surface_scattering(ph, scattering_types):
                 Ly = cf.rectangular_hole_side_y * (cf.hole_coordinates[i, 2] + 1)
                 scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
-
             # If there was any scattering, then no need to check other holes:
             if scattering_types.holes is not None:
                 break
@@ -492,7 +491,7 @@ def surface_scattering(ph, scattering_types):
     # Scattering on pillars:
     if cf.include_pillars:
 
-        # Prelimenary move to see if phonon would cross something:
+        # Preliminary move to see if phonon would cross something:
         x, y, z = move(ph, cf.timestep)
 
         for i in range(cf.pillar_coordinates.shape[0]):

@@ -2,7 +2,7 @@
 
 
 from freepaths.config import cf
-from freepaths.scattering import *
+from freepaths.scattering import internal_scattering, surface_scattering, reinitialization
 from freepaths.scattering_types import ScatteringTypes
 
 
@@ -21,7 +21,7 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
             surface_scattering(phonon, scattering_types)
             reinitialization(phonon, scattering_types)
 
-            # If any scattering has occured, record it:
+            # If any scattering has occurred, record it:
             if scattering_types.is_scattered:
                 flight.add_point_to_path()
                 scatter_stats.save_scattering_events(phonon.y, scattering_types)

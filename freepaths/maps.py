@@ -134,7 +134,7 @@ class ThermalMaps:
             # Average heat flux:
             J = sum(self.heat_flux_profile_y[1:cf.number_of_pixels_y, timeframe_number]) / (cf.number_of_pixels_y - 1)
 
-            # Here dL is shorter then aclual length because we ignore 1st pixel and lose one more due to averaging:
+            # Here dL is shorter than actual length because we ignore 1st pixel and lose one more due to averaging:
             d_L = (cf.number_of_pixels_y - 2) * cf.length / cf.number_of_pixels_y
 
             # By definition, J = -K*grad(T), so the thermal conductivity:

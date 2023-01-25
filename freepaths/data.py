@@ -138,8 +138,8 @@ class SegmentData:
     @property
     def segment_coordinates(self):
         """Calculate coordinates of the centers of each segment"""
-        segment_length = cf.length / cf.number_of_length_segments
-        segments = [(segment_length/2 + i*segment_length) * 1e6 for i in range(cf.number_of_length_segments)]
+        segment_length = cf.length * 1e6 / cf.number_of_length_segments
+        segments = [(segment_length/2 + i*segment_length) for i in range(cf.number_of_length_segments)]
         return segments
 
     def record_time_in_segment(self, coordinate):

@@ -88,7 +88,7 @@ class Phonon:
             self.phi = asin((asin(2*random() - 1))/(pi/2))
 
     def assign_frequency(self, material):
-        """Assigning frequency with parobability according to Plankian distribution"""
+        """Assigning frequency with probability according to Planckian distribution"""
 
         # Frequency of the peak of the Plank distribution:
         f_max = material.default_speed/(2*pi*hbar*material.default_speed/(2.82*k*cf.temp))

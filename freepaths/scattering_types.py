@@ -38,12 +38,12 @@ class ScatteringTypes:
     @property
     def is_scattered(self):
         """Has any of the scattering events occurred?"""
-        return any([self.holes is not None,
-                    self.pillars is not None,
-                    self.top_bottom is not None,
-                    self.walls is not None,
-                    self.internal is not None,
-                    self.hot_side is not None])
+        return any([self.holes,
+                    self.pillars,
+                    self.top_bottom,
+                    self.walls,
+                    self.internal,
+                    self.hot_side])
 
     def reset(self):
         """Reset all scattering types to None"""

@@ -53,22 +53,9 @@ def output_scattering_information(scatter_stats):
     scat_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
     scat_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
 
-    if cf.include_holes:
-        scat_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
-                             np.sum(scatter_stats.hole_specular)) / total
-        scat_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
-        scat_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
-
-    if cf.include_pillars:
-        scat_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
-                            np.sum(scatter_stats.pillar_specular)) / total
-        scat_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
-        scat_on_pill_spec = 100*np.sum(scatter_stats.pillar_specular) / total_pill
-
     retherm = 100*np.sum(scatter_stats.hot_side) / total
     internal = 100*np.sum(scatter_stats.internal) / total
 
-    # Create output:
     info1 = (
             f'\n{scat_on_walls:.2f}% - scattering on side walls ',
             f'({scat_on_walls_diff:.2f}% - diffuse, ',
@@ -81,6 +68,10 @@ def output_scattering_information(scatter_stats):
     )
 
     if cf.include_holes:
+        scat_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
+                             np.sum(scatter_stats.hole_specular)) / total
+        scat_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
+        scat_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
         info2 = (
                 f'\n{scat_on_holes:.2f}% - scattering on hole walls ',
                 f'({scat_on_holes_diff:.2f}% - diffuse, ',
@@ -88,6 +79,10 @@ def output_scattering_information(scatter_stats):
         )
 
     if cf.include_pillars:
+        scat_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
+                            np.sum(scatter_stats.pillar_specular)) / total
+        scat_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
+        scat_on_pill_spec = 100*np.sum(scatter_stats.pillar_specular) / total_pill
         info3 = (
                 f'\n{scat_on_pill:.2f}% - scattering on pillar walls ',
                 f'({scat_on_pill_diff:.2f}% - diffuse, ',

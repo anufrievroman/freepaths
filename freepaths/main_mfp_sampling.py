@@ -40,12 +40,12 @@ def main(input_file):
 
     # For each polarization branch:
     for polarization in [Polarization.LA, Polarization.TA, Polarization.TA]:
-        sys.stdout.write(f"\rIntergating {polarization.name} branch.\n")
+        sys.stdout.write(f"\rIntegrating {polarization.name} branch.\n")
 
         # For each phonon:
         for index in range(cf.number_of_phonons):
 
-            # Wavevector:
+            # Wave vector:
             k_vector = (material.dispersion[index+1, 0] + material.dispersion[index, 0]) / 2
             d_k_vector = (material.dispersion[index+1, 0] - material.dispersion[index, 0])
 
@@ -72,7 +72,6 @@ def main(input_file):
             # Thermal conductivity, Ref. Phys. Rev. 132 2461 (1963):
             relax_time = flight.mean_free_path/phonon.speed
             thermal_conductivity += (1/(6*(math.pi**2)))*c_p*(phonon.speed**2)*relax_time*(k_vector**2)*d_k_vector
-
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()

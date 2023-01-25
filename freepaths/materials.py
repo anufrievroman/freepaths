@@ -10,7 +10,6 @@ class Material:
     def __init__(self, material, num_points=1000):
         self.name = material
 
-
         if self.name == Materials.Si:  # Ref. APL 95 161901 (2009)
             A1 = 1369.42
             B1 = -2.405e-8
@@ -27,7 +26,6 @@ class Material:
             self.dispersion[:, 2] = [abs(A2 * k + B2 * k**2 + C2 * k**3 + D2 * k**4) for k in self.dispersion[:, 0]] # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
 
-
         elif self.name == Materials.SiC:  # Ref. PRB 50 17054 (1994)
             A1 = 1737.36296
             B1 = 1.7604452e-08
@@ -43,7 +41,6 @@ class Material:
             self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
 
-
         elif self.name == Materials.Diamond:  # Ref. Carbon 91 266-274 (2015)
             A1 = 4309.95222
             B1 = -8.855338e-08
@@ -58,7 +55,6 @@ class Material:
             self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]  # LA branch
             self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
-
 
         elif self.name == Materials.AlN:  # Ref. PRB 58 12899 (1998)
             A1 = 946.677

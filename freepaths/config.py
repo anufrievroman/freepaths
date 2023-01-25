@@ -10,8 +10,8 @@ from freepaths.default_config import *
 
 
 # Parse user arguments:
-parser = argparse.ArgumentParser(prog = 'FreePATHS', description = 'Monte Carlo simulator',
-                epilog = 'For more information, visit: https://github.com/anufrievroman/freepaths')
+parser = argparse.ArgumentParser(prog='FreePATHS', description='Monte Carlo simulator',
+                                 epilog='For more information, visit: https://github.com/anufrievroman/freepaths')
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
 parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
 args = parser.parse_args()
@@ -95,7 +95,6 @@ class Config:
         self.pillar_height = PILLAR_HEIGHT
         self.pillar_wall_angle = PILLAR_WALL_ANGLE
 
-
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
         if self.hot_side_angle_distribution in ["random", "lambert", "directional"]:
@@ -113,11 +112,10 @@ class Config:
         else:
             print(f"ERROR: Parameter {self.cold_side_position} is not set correctly.\n")
 
-
     def check_validity(self):
-        """Check if some of the parameteres are valid"""
+        """Check if some parameteres are valid"""
         if self.number_of_phonons < self.output_trajectories_of_first:
-            print("ERROR: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exeeds NUMBER_OF_PHONONS!\n")
+            print("ERROR: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeds NUMBER_OF_PHONONS!\n")
 
 
 cf = Config()
