@@ -3,7 +3,6 @@
 from math import cos
 import numpy as np
 
-from parameters import *
 
 class Path:
     """Phonon path coordinates"""
@@ -44,12 +43,17 @@ class Flight:
         self.free_path = 0.0
         self.free_path_along_y = 0.0
 
+    @property
+    def mean_free_path(self):
+        """Mean value of all free flights"""
+        return sum(self.free_paths)/len(self.free_paths)
+
     def add_point_to_path(self):
         """Add a scattering point to the path"""
         self.path.add_point(self.phonon.x, self.phonon.y, self.phonon.z)
 
     def save_free_paths(self):
-        """Self current free path to the list of free paths"""
+        """Save current free path to the list of free paths"""
         self.free_paths.append(self.free_path)
         self.free_paths_along_y.append(self.free_path_along_y)
 
@@ -59,17 +63,16 @@ class Flight:
         self.free_path = 0.0
         self.free_path_along_y = 0.0
 
-    def finish(self, step):
+    def finish(self, step, timestep, detector_size):
         """Finish the flight and record final state"""
         self.exit_theta = self.phonon.theta
-        self.travel_time = step * TIMESTEP
-        if abs(self.phonon.x) < FREQUENCY_DETECTOR_SIZE / 2.0:
+        self.travel_time = step * timestep
+        if abs(self.phonon.x) < detector_size / 2.0:
             self.detected_frequency = self.phonon.f
 
-    def add_step(self):
+    def add_step(self, timestep):
         """Increase parameters of the flight by length of one step"""
-        step_length = self.phonon.speed * TIMESTEP
+        step_length = self.phonon.speed * timestep
         self.free_path += step_length
         self.free_path_along_y += step_length * abs(cos(self.phonon.phi)) * abs(cos(self.phonon.theta))
-        self.time_since_previous_scattering += TIMESTEP
-
+        self.time_since_previous_scattering += timestep

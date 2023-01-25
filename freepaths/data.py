@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from parameters import *
-from events import Scattering
+from freepaths.config import cf
+from freepaths.scattering_types import Scattering
 
 class PathData:
     """Paths of phonons in space"""
@@ -78,23 +78,23 @@ class ScatteringData:
 
     def __init__(self):
         """Initialize arrays according to the number of segments"""
-        self.wall_diffuse = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.wall_specular = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.top_diffuse = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.top_specular = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.hole_diffuse = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.hole_specular = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.pillar_diffuse = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.pillar_specular = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.hot_side = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.internal = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
-        self.total = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
+        self.wall_diffuse = np.zeros(cf.number_of_length_segments)
+        self.wall_specular = np.zeros(cf.number_of_length_segments)
+        self.top_diffuse = np.zeros(cf.number_of_length_segments)
+        self.top_specular = np.zeros(cf.number_of_length_segments)
+        self.hole_diffuse = np.zeros(cf.number_of_length_segments)
+        self.hole_specular = np.zeros(cf.number_of_length_segments)
+        self.pillar_diffuse = np.zeros(cf.number_of_length_segments)
+        self.pillar_specular = np.zeros(cf.number_of_length_segments)
+        self.hot_side = np.zeros(cf.number_of_length_segments)
+        self.internal = np.zeros(cf.number_of_length_segments)
+        self.total = np.zeros(cf.number_of_length_segments)
 
     def save_scattering_events(self, y, scattering_types):
         """Analyze types of scattering at the current timestep and add it to the statistics"""
 
         # Calculate in which length segment (starting from zero) we are:
-        segment = int(y // (LENGTH / NUMBER_OF_LENGTH_SEGMENTS))
+        segment = int(y // (cf.length / cf.number_of_length_segments))
         self.total[segment] += 1
 
         # Scattering on side walls:
@@ -133,22 +133,22 @@ class SegmentData:
 
     def __init__(self):
         """Initialize arrays according to the number of segments"""
-        self.time_spent = np.zeros(NUMBER_OF_LENGTH_SEGMENTS)
+        self.time_spent = np.zeros(cf.number_of_length_segments)
 
     @property
     def segment_coordinates(self):
         """Calculate coordinates of the centers of each segment"""
-        segment_length = LENGTH / NUMBER_OF_LENGTH_SEGMENTS
-        segments = [(segment_length/2 + i*segment_length) * 1e6 for i in range(NUMBER_OF_LENGTH_SEGMENTS)]
+        segment_length = cf.length / cf.number_of_length_segments
+        segments = [(segment_length/2 + i*segment_length) * 1e6 for i in range(cf.number_of_length_segments)]
         return segments
 
     def record_time_in_segment(self, coordinate):
         """Record how long phonon stays in different segments"""
-        for segment_number in range(NUMBER_OF_LENGTH_SEGMENTS):
-            segment_beginning = segment_number * (LENGTH / NUMBER_OF_LENGTH_SEGMENTS)
-            segment_end = (segment_number + 1)*(LENGTH / NUMBER_OF_LENGTH_SEGMENTS)
+        for segment_number in range(cf.number_of_length_segments):
+            segment_beginning = segment_number * (cf.length / cf.number_of_length_segments)
+            segment_end = (segment_number + 1)*(cf.length / cf.number_of_length_segments)
             if segment_beginning <= coordinate < segment_end:
-                self.time_spent[segment_number] += TIMESTEP * 1e6
+                self.time_spent[segment_number] += cf.timestep * 1e6
 
     def write_into_files(self):
         """Write data into files"""

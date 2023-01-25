@@ -6,20 +6,32 @@ This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nan
 
 ## Installation
 
-- Install python 3. On Linux and MacOS it is probably already installed. On Windows, you may choose to install [Anaconda](https://www.anaconda.com).
-- Install `numpy matplotlib scipy` libraries. On linux and MacOS `pip install numpy matplotlib scipy`, on Windows it is already installed with [Anaconda](https://www.anaconda.com).
-- Download this repository. Unzip it. You only need the `freepaths` folder.
+Program requires python 3. On Linux and MacOS it is probably already installed. On Windows, you may choose to install [Anaconda](https://www.anaconda.com).
+
+Install from PyPi repository with:
+
+`pip install --upgrade freepaths`
+
 
 ## Usage
 
-- Adjust parameters in `parameters.py` file.
-- See `Examples` folder for typical structures and how you may build arrays of holes.
-- Start the simulation by running `main.py` file. On Linux and MacOS `python main.py`. On Windows, open Spider that was installed with [Anaconda](https://www.anaconda.com), open `main.py` and run it.
-- See the results in a newly created `Results` folder.
+Run the program as:
+
+`freepaths your_input_file.py`
+
+In the `examples` folder, you will find example input files. Try using one of them, for example:
+
+`freepaths simple_nanowire.py`
+
+If you wish to run it in the mean free path sampling mode to calculate the thermal conductivity, add `-s` flag:
+
+`freepaths -s simple_nanowire.py`
+
+However, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation. After the simulation, see the results in a newly created `Results` folder.
 
 ## Disclaimer
 
-The code is provided as is. Note that it likely contains bugs or might be inappropriate for your use case. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more details on the code.
+The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more details on the code.
 
 ## References
 

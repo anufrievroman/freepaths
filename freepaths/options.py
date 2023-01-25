@@ -3,20 +3,12 @@
 import enum
 
 
-class Shapes(enum.Enum):
-    """Possible shapes of holes"""
-    CIRCLE = 1
-    RECTANGLE = 2
-    TRIANGLE_UP = 3
-    TRIANGLE_DOWN = 4
-
-
 class Materials(enum.Enum):
     """Possible materials"""
-    SILICON = 1
-    SILICON_CARBIDE = 2
-    DIAMOND = 3
-    ALUMINIUM_NITRIDE = 4
+    Si = 1
+    SiC = 2
+    Diamond = 3
+    AlN = 4
 
 
 class Distributions(enum.Enum):

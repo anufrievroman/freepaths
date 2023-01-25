@@ -1,9 +1,9 @@
 """Module that runs one phonon through the structure"""
 
 
-from parameters import *
-from scattering import *
-from events import ScatteringTypes
+from freepaths.config import cf
+from freepaths.scattering import *
+from freepaths.scattering_types import ScatteringTypes
 
 
 def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatter_maps, material):
@@ -12,11 +12,11 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
     scattering_types = ScatteringTypes()
 
     # Run the phonon step-by-step:
-    for step_number in range(NUMBER_OF_TIMESTEPS):
+    for step_number in range(cf.number_of_timesteps):
         if phonon.is_in_system:
 
             # Check if different scattering events happened during current time step:
-            if INCLUDE_INTERNAL_SCATTERING:
+            if cf.include_internal_scattering:
                 internal_scattering(phonon, flight, scattering_types)
             surface_scattering(phonon, scattering_types)
             reinitialization(phonon, scattering_types)
@@ -25,7 +25,7 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
             if scattering_types.is_scattered:
                 flight.add_point_to_path()
                 scatter_stats.save_scattering_events(phonon.y, scattering_types)
-                if OUTPUT_SCATTERING_MAP:
+                if cf.output_scattering_map:
                     scatter_maps.add_scattering_to_map(phonon, scattering_types)
 
             # If diffuse scattering has occurred, reset phonon free path:
@@ -34,7 +34,7 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
                 flight.restart()
                 phonon.assign_internal_scattering_time(material)
             else:
-                flight.add_step()
+                flight.add_step(cf.timestep)
 
             # Record presence of the phonon at this timestep and move on:
             thermal_maps.add_energy_to_maps(phonon, step_number, material)
@@ -45,6 +45,6 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
         # If the phonon reached cold side, record it and break the loop:
         else:
             flight.add_point_to_path()
-            flight.finish(step_number)
+            flight.save_free_paths()
+            flight.finish(step_number, cf.timestep, cf.frequency_detector_size)
             break
-

@@ -4,9 +4,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-from parameters import *
+from freepaths.config import cf
+import matplotlib.pyplot as plt
 
-plt.style.use('plotstyle.mplstyle')
+# Style of the plots:
+plt.rcParams['font.family'] = "Arial"
+plt.rcParams['axes.titlesize'] = 12
+plt.rcParams['axes.labelsize'] = 12
+plt.rcParams['lines.linewidth'] = 1.0
+plt.rcParams['xtick.direction'] = "in"
+plt.rcParams['ytick.direction'] = "in"
+plt.rcParams['xtick.minor.visible'] = False
+plt.rcParams['ytick.minor.visible'] = False
+plt.rcParams['legend.frameon'] = False
+plt.rcParams['figure.autolayout'] = True
+plt.rcParams['figure.figsize'] = [5, 3.5]
+plt.rcParams['figure.dpi'] = 200
+plt.rcParams['savefig.dpi'] = 200
+plt.rcParams['legend.fontsize'] = 8
 
 
 def distribution_calculation(filename, data_range, number_of_nodes):
@@ -53,72 +68,72 @@ def plot_angle_distribution():
     ax.plot(angle_distributions[:, 0], angle_distributions[:, 2], 'r')
     ax.set_xlabel('Angle (degree)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
+    ax.legend(["At hot side", "At cold side"])
     fig.savefig("Distribution of angles.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
 
 
 def plot_free_path_distribution():
     """Plot distribution of free path"""
     filename = "Data/All free paths.csv"
-    free_path_distribution = distribution_calculation(filename, None, NUMBER_OF_NODES)
+    free_path_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1])
     ax.set_xlabel('Free flights (μm)', fontsize=12)
     ax.set_ylabel('Number of flights', fontsize=12)
     # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
     fig.savefig("Distribution of free paths.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of free paths.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
 def plot_frequency_distribution():
     """Plot distribution of frequencies"""
     filename = "Data/All initial frequencies.csv"
-    frequency_distribution = distribution_calculation(filename, None, NUMBER_OF_NODES)
+    frequency_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(frequency_distribution[:, 0], frequency_distribution[:, 1])
     ax.set_xlabel('Frequency (Hz)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of initial frequencies.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of initial frequencies.csv', frequency_distribution, fmt='%1.3e', delimiter=",")
 
 
 def plot_wavelength_distribution():
     """Plot distribution of wavelength"""
-    wavelength_distribution = wavelength_distribution_calculation(NUMBER_OF_NODES)
+    wavelength_distribution = wavelength_distribution_calculation(cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(wavelength_distribution[:, 0] * 1e9, wavelength_distribution[:, 1])
     ax.set_xlabel('Wavelength (nm)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of wavelengths.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of wavelengths.csv', wavelength_distribution, fmt='%1.3e', delimiter=",")
 
 
 def plot_travel_time_distribution():
     """Plot distribution of wavelength"""
-    travel_time_distribution = distribution_calculation("Data/All travel times.csv", None, NUMBER_OF_NODES)
+    travel_time_distribution = distribution_calculation("Data/All travel times.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(travel_time_distribution[:, 0] * 1e9, travel_time_distribution[:, 1])
     ax.set_xlabel('Travel time (ns)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of travel times.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
 
 
 def plot_detected_frequency_distribution():
     """Plot distribution of detected frequencies"""
-    detected_frequency_distribution = distribution_calculation("Data/All detected frequencies.csv", None,
-                                                               NUMBER_OF_NODES)
+    detected_frequency_distribution = distribution_calculation("Data/All detected frequencies.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(detected_frequency_distribution[:, 0], detected_frequency_distribution[:, 1])
     ax.set_xlabel('Frequency (Hz)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of detected frequencies.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of detected frequencies.csv', detected_frequency_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -131,7 +146,7 @@ def plot_velocity_distribution():
     ax.set_xlabel('Frequency (Hz)', fontsize=12)
     ax.set_ylabel('Group velocity (m/s)', fontsize=12)
     fig.savefig('Group velocities.pdf', dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_time_in_segments():
@@ -142,7 +157,7 @@ def plot_time_in_segments():
     ax.set_xlabel('Y (μm)', fontsize=12)
     ax.set_ylabel('Time spent (ns)', fontsize=12)
     fig.savefig("Time spent in segments.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_thermal_conductivity():
@@ -153,7 +168,7 @@ def plot_thermal_conductivity():
     ax.set_ylabel('Thermal conductivity (W/mK)', fontsize=12)
     ax.set_xlabel('Time (ns)', fontsize=12)
     fig.savefig("Thermal conductivity.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_temperature_profile():
@@ -165,7 +180,7 @@ def plot_temperature_profile():
     ax.set_xlabel('Y (μm)', fontsize=12)
     ax.set_ylabel('Temperature (K)', fontsize=12)
     fig.savefig("Temperature profile.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_heat_flux_profile():
@@ -173,11 +188,11 @@ def plot_heat_flux_profile():
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1)
     for timeframe in range(len(data) - 1):
-        ax.plot(data[0], data[timeframe + 1], linewidth=1)
+        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
     ax.set_xlabel('Y (μm)', fontsize=12)
     ax.set_ylabel('Heat flux (W/m^2)', fontsize=12)
     fig.savefig("Heat flux profile.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_thermal_map():
@@ -186,7 +201,7 @@ def plot_thermal_map():
     thermal_map = np.genfromtxt("Data/Thermal map.csv", unpack=False, delimiter=',', skip_header=0)
     thermal_map = np.flipud(thermal_map)
     minimum_of_colorbar = 1e-20  # Cannot be zero!
-    boundaries = [(-WIDTH / 2) * 1e6, (WIDTH / 2) * 1e6, 0, LENGTH * 1e6]
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(thermal_map)))
     plt.xlabel('X (μm)', fontsize=12)
@@ -194,7 +209,7 @@ def plot_thermal_map():
     cbar = plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_scattering_map():
@@ -210,7 +225,7 @@ def plot_scattering_map():
     ax.legend(["Diffuse", "Specular", "Internal"])
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Scattering map.pdf", bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_trajectories():
@@ -220,7 +235,7 @@ def plot_trajectories():
 
     # Create XY plot:
     fig, ax = plt.subplots()
-    for index in range(OUTPUT_TRAJECTORIES_OF_FIRST):
+    for index in range(cf.output_trajectories_of_first):
         x_coordinates = np.trim_zeros(data[:, 3 * index], trim='b')
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
         ax.plot(x_coordinates, y_coordinates, linewidth=0.2)
@@ -228,11 +243,11 @@ def plot_trajectories():
     ax.set_ylabel('Y (μm)', fontsize=12)
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Phonon paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
     # Create YZ plot:
     fig, ax = plt.subplots()
-    for index in range(OUTPUT_TRAJECTORIES_OF_FIRST):
+    for index in range(cf.output_trajectories_of_first):
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
         z_coordinates = np.trim_zeros(data[:, 3 * index + 2], trim='b')
         ax.plot(y_coordinates, z_coordinates, linewidth=0.2)
@@ -240,7 +255,7 @@ def plot_trajectories():
     ax.set_ylabel('Z (μm)', fontsize=12)
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Phonon paths YZ.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
 
 def plot_scattering_statistics():
@@ -268,7 +283,7 @@ def plot_scattering_statistics():
     plt.yscale('log')
     ax.set_ylim(bottom=1.0)
     fig.savefig("Scattering rates.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if PLOTS_IN_TERMINAL: plt.show()
+    if cf.plots_in_terminal: plt.show()
 
     # Save the file:
     filename = "Data/Scattering rates.csv"
@@ -296,5 +311,5 @@ def plot_data():
     plot_thermal_map()
     plot_trajectories()
     plot_scattering_statistics()
-    if OUTPUT_SCATTERING_MAP:
+    if cf.output_scattering_map:
         plot_scattering_map()

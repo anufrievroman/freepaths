@@ -3,13 +3,13 @@
 import time
 import numpy as np
 
-from parameters import *
+from freepaths.config import cf
 
 
 def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     exit_angles = np.loadtxt("Data/All exit angles.csv")
-    percentage = int(100 * np.count_nonzero(exit_angles) / NUMBER_OF_PHONONS)
+    percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
     print(f'\r{percentage}% of phonons reached the cold side.')
     print(f'The simulation took about {int((time.time() - start_time)//60)} min. to run.')
 
@@ -17,17 +17,17 @@ def output_general_information(start_time):
         info = (
                 f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
                 f'\nIt took about {int((time.time()-start_time)//60)} min to run.\n',
-                f'\nNumber of phonons = {NUMBER_OF_PHONONS}',
-                f'\nNumber of timesteps = {NUMBER_OF_TIMESTEPS}',
-                f'\nLength of a timestep = {TIMESTEP} s',
-                f'\nTemperature = {T} K\n',
-                f'\nLength = {LENGTH * 1e9:.1f} nm',
-                f'\nWidth = {WIDTH * 1e9:.1f} nm',
-                f'\nThickness = {THICKNESS * 1e9:.1f} nm\n',
-                f'\nSide wall roughness = {SIDE_WALL_ROUGHNESS * 1e9:.1f} nm',
-                f'\nHole roughness = {HOLE_ROUGHNESS * 1e9:.1f} nm',
-                f'\nTop roughness = {TOP_ROUGHNESS * 1e9:.1f} nm',
-                f'\nBottom roughness = {BOTTOM_ROUGHNESS * 1e9:.1f} nm\n',
+                f'\nNumber of phonons = {cf.number_of_phonons}',
+                f'\nNumber of timesteps = {cf.number_of_timesteps}',
+                f'\nLength of a timestep = {cf.timestep} s',
+                f'\nTemperature = {cf.temp} K\n',
+                f'\nLength = {cf.length * 1e9:.1f} nm',
+                f'\nWidth = {cf.width * 1e9:.1f} nm',
+                f'\nThickness = {cf.thickness * 1e9:.1f} nm\n',
+                f'\nSide wall roughness = {cf.side_wall_roughness * 1e9:.1f} nm',
+                f'\nHole roughness = {cf.hole_roughness * 1e9:.1f} nm',
+                f'\nTop roughness = {cf.top_roughness * 1e9:.1f} nm',
+                f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm\n',
                 f'\n{percentage:.0f}% of phonons reached the cold side\n'
         )
         f.writelines(info)
@@ -53,13 +53,13 @@ def output_scattering_information(scatter_stats):
     scat_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
     scat_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
 
-    if INCLUDE_HOLES:
+    if cf.include_holes:
         scat_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
                              np.sum(scatter_stats.hole_specular)) / total
         scat_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
         scat_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
 
-    if INCLUDE_PILLARS:
+    if cf.include_pillars:
         scat_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
                             np.sum(scatter_stats.pillar_specular)) / total
         scat_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
@@ -80,14 +80,14 @@ def output_scattering_information(scatter_stats):
             f'\n{internal:.2f}% - internal scattering processes',
     )
 
-    if INCLUDE_HOLES:
+    if cf.include_holes:
         info2 = (
                 f'\n{scat_on_holes:.2f}% - scattering on hole walls ',
                 f'({scat_on_holes_diff:.2f}% - diffuse, ',
                 f'{scat_on_holes_spec:.2f}% - specular)',
         )
 
-    if INCLUDE_PILLARS:
+    if cf.include_pillars:
         info3 = (
                 f'\n{scat_on_pill:.2f}% - scattering on pillar walls ',
                 f'({scat_on_pill_diff:.2f}% - diffuse, ',
@@ -97,7 +97,7 @@ def output_scattering_information(scatter_stats):
     # Write info into a text file:
     with open("Information.txt", "a") as f:
         f.writelines(info1)
-        if INCLUDE_HOLES:
+        if cf.include_holes:
             f.writelines(info2)
-        if INCLUDE_PILLARS:
+        if cf.include_pillars:
             f.writelines(info3)

@@ -5,7 +5,7 @@ from math import cos
 from scipy.constants import hbar, pi
 import numpy as np
 
-from parameters import *
+from freepaths.config import cf
 
 
 class ScatteringMap:
@@ -68,73 +68,74 @@ class ThermalMaps:
 
     def __init__(self):
         """Initialize arrays of thermal maps"""
-        self.thermal_map = np.zeros((NUMBER_OF_PIXELS_Y, NUMBER_OF_PIXELS_X))
-        self.heat_flux_profile_x = np.zeros((NUMBER_OF_PIXELS_X, NUMBER_OF_TIMEFRAMES))
-        self.heat_flux_profile_y = np.zeros((NUMBER_OF_PIXELS_Y, NUMBER_OF_TIMEFRAMES))
-        self.temperature_profile_x = np.zeros((NUMBER_OF_PIXELS_X, NUMBER_OF_TIMEFRAMES))
-        self.temperature_profile_y = np.zeros((NUMBER_OF_PIXELS_Y, NUMBER_OF_TIMEFRAMES))
-        self.thermal_conductivity = np.zeros((NUMBER_OF_TIMEFRAMES, 2))
+        self.thermal_map = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.heat_flux_profile_x = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
+        self.heat_flux_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
+        self.temperature_profile_x = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
+        self.temperature_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
+        self.thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
 
     def add_energy_to_maps(self, ph, timestep_number, material):
         """This function registers the phonon in the pixel corresponding to its current position
         and at certain timesteps and adds it to thermal maps and thermal profiles"""
 
         # Calculate the index of the pixel in which this phonon is now:
-        index_x = int(((ph.x + WIDTH / 2) * NUMBER_OF_PIXELS_X) // WIDTH)
+        index_x = int(((ph.x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
         # index_y = int((ph.y*number_of_pixels_y) // length)
-        index_y = int(ph.y // (LENGTH / NUMBER_OF_PIXELS_Y))
+        index_y = int(ph.y // (cf.length / cf.number_of_pixels_y))
 
         # Calculate the volume of this pixel:
-        vol_cell = LENGTH * THICKNESS * WIDTH
-        vol_cell_x = vol_cell / NUMBER_OF_PIXELS_X
-        vol_cell_y = vol_cell / NUMBER_OF_PIXELS_Y
+        vol_cell = cf.length * cf.thickness * cf.width
+        vol_cell_x = vol_cell / cf.number_of_pixels_x
+        vol_cell_y = vol_cell / cf.number_of_pixels_y
 
         # Here we arbitrarily correct the volume of the unit cells in pillars:
-        if INCLUDE_PILLARS == 'yes':
-            vol_cell_x += 2.5 * 0.3333 * PILLAR_HEIGHT * (CIRCULAR_HOLE_DIAMETER / 2) ** 2
-            vol_cell_y += 2.5 * 0.3333 * PILLAR_HEIGHT * (CIRCULAR_HOLE_DIAMETER / 2) ** 2
+        if cf.include_pillars == 'yes':
+            vol_cell_x += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
+            vol_cell_y += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
 
         # Prevent error if the phonon is outside the structure:
-        if (0 <= index_x < NUMBER_OF_PIXELS_X) and (0 <= index_y < NUMBER_OF_PIXELS_Y):
+        if (0 <= index_x < cf.number_of_pixels_x) and (0 <= index_y < cf.number_of_pixels_y):
 
             # Record energy h*w of this phonon into the pixel of thermal map:
             energy = hbar * 2 * pi * ph.f
             self.thermal_map[index_y, index_x] += energy
 
             # Record energy of this phonon into flux and temperature profiles: (DOUBLE-CHECK THIS)
-            assigned_time = (timestep_number + random.randint(0, NUMBER_OF_TIMESTEPS)) * TIMESTEP * NUMBER_OF_TIMEFRAMES
-            total_time = NUMBER_OF_TIMESTEPS * TIMESTEP
+            random_timeframe = random.randint(0, cf.number_of_timesteps)
+            assigned_time = (timestep_number + random_timeframe) * cf.timestep * cf.number_of_timeframes
+            total_time = cf.number_of_timesteps * cf.timestep
             timeframe_number = int(assigned_time // total_time)
 
-            if timeframe_number < NUMBER_OF_TIMEFRAMES:
+            if timeframe_number < cf.number_of_timeframes:
                 self.heat_flux_profile_x[index_x, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / vol_cell_x
                 self.heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / vol_cell_y
-                self.temperature_profile_x[index_x, timeframe_number] += energy / (SPECIFIC_HEAT_CAPACITY * material.density) / vol_cell_x
-                self.temperature_profile_y[index_y, timeframe_number] += energy / (SPECIFIC_HEAT_CAPACITY * material.density) / vol_cell_y
+                self.temperature_profile_x[index_x, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / vol_cell_x
+                self.temperature_profile_y[index_y, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / vol_cell_y
 
     def calculate_thermal_conductivity(self):
         """Calculate the thermal conductivity for each time interval from heat flux
         and temperature profiles accumulated in that interval"""
 
         # Initialize array for thermal conductivity in each time interval
-        self.thermal_conductivity[:, 0] = range(NUMBER_OF_TIMEFRAMES)
-        total_time = NUMBER_OF_TIMESTEPS * TIMESTEP * 1e9
-        self.thermal_conductivity[:, 0] *= total_time / NUMBER_OF_TIMEFRAMES
+        self.thermal_conductivity[:, 0] = range(cf.number_of_timeframes)
+        total_time = cf.number_of_timesteps * cf.timestep * 1e9
+        self.thermal_conductivity[:, 0] *= total_time / cf.number_of_timeframes
 
         # For each time interval calculate the thermal conductivity:
-        for timeframe_number in range(NUMBER_OF_TIMEFRAMES):
+        for timeframe_number in range(cf.number_of_timeframes):
             # Here we ignore the first pixel, because there are anomalies usually...
             T_high = self.temperature_profile_y[1, timeframe_number]
-            T_low = self.temperature_profile_y[(NUMBER_OF_PIXELS_Y - 1), timeframe_number]
+            T_low = self.temperature_profile_y[(cf.number_of_pixels_y - 1), timeframe_number]
 
             # Temperature gradient:
             d_T = T_high - T_low
 
             # Average heat flux:
-            J = sum(self.heat_flux_profile_y[1:NUMBER_OF_PIXELS_Y, timeframe_number]) / (NUMBER_OF_PIXELS_Y - 1)
+            J = sum(self.heat_flux_profile_y[1:cf.number_of_pixels_y, timeframe_number]) / (cf.number_of_pixels_y - 1)
 
             # Here dL is shorter then aclual length because we ignore 1st pixel and lose one more due to averaging:
-            d_L = (NUMBER_OF_PIXELS_Y - 2) * LENGTH / NUMBER_OF_PIXELS_Y
+            d_L = (cf.number_of_pixels_y - 2) * cf.length / cf.number_of_pixels_y
 
             # By definition, J = -K*grad(T), so the thermal conductivity:
             self.thermal_conductivity[timeframe_number, 1] = J * d_L / d_T
@@ -142,14 +143,14 @@ class ThermalMaps:
     def write_into_files(self):
         """Write thermal map into file"""
 
-        if OUTPUT_RAW_THERMAL_MAP:
+        if cf.output_raw_thermal_map:
             np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",")
 
         # Create coordinate arrays [um]
         num_of_points_x = self.temperature_profile_x.shape[0]
         num_of_points_y = self.temperature_profile_y.shape[0]
-        coordinates_x = np.arange(num_of_points_x) * 1e6 * WIDTH / num_of_points_x
-        coordinates_y = np.arange(num_of_points_y) * 1e6 * LENGTH / num_of_points_y
+        coordinates_x = np.arange(num_of_points_x) * 1e6 * cf.width / num_of_points_x
+        coordinates_y = np.arange(num_of_points_y) * 1e6 * cf.length / num_of_points_y
 
         # Saving all the profiles in the files:
         data_temp_x = np.vstack((coordinates_x, self.temperature_profile_x.T)).T

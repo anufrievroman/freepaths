@@ -4,15 +4,14 @@ from math import pi, cos, sin, tan, exp, sqrt, atan, asin, acos
 from random import random
 from numpy import sign
 
-from move import move
-from events import Scattering
-from parameters import *
-from options import Shapes
+from freepaths.config import cf
+from freepaths.move import move
+from freepaths.scattering_types import Scattering
 
 
 def specularity(angle, roughness, wavelength):
     """Calculate probability of specular scattering with Soffer's equation"""
-    return exp(-16*(pi**2)*(roughness**2)*((cos(angle))**2)/(wavelength**2))
+    return exp(-16 * pi**2 * roughness**2 * ((cos(angle))**2) / wavelength**2)
 
 
 def internal_scattering(ph, flight, scattering_types):
@@ -26,7 +25,7 @@ def internal_scattering(ph, flight, scattering_types):
 
 def reinitialization(ph, scattering_types):
     """Rethermalize phonon if it comes back to the hot side"""
-    _, y, _ = move(ph)
+    _, y, _ = move(ph, cf.timestep)
 
     # If phonon returns to the staring line y = 0, generate it again:
     if y < 0:
@@ -40,11 +39,11 @@ def scattering_on_circular_holes(ph, x0, y0, R, scattering_types, x, y, z):
     # If phonon is inside the circle with radius R:
     if (x - x0)**2 + (y - y0)**2 <= R**2:
 
-        # Calculate specular scattering probability (Soffer's equation):
+        # Calculate angle to the surface and specular scattering probability:
         if y == y0: y += 1e-9 # Prevent division by zero
         tangent_theta = atan((x - x0)/(y - y0))
         a = acos(cos(ph.phi)*cos(ph.theta + sign(y - y0)*tangent_theta))  # Angle to the surface
-        p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+        p = specularity(a, cf.hole_roughness, ph.wavelength)
 
         # Specular scattering:
         if random() < p:
@@ -83,9 +82,9 @@ def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
         # Scattering on left and right walls of the hole:
         if abs(y1) <= Ly/2:
 
-            # Specular scattering probability (Soffer's equation):
+            # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi)*sin(abs(ph.theta)))  # Angle to the normal to the surface
-            p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -109,9 +108,9 @@ def scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
 
         # Scattering on top and bottom walls of the hole:
         else:
-            # Specular scattering probability (Soffer's equation):
-            a = acos(cos(ph.phi)*cos(ph.theta))     # Angle to the surface
-            p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+            # Calculate angle to the surface and specular scattering probability:
+            a = acos(cos(ph.phi)*cos(ph.theta))
+            p = specularity(a, cf.hole_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -147,16 +146,16 @@ def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types, x, y, z
     """Check if a phonon strikes a circular pillar and calculate new direction"""
 
     # Cone radius at a given z coordinate:
-    R = R_base - (z - THICKNESS / 2) / tan(PILLAR_WALL_ANGLE)
+    R = R_base - (z - cf.thickness / 2) / tan(cf.pillar_wall_angle)
 
     # If phonon crosses the pillar boundary. Third condition is to exclude all other pillars:
-    if ((x - x0)**2 + (y - y0)**2 >= R**2) and (z > THICKNESS / 2) \
-            and ((x - x0) ** 2 + (y - y0) ** 2 < (R + 2 * ph.speed * TIMESTEP) ** 2):
+    if ((x - x0)**2 + (y - y0)**2 >= R**2) and (z > cf.thickness / 2) \
+            and ((x - x0) ** 2 + (y - y0) ** 2 < (R + 2 * ph.speed * cf.timestep) ** 2):
 
-        # Calculate specular scattering probability (Soffer's equation):
+        # Calculate angle to the surface and specular scattering probability:
         tangent_theta = atan((x - x0)/(y - y0))
-        a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi - (pi / 2 - PILLAR_WALL_ANGLE)))  # Angle to the surface
-        p = specularity(a, PILLAR_ROUGHNESS, ph.wavelength)
+        a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi - (pi / 2 - cf.pillar_wall_angle)))  # Angle to the surface
+        p = specularity(a, cf.pillar_roughness, ph.wavelength)
 
         # Specular scattering:
         if random() < p:
@@ -165,23 +164,23 @@ def scattering_on_circular_pillars(ph, x0, y0, R_base, scattering_types, x, y, z
             if sqrt((abs(x) - abs(x0))**2 + (abs(y) - abs(y0))**2) >= sqrt((abs(ph.x) - abs(x0))**2 + (abs(ph.y) - abs(y0))**2) :
 
                 # If theta does not reflect back:
-                if ph.phi < pi/2 - 2*PILLAR_WALL_ANGLE:
-                    ph.phi = ph.phi - (pi / 2 - PILLAR_WALL_ANGLE)
+                if ph.phi < pi/2 - 2 * cf.pillar_wall_angle:
+                    ph.phi = ph.phi - (pi / 2 - cf.pillar_wall_angle)
 
                 # Regular reflection:
                 else:
                     ph.theta = - ph.theta - pi + 2*tangent_theta
-                    ph.phi = ph.phi - (pi / 2 - PILLAR_WALL_ANGLE)
+                    ph.phi = ph.phi - (pi / 2 - cf.pillar_wall_angle)
 
             # If phonon strikes the wall as it goes towards the center:
             else:
-                ph.phi = -sign(ph.phi) * ph.phi - 2 * PILLAR_WALL_ANGLE
+                ph.phi = -sign(ph.phi) * ph.phi - 2 * cf.pillar_wall_angle
             scattering_types.pillars = Scattering.SPECULAR
 
         # Diffuse scattering:
         else:
             ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
-            ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - PILLAR_WALL_ANGLE)
+            ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - cf.pillar_wall_angle)
             scattering_types.pillars = Scattering.DIFFUSE
 
 
@@ -195,11 +194,11 @@ def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y
     if (Ly/2 - (y - y0) <= (Lx/2 - abs(x - x0))/tan(beta)) and (abs(y - y0) < Ly/2):
 
         # Scattering on the bottom wall of the triangle:
-        if (y + TIMESTEP * ph.speed > y0 + Ly / 2) and (abs(ph.theta) > pi / 2):
+        if (y + cf.timestep * ph.speed > y0 + Ly / 2) and (abs(ph.theta) > pi / 2):
 
-            # Calculate specular scattering probability (Soffer's equation):
-            a = acos(cos(ph.phi)*cos(ph.theta)) # Angle to the surface
-            p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+            # Calculate angle to the surface and specular scattering probability:
+            a = acos(cos(ph.phi)*cos(ph.theta))
+            p = specularity(a, cf.hole_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -215,9 +214,9 @@ def scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y
 
         # Scattering on the sidewalls of the triangle:
         else:
-            # Calculate specular scattering probability (Soffer's equation):
-            a = acos(cos(ph.phi)*cos(ph.theta - sign(x - x0)*(pi/2 - beta)))  # Angle to the surface
-            p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+            # Calculate angle to the surface and specular scattering probability:
+            a = acos(cos(ph.phi)*cos(ph.theta - sign(x - x0)*(pi/2 - beta)))
+            p = specularity(a, cf.hole_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -243,11 +242,11 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
         #x1=Ly/2/tan(theta) - abs(y0-y)/tan(theta) + abs(x0-x)
 
         # Scattering on the bottom wall of the triangle:
-        if ((y - TIMESTEP * ph.speed) < (y0 - Ly / 2)) and (abs(ph.theta) < pi / 2):
+        if ((y - cf.timestep * ph.speed) < (y0 - Ly / 2)) and (abs(ph.theta) < pi / 2):
 
-            # Calculate specular scattering probability (Soffer's equation):
-            a = acos(cos(ph.phi)*cos(ph.theta)) # Angle to the surface
-            p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+            # Calculate angle to the surface and specular scattering probability:
+            a = acos(cos(ph.phi)*cos(ph.theta))
+            p = specularity(a, cf.hole_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -265,9 +264,9 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
         # Scattering on the sidewalls of the triangle:
         else:
 
-            # Calculate specular scattering probability (Soffer's equation):
-            a = acos(cos(ph.phi)*cos(ph.theta + sign(x - x0)*(pi/2 - beta)))  # Angle to the surface
-            p = specularity(a, HOLE_ROUGHNESS, ph.wavelength)
+            # Calculate angle to the surface and specular scattering probability:
+            a = acos(cos(ph.phi)*cos(ph.theta + sign(x - x0)*(pi/2 - beta)))
+            p = specularity(a, cf.hole_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -285,20 +284,20 @@ def scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, 
 def no_new_scattering(ph):
     """Check if new angles do not immediately lead to new top/bottom or sidewall scattering.
     This is necessary to prevent phonons leaving the structure boundaries."""
-    x, y, z = move(ph)
-    return True if (abs(z) < THICKNESS / 2 and abs(x) < WIDTH / 2 and y > 0) else False
+    x, y, z = move(ph, cf.timestep)
+    return True if (abs(z) < cf.thickness / 2 and abs(x) < cf.width / 2 and y > 0) else False
 
 
 def side_wall_scattering(ph, scattering_types):
     """Check if the phonon hits a side wall and output new vector"""
-    x, y, z = move(ph)
+    x, y, z = move(ph, cf.timestep)
 
     # If phonon is beyond the side wall:
-    if abs(x) > WIDTH/2:
+    if abs(x) > cf.width/2:
 
-        # Calculate specular scattering probability (Soffer's equation):
+        # Calculate angle to the surface and specular scattering probability:
         a = acos(cos(ph.phi)*sin(abs(ph.theta))) # Angle to the surface
-        p = specularity(a, SIDE_WALL_ROUGHNESS, ph.wavelength)
+        p = specularity(a, cf.side_wall_roughness, ph.wavelength)
 
         # Specular scattering:
         if random() < p:
@@ -327,14 +326,14 @@ def side_wall_scattering(ph, scattering_types):
 
 def top_scattering(ph, scattering_types):
     """Check if the phonon hits the top surface and output new vector"""
-    x, y, z = move(ph)
+    x, y, z = move(ph, cf.timestep)
 
     # If phonon is above the top surface, scattering happens:
-    if z > THICKNESS/2:
+    if z > cf.thickness/2:
 
-        # Calculate specular scattering probability (Soffer's equation):
+        # Calculate angle to the surface and specular scattering probability:
         a = pi/2 - abs(ph.phi)
-        p = specularity(a, BOTTOM_ROUGHNESS, ph.wavelength)
+        p = specularity(a, cf.bottom_roughness, ph.wavelength)
 
         # Specular scattering:
         if random() < p:
@@ -355,22 +354,22 @@ def top_scattering(ph, scattering_types):
 
 def top_scattering_with_pillars(ph, scattering_types):
     """Check if the phonon hits the top surface and if this place has a pillar and output new vector"""
-    x, y, z = move(ph)
+    x, y, z = move(ph, cf.timestep)
 
     # If phonon is below the bottom surface, scattering happens:
-    if z > THICKNESS/2:
-        distances_from_centers = [0]*PILLAR_COORDINATES.shape[0]
-        for i in range(PILLAR_COORDINATES.shape[0]):                            # For each pillar
-            x0 = PILLAR_COORDINATES[i,0]                                          # Coordinates of the pillar center
-            y0 = PILLAR_COORDINATES[i,1]
+    if z > cf.thickness / 2:
+        distances_from_centers = [0]*cf.pillar_coordinates.shape[0]
+        for i in range(cf.pillar_coordinates.shape[0]):
+            x0 = cf.pillar_coordinates[i,0]
+            y0 = cf.pillar_coordinates[i,1]
             distances_from_centers[i] = (x-x0)**2 + (y-y0)**2
 
         # Angle to the surface:
         a = pi / 2 - abs(ph.phi)
 
         # If it is not under the pillar:
-        if all((i > (CIRCULAR_HOLE_DIAMETER / 2) ** 2) for i in distances_from_centers):
-            p = specularity(a, BOTTOM_ROUGHNESS, ph.wavelength)
+        if all((i > (cf.circular_hole_diameter / 2) ** 2) for i in distances_from_centers):
+            p = specularity(a, cf.bottom_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -389,8 +388,8 @@ def top_scattering_with_pillars(ph, scattering_types):
                 scattering_types.top_bottom = Scattering.DIFFUSE
 
         # If it is the pillar top:
-        elif z > PILLAR_HEIGHT + THICKNESS/2 and any((i > (CIRCULAR_HOLE_DIAMETER / 2)**2) for i in distances_from_centers):
-            p = specularity(a, PILLAR_TOP_ROUGHNESS, ph.wavelength)
+        elif z > cf.pillar_height + cf.thickness/2 and any((i > (cf.circular_hole_diameter / 2)**2) for i in distances_from_centers):
+            p = specularity(a, cf.pillar_top_roughness, ph.wavelength)
 
             # Specular scattering:
             if random() < p:
@@ -411,14 +410,14 @@ def top_scattering_with_pillars(ph, scattering_types):
 
 def bottom_scattering(ph, scattering_types):
     """Check if the phonon hits the bottom surface and calculate new angles"""
-    x, y, z = move(ph)
+    x, y, z = move(ph, cf.timestep)
 
     # If phonon is below the top surface:
-    if z < -THICKNESS/2:
+    if z < -cf.thickness/2:
 
-        # Calculate specular scattering probability (Soffer's equation):
+        # Calculate angle to the surface and specular scattering probability:
         a = pi/2 - abs(ph.phi)
-        p = specularity(a, BOTTOM_ROUGHNESS, ph.wavelength)
+        p = specularity(a, cf.bottom_roughness, ph.wavelength)
 
         # Specular scattering:
         if random() < p:
@@ -441,7 +440,7 @@ def surface_scattering(ph, scattering_types):
     """This function checks if there will be a surface scattering on this timestep and returns a new direction"""
 
     # Scattering on top surface:
-    if INCLUDE_PILLARS:
+    if cf.include_pillars:
         top_scattering_with_pillars(ph, scattering_types)
     else:
         top_scattering(ph, scattering_types)
@@ -454,35 +453,35 @@ def surface_scattering(ph, scattering_types):
     side_wall_scattering(ph, scattering_types)
 
     # Scattering on holes:
-    if INCLUDE_HOLES:
+    if cf.include_holes:
         # Prelimenary move to see if phonon would cross something:
-        x, y, z = move(ph)
+        x, y, z = move(ph, cf.timestep)
 
         # Check for each hole:
-        for i in range(HOLE_COORDINATES.shape[0]):
+        for i in range(cf.hole_coordinates.shape[0]):
 
             # Coordinates of the hole center:
-            x0 = HOLE_COORDINATES[i, 0]
-            y0 = HOLE_COORDINATES[i, 1]
+            x0 = cf.hole_coordinates[i, 0]
+            y0 = cf.hole_coordinates[i, 1]
 
-            if HOLE_SHAPES[i] == Shapes.CIRCLE:
-                rad = CIRCULAR_HOLE_DIAMETER * (1 + HOLE_COORDINATES[i, 2]) / 2
+            if cf.hole_shapes[i] == "circle":
+                rad = cf.circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
                 scattering_on_circular_holes(ph, x0, y0, rad, scattering_types, x, y, z)
 
-            elif HOLE_SHAPES[i] == Shapes.RECTANGLE:
+            elif cf.hole_shapes[i] == "rectangle":
                 # Correction of the hole size if there are holes of non-standard size:
-                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
+                Lx = cf.rectangular_hole_side_x * (cf.hole_coordinates[i, 2] + 1)
+                Ly = cf.rectangular_hole_side_y * (cf.hole_coordinates[i, 2] + 1)
                 scattering_on_rectangular_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
-            elif HOLE_SHAPES[i] == Shapes.TRIANGLE_UP:
-                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
+            elif cf.hole_shapes[i] == "triangle_up":
+                Lx = cf.rectangular_hole_side_x * (cf.hole_coordinates[i, 2] + 1)
+                Ly = cf.rectangular_hole_side_y * (cf.hole_coordinates[i, 2] + 1)
                 scattering_on_triangle_up_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
-            elif HOLE_SHAPES[i] == Shapes.TRIANGLE_DOWN:
-                Lx = RECTANGULAR_HOLE_SIDE_X * (HOLE_COORDINATES[i, 2] + 1)
-                Ly = RECTANGULAR_HOLE_SIDE_Y * (HOLE_COORDINATES[i, 2] + 1)
+            elif cf.hole_shapes[i] == "triangle_down":
+                Lx = cf.rectangular_hole_side_x * (cf.hole_coordinates[i, 2] + 1)
+                Ly = cf.rectangular_hole_side_y * (cf.hole_coordinates[i, 2] + 1)
                 scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
 
 
@@ -491,17 +490,17 @@ def surface_scattering(ph, scattering_types):
                 break
 
     # Scattering on pillars:
-    if INCLUDE_PILLARS:
+    if cf.include_pillars:
 
         # Prelimenary move to see if phonon would cross something:
-        x, y, z = move(ph)
+        x, y, z = move(ph, cf.timestep)
 
-        for i in range(PILLAR_COORDINATES.shape[0]):
+        for i in range(cf.pillar_coordinates.shape[0]):
 
             # Coordinates and radius of the given pillar:
-            x0 = PILLAR_COORDINATES[i, 0]
-            y0 = PILLAR_COORDINATES[i, 1]
-            rad = CIRCULAR_HOLE_DIAMETER * (1 + PILLAR_COORDINATES[i,2]) / 2
+            x0 = cf.pillar_coordinates[i, 0]
+            y0 = cf.pillar_coordinates[i, 1]
+            rad = cf.circular_hole_diameter * (1 + cf.pillar_coordinates[i,2]) / 2
 
             scattering_on_circular_pillars(ph, x0, y0, rad, scattering_types, x, y, z)
 
