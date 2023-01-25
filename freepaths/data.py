@@ -30,7 +30,7 @@ class PathData:
                 data[point_n, 0 + index*3] = x*1e6
                 data[point_n, 1 + index*3] = y*1e6
                 data[point_n, 2 + index*3] = z*1e6
-        np.savetxt(filename, data, fmt='%2.4f', delimiter=",", header="X (μm), Y (μm), Z (μm)")
+        np.savetxt(filename, data, fmt='%2.4f', delimiter=",", header="X (μm), Y (μm), Z (μm)", encoding='utf-8')
 
 
 class GeneralData:
@@ -63,14 +63,14 @@ class GeneralData:
 
     def write_into_files(self):
         """Write all the data into files"""
-        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', delimiter=",", header="L [m]")
-        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', delimiter=",", header="Ly [m]")
-        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]")
-        np.savetxt("Data/All detected frequencies.csv", self.detected_frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]")
-        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]")
-        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]")
-        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]")
-        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', delimiter=",", header="Travel time [s]")
+        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', delimiter=",", header="L [m]", encoding='utf-8')
+        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', delimiter=",", header="Ly [m]", encoding='utf-8')
+        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]", encoding='utf-8')
+        np.savetxt("Data/All detected frequencies.csv", self.detected_frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]", encoding='utf-8')
+        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]", encoding='utf-8')
+        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', delimiter=",", header="Travel time [s]", encoding='utf-8')
 
 
 class ScatteringData:
@@ -125,7 +125,7 @@ class ScatteringData:
         header1 = "Sidewalls diffuse, Sidewalls specular, Top & bottom diffuse, Top & bottom specular, "
         header2 = "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular"
         header = header1 + header2
-        np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header)
+        np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
 
 
 class SegmentData:
@@ -154,4 +154,4 @@ class SegmentData:
         """Write data into files"""
         filename = "Data/Time spent in segments.csv"
         data = np.vstack((self.segment_coordinates, self.time_spent)).T
-        np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header="Y [um], Time [ns]")
+        np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header="Y [um], Time [ns]", encoding='utf-8')

@@ -26,7 +26,7 @@ plt.rcParams['legend.fontsize'] = 8
 
 def distribution_calculation(filename, data_range, number_of_nodes):
     """Calculate distribution of numbers (histogram) in a given file"""
-    data = np.loadtxt(filename)
+    data = np.loadtxt(filename, encoding='utf-8')
     if data_range is None:
         data_range = np.max(data)
     distribution = np.zeros((number_of_nodes, 2))
@@ -37,8 +37,8 @@ def distribution_calculation(filename, data_range, number_of_nodes):
 
 def angle_distribution_calculation():
     """Analyse measured phonon angles and create their distribution"""
-    all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float')
-    initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float')
+    all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
+    initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
     distribution = np.zeros((180, 3))
     distribution[:, 0] = range(-90, 90)
     exit_angles = all_exit_angles[all_exit_angles != 0]
@@ -49,8 +49,8 @@ def angle_distribution_calculation():
 
 def wavelength_distribution_calculation(number_of_nodes):
     """Calculate phonon wavelength distribution from their frequencies and velocities"""
-    frequencies = np.loadtxt("Data/All initial frequencies.csv")
-    speeds = np.loadtxt("Data/All group velocities.csv")
+    frequencies = np.loadtxt("Data/All initial frequencies.csv", encoding='utf-8')
+    speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
     wavelengths = np.zeros((len(speeds)))
     wavelengths[:] = speeds[:] / frequencies[:]
     data_range = np.amax(wavelengths)
@@ -174,7 +174,7 @@ def plot_thermal_conductivity():
 def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1)
+    data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     for timeframe in range(len(data) - 1):
         ax.plot(data[0], data[timeframe + 1], linewidth=1)
     ax.set_xlabel('Y (μm)', fontsize=12)
@@ -186,7 +186,7 @@ def plot_temperature_profile():
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
     fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1)
+    data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     for timeframe in range(len(data) - 1):
         ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
     ax.set_xlabel('Y (μm)', fontsize=12)
@@ -198,7 +198,7 @@ def plot_heat_flux_profile():
 def plot_thermal_map():
     """Plot thermal map as color map"""
     fig = plt.figure()
-    thermal_map = np.genfromtxt("Data/Thermal map.csv", unpack=False, delimiter=',', skip_header=0)
+    thermal_map = np.genfromtxt("Data/Thermal map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     thermal_map = np.flipud(thermal_map)
     minimum_of_colorbar = 1e-20  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
@@ -216,7 +216,7 @@ def plot_scattering_map():
     """Plot the map of scattering events"""
     fig, ax = plt.subplots()
     filename = "Data/Scattering map.csv"
-    spec_x, spec_y, diff_x, diff_y, int_x, int_y = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1)
+    spec_x, spec_y, diff_x, diff_y, int_x, int_y = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     ax.plot(diff_x[diff_x != 0], diff_y[diff_y != 0], 'o', color='b', markersize=0.1, alpha=0.3)
     ax.plot(spec_x[spec_x != 0], spec_y[spec_y != 0], 'o', color='g', markersize=0.1, alpha=0.3)
     ax.plot(int_x[int_x != 0], int_y[int_y != 0], 'o', color='r', markersize=0.1, alpha=0.3)
@@ -231,7 +231,7 @@ def plot_scattering_map():
 def plot_trajectories():
     """Plot the phonon trajectories"""
 
-    data = np.genfromtxt("Data/Phonon paths.csv", unpack=False, delimiter=',', skip_header=1)
+    data = np.genfromtxt("Data/Phonon paths.csv", unpack=False, delimiter=',', skip_header=1, encoding='utf-8')
 
     # Create XY plot:
     fig, ax = plt.subplots()
@@ -262,9 +262,9 @@ def plot_scattering_statistics():
     """Calculate and plot rates of different scattering events in each length segment"""
     # Load the data from files:
     filename = "Data/Scattering events statistics.csv"
-    scattering_data = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1)
+    scattering_data = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     filename = "Data/Time spent in segments.csv"
-    segments, time_spent = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1)
+    segments, time_spent = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
 
     # Create the plot:
     fig, ax = plt.subplots()

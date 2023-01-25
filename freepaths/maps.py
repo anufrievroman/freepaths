@@ -60,7 +60,7 @@ class ScatteringMap:
 
         # Save into file:
         header = "Specular X, Specular Y, Diffuse X, Diffuse Y, Internal X, Internal Y"
-        np.savetxt("Data/Scattering map.csv", data, fmt='%1.2e', delimiter=",", header=header)
+        np.savetxt("Data/Scattering map.csv", data, fmt='%1.2e', delimiter=",", header=header, encoding='utf-8')
 
 
 class ThermalMaps:
@@ -144,7 +144,7 @@ class ThermalMaps:
         """Write thermal map into file"""
 
         if cf.output_raw_thermal_map:
-            np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",")
+            np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
 
         # Create coordinate arrays [um]
         num_of_points_x = self.temperature_profile_x.shape[0]
@@ -158,8 +158,8 @@ class ThermalMaps:
         data_flux_x = np.vstack((coordinates_x, self.heat_flux_profile_x.T)).T
         data_flux_y = np.vstack((coordinates_y, self.heat_flux_profile_y.T)).T
         data_tc = self.thermal_conductivity
-        np.savetxt("Data/Temperature profiles x.csv", data_temp_x, fmt='%1.3e', delimiter=",", header="X (um), T (K)")
-        np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), T (K)")
-        np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)")
-        np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)")
-        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK)")
+        np.savetxt("Data/Temperature profiles x.csv", data_temp_x, fmt='%1.3e', delimiter=",", header="X (um), T (K)", encoding='utf-8')
+        np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), T (K)", encoding='utf-8')
+        np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
+        np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
+        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK)", encoding='utf-8')

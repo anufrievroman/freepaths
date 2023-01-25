@@ -13,7 +13,7 @@ def output_general_information(start_time):
     print(f'\r{percentage}% of phonons reached the cold side.')
     print(f'The simulation took about {int((time.time() - start_time)//60)} min. to run.')
 
-    with open("Information.txt", "w+") as f:
+    with open("Information.txt", "w+", encoding="utf-8") as file:
         info = (
                 f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
                 f'\nIt took about {int((time.time()-start_time)//60)} min to run.\n',
@@ -30,7 +30,7 @@ def output_general_information(start_time):
                 f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm\n',
                 f'\n{percentage:.0f}% of phonons reached the cold side\n'
         )
-        f.writelines(info)
+        file.writelines(info)
 
 
 def output_scattering_information(scatter_stats):
@@ -95,9 +95,9 @@ def output_scattering_information(scatter_stats):
         )
 
     # Write info into a text file:
-    with open("Information.txt", "a") as f:
-        f.writelines(info1)
+    with open("Information.txt", "a", encoding="utf-8") as file:
+        file.writelines(info1)
         if cf.include_holes:
-            f.writelines(info2)
+            file.writelines(info2)
         if cf.include_pillars:
-            f.writelines(info3)
+            file.writelines(info3)
