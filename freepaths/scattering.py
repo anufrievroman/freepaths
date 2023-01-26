@@ -33,6 +33,41 @@ def reinitialization(ph, scattering_types):
         scattering_types.hot_side = Scattering.DIFFUSE
 
 
+def top_parabola_scattering(ph, scattering_types):
+    """Scattering on top parabolic boundary"""
+    x, y, z = move(ph, cf.timestep)
+
+    # If phonon is beyond the parabola:
+    y_cept = -(cf.width/2)**2 / (4*cf.top_parabola_focus) + cf.top_parabola_tip
+    if y > y_cept and (x**2 + 4*cf.top_parabola_focus*(y - cf.top_parabola_tip)) >= 0:
+
+        # Calculate angle to the surface and specular scattering probability:
+        normal_theta =  pi * (x < 0) - atan(2*cf.top_parabola_focus/x)
+        dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
+        angle = acos(dot_product)
+        p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+
+        # Diffuse scattering:
+        if random() < p:
+            if abs(ph.theta) > pi/2:
+                ph.theta = ph.theta - 2*normal_theta
+            else :
+                ph.theta = 2*normal_theta - ph.theta
+            scattering_types.walls = Scattering.SPECULAR
+        else :
+            scattering_types.walls = Scattering.DIFFUSE
+            attempt = 0
+            while attempt < 10:
+                attempt += 1
+                # Lambertian distribution
+                ph.theta = normal_theta + asin(2*random() - 1) - pi/2
+                ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+                # Accept the angles only if they do not immediately cause new scattering:
+                if no_new_scattering(ph):
+                    break
+
+
 def scattering_on_circular_holes(ph, x0, y0, R, scattering_types, x, y, z):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
 
@@ -42,7 +77,7 @@ def scattering_on_circular_holes(ph, x0, y0, R, scattering_types, x, y, z):
         # Calculate angle to the surface and specular scattering probability:
         if y == y0: y += 1e-9 # Prevent division by zero
         tangent_theta = atan((x - x0)/(y - y0))
-        a = acos(cos(ph.phi)*cos(ph.theta + sign(y - y0)*tangent_theta))  # Angle to the surface
+        a = acos(cos(ph.phi)*cos(ph.theta + sign(y - y0)*tangent_theta))
         p = specularity(a, cf.hole_roughness, ph.wavelength)
 
         # Specular scattering:
@@ -451,6 +486,8 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on sidewalls:
     side_wall_scattering(ph, scattering_types)
+    if cf.include_top_parabola:
+        top_parabola_scattering(ph, scattering_types)
 
     # Scattering on holes:
     if cf.include_holes:

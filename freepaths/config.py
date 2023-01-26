@@ -77,6 +77,14 @@ class Config:
         self.bottom_roughness = BOTTOM_ROUGHNESS
         self.pillar_top_roughness = PILLAR_TOP_ROUGHNESS
 
+        # Parabolic boundary:
+        self.include_top_parabola = INCLUDE_TOP_PARABOLA
+        self.top_parabola_tip = TOP_PARABOLA_TIP
+        self.top_parabola_focus = TOP_PARABOLA_FOCUS
+        self.include_bottom_parabola = INCLUDE_BOTTOM_PARABOLA
+        self.bottom_parabola_tip = BOTTOM_PARABOLA_TIP
+        self.bottom_parabola_focus = BOTTOM_PARABOLA_FOCUS
+
         # Hole array parameters:
         self.include_holes = INCLUDE_HOLES
         self.circular_hole_diameter = CIRCULAR_HOLE_DIAMETER

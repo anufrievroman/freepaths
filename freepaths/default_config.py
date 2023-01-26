@@ -49,6 +49,14 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 PILLAR_TOP_ROUGHNESS           = 0.2e-9
 
+# Parabolic boundaries:
+INCLUDE_TOP_PARABOLA           = False
+TOP_PARABOLA_TIP               = 1000e-9
+TOP_PARABOLA_FOCUS             = 100e-9
+INCLUDE_BOTTOM_PARABOLA        = False
+BOTTOM_PARABOLA_TIP            = 1000e-9
+BOTTOM_PARABOLA_FOCUS          = 100e-9
+
 # Hole array parameters [m]:
 INCLUDE_HOLES                  = False
 CIRCULAR_HOLE_DIAMETER         = 200e-9
