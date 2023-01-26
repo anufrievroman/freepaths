@@ -58,22 +58,15 @@ The thermal conductivity will be output in the terminal. However, other statisti
 The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more details on the code.
 
 
-## References
+## References and acknowledgments
 
+The code has been developed by [Roman Anufriev](https://anufrievroman.com) in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo in 2018-2022. If you would like to use this code for your research, please cite the papers above, if it is appropriate.
 Details of the code and examples of the output can be found in the following papers:
 
 1. Anufriev et al. [Materials Today Physics 15, 100272 (2021)](https://www.sciencedirect.com/science/article/pii/S2542529320300961)
 2. Anufriev et al. [Nanoscale, 11, 13407-13414 (2019)](https://pubs.rsc.org/en/content/articlehtml/2019/nr/c9nr03863a)
 3. Anufriev et al. [ACS Nano 12, 11928 (2018)](https://pubs.acs.org/doi/abs/10.1021/acsnano.8b07597)
 4. Huang et al. [ACS Applied Materials & Interfaces 12, 25478 (2020)](https://pubs.acs.org/doi/10.1021/acsami.0c06030)
-
-
-## Credits
-
-The code has been developed by [Roman Anufriev](https://anufrievroman.com) in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo in 2018-2022. If you would like to use this code for your research, please cite the papers above, if it is appropriate.
-
-
-## Acknowledgments
 
 Development of this code was funded by the following grants:
 
