@@ -13,6 +13,7 @@ Install the package from PyPi repository by entering this command into a termina
 
 `pip install --upgrade freepaths`
 
+For more details about installation, see (this wiki page](https://github.com/anufrievroman/freepaths/wiki/Installation).
 
 ## Usage
 
@@ -49,9 +50,7 @@ The thermal conductivity will be output in the terminal. However, other statisti
 
 ## Troubleshooting
 
-- If during installation terminal says something like `pip is not found`, that means you need to install `pip` in your system.
-- If after installation the program does not run and the error says something like `freepaths is not a recognised command` or `freepaths is not found`, but the `freepaths` package was actually installed, try running everything with `python -m` prefix, for example: `python -m freepaths`. This error occurs when system can't find a path to installed packages, so you may need to restart the terminal or change PATH variable.
-- If installation fails, you can simply download this repository, start the terminal in its main directory (where license file is) and run the program as `python -m freepaths`. In this case, you'll always need to run the program from this folder and place your input files there.
+- [Troubles with installation](https://github.com/anufrievroman/freepaths/wiki/Installation)
 - Rarely, phonons may enter a hole in the structure or break out of structure boundaries. To reduce the impact of this bug, reduce the TIMESTEP parameter. However, this is usually happens once per many thousand collisions and has negligible impact on the final statistics.
 
 ## Disclaimer

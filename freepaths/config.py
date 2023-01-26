@@ -148,6 +148,10 @@ class Config:
             print("ERROR: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
             sys.exit()
 
+        if self.hot_side_y == 0 and self.hot_side_angle_distribution == Distributions.UNIFORM:
+            print("ERROR: Uniform angle distribution should not be used with HOT_SIDE_Y = 0.\n")
+            sys.exit()
+
 
 cf = Config()
 cf.convert_to_enums()
