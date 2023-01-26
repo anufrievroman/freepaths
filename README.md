@@ -29,13 +29,13 @@ Run the program as:
 
 `freepaths your_input_file.py`
 
-In the `examples` folder, you will find example input files. Try using one of them, for instance as:
+See [wiki page](https://github.com/anufrievroman/freepaths/wiki/Creating-input-files) for explanations about creating your own input files. In the [examples](https://github.com/anufrievroman/freepaths/tree/master/examples) folder, you will find examples of various input files. Try using one of them, for instance as:
 
 `freepaths simple_nanowire.py`
 
-However, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
+Also, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
 
-After the simulation, see the results in a newly created `Results` folder.
+After the simulation, see the results in a newly created **Results** folder.
 
 
 ### MFP sampling mode
@@ -52,7 +52,7 @@ The thermal conductivity will be output in the terminal. However, other statisti
 - If during installation terminal says something like `pip is not found`, that means you need to install `pip` in your system.
 - If after installation the program does not run and the error says something like `freepaths is not a recognised command` or `freepaths is not found`, but the `freepaths` package was actually installed, try running everything with `python -m` prefix, for example: `python -m freepaths`. This error occurs when system can't find a path to installed packages, so you may need to restart the terminal or change PATH variable.
 - If installation fails, you can simply download this repository, start the terminal in its main directory (where license file is) and run the program as `python -m freepaths`. In this case, you'll always need to run the program from this folder and place your input files there.
-- Rarely, phonons may enter a hole in the structure or break out of structure boundaries. To reduce the impact of this bug, reduce the TIMESTEP parameter. However, this is usually happens once per many thousand collisions and bares not impact on the final statistics.
+- Rarely, phonons may enter a hole in the structure or break out of structure boundaries. To reduce the impact of this bug, reduce the TIMESTEP parameter. However, this is usually happens once per many thousand collisions and has negligible impact on the final statistics.
 
 ## Disclaimer
 
@@ -66,10 +66,13 @@ Details of the code and examples of the output can be found in the following pap
 1. Anufriev et al. [Materials Today Physics 15, 100272 (2021)](https://www.sciencedirect.com/science/article/pii/S2542529320300961)
 2. Anufriev et al. [Nanoscale, 11, 13407-13414 (2019)](https://pubs.rsc.org/en/content/articlehtml/2019/nr/c9nr03863a)
 3. Anufriev et al. [ACS Nano 12, 11928 (2018)](https://pubs.acs.org/doi/abs/10.1021/acsnano.8b07597)
+4. Huang et al. [ACS Applied Materials & Interfaces 12, 25478 (2020)](https://pubs.acs.org/doi/10.1021/acsami.0c06030)
+
 
 ## Credits
 
 The code has been developed by [Roman Anufriev](https://anufrievroman.com) in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo in 2018-2022. If you would like to use this code for your research, please cite the papers above, if it is appropriate.
+
 
 ## Acknowledgments
 

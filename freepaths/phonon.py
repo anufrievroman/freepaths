@@ -56,7 +56,7 @@ class Phonon:
         Depending on where we set the cold side, we check if phonon crossed that line"""
         small_offset = 10e-9
         if cf.cold_side_position == Positions.TOP:
-            return cf.length > self.y > 0
+            return cf.length > self.y
         if cf.cold_side_position == Positions.RIGHT:
             return (self.y < cf.length - 1.1e-6) or (self.y > cf.length - 1.1e-6 and self.x < cf.width / 2.0 - small_offset)
         if cf.cold_side_position == Positions.TOP_AND_RIGHT:
@@ -71,8 +71,8 @@ class Phonon:
 
     def assign_coordinates(self):
         """Assign initial coordinates at the hot side"""
-        self.x = cf.hot_side_x + 0.49 * cf.hot_side_width * (2 * random() - 1)
-        self.y = 1e-12
+        self.x = cf.hot_side_x + 0.49 * cf.hot_side_width_x * (2 * random() - 1)
+        self.y = cf.hot_side_y + 0.49 * cf.hot_side_width_y * (2 * random() - 1)
         self.z = 0.49 * cf.thickness * (2 * random() - 1)
 
     def assign_angles(self):
@@ -86,6 +86,9 @@ class Phonon:
         if cf.hot_side_angle_distribution == Distributions.LAMBERT:
             self.theta = asin(2*random() - 1)
             self.phi = asin((asin(2*random() - 1))/(pi/2))
+        if cf.hot_side_angle_distribution == Distributions.UNIFORM:
+            self.theta = -pi + 2*pi*random()
+            self.phi = asin(2*random() - 1)
 
     def assign_frequency(self, material):
         """Assigning frequency with probability according to Planckian distribution"""

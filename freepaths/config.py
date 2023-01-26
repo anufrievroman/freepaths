@@ -10,8 +10,9 @@ from freepaths.default_config import *
 
 
 # Parse user arguments:
+WEBSITE = 'https://github.com/anufrievroman/freepaths'
 parser = argparse.ArgumentParser(prog='FreePATHS', description='Monte Carlo simulator',
-                                 epilog='For more information, visit: https://github.com/anufrievroman/freepaths')
+                                 epilog=f'For more information, visit: {WEBSITE}')
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
 parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
 args = parser.parse_args()
@@ -67,7 +68,9 @@ class Config:
         self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
         self.cold_side_position = COLD_SIDE_POSITION
         self.hot_side_x = HOT_SIDE_X
-        self.hot_side_width = HOT_SIDE_WIDTH
+        self.hot_side_y = HOT_SIDE_Y
+        self.hot_side_width_x = HOT_SIDE_WIDTH_X
+        self.hot_side_width_y = HOT_SIDE_WIDTH_Y
 
         # Roughness:
         self.side_wall_roughness = SIDE_WALL_ROUGHNESS
@@ -105,27 +108,47 @@ class Config:
 
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
-        if self.hot_side_angle_distribution in ["random", "lambert", "directional"]:
+        if self.hot_side_angle_distribution in ["random", "lambert", "directional", "uniform"]:
             self.hot_side_angle_distribution = Distributions[self.hot_side_angle_distribution.upper()]
         else:
-            print(f"ERROR: Parameter {self.hot_side_angle_distribution} is not set correctly.\n")
+            print("ERROR: Parameter HOT_SIDE_ANGLE_DISTRIBUTION is not set correctly.\n")
+            sys.exit()
 
         if self.media in ["Si", "SiC", "Diamond", "AlN"]:
             self.media = Materials[self.media]
         else:
             print(f"ERROR: Material {self.media} is not in the database.\n")
+            sys.exit()
 
         if self.cold_side_position in ["top", "top_and_right", "top_and_bottom", "right"]:
             self.cold_side_position = Positions[self.cold_side_position.upper()]
         else:
-            print(f"ERROR: Parameter {self.cold_side_position} is not set correctly.\n")
+            print("ERROR: Parameter COLD_SIDE_POSITION is not set correctly.\n")
+            sys.exit()
 
-    def check_validity(self):
+    def check_parameter_validity(self):
         """Check if some parameteres are valid"""
         if self.number_of_phonons < self.output_trajectories_of_first:
-            print("ERROR: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeds NUMBER_OF_PHONONS!\n")
+            print("ERROR: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeds NUMBER_OF_PHONONS.\n")
+            sys.exit()
+
+        if self.hot_side_y > self.length:
+            print("ERROR: Parameter HOT_SIDE_Y exceeds LENGHT.\n")
+            sys.exit()
+
+        if self.hot_side_y < 0:
+            print("ERROR: Parameter HOT_SIDE_Y is negative.\n")
+            sys.exit()
+
+        if self.hot_side_y - self.hot_side_width_y / 2 < 0:
+            print("ERROR: Parameter HOT_SIDE_WIDTH_Y is too large.\n")
+            sys.exit()
+
+        if self.hot_side_width_x > self.width:
+            print("ERROR: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
+            sys.exit()
 
 
 cf = Config()
 cf.convert_to_enums()
-cf.check_validity()
+cf.check_parameter_validity()

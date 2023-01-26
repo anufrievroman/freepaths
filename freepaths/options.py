@@ -16,6 +16,7 @@ class Distributions(enum.Enum):
     RANDOM = 1
     LAMBERT = 2
     DIRECTIONAL = 3
+    UNIFORM = 4
 
 
 class Positions(enum.Enum):

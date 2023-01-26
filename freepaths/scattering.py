@@ -47,18 +47,59 @@ def top_parabola_scattering(ph, scattering_types):
         angle = acos(dot_product)
         p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
 
-        # Diffuse scattering:
+        # Specular scattering:
         if random() < p:
             if abs(ph.theta) > pi/2:
                 ph.theta = ph.theta - 2*normal_theta
             else :
                 ph.theta = 2*normal_theta - ph.theta
             scattering_types.walls = Scattering.SPECULAR
+
+        # Diffuse scattering:
         else :
             scattering_types.walls = Scattering.DIFFUSE
             attempt = 0
             while attempt < 10:
                 attempt += 1
+
+                # Lambertian distribution
+                ph.theta = normal_theta + asin(2*random() - 1) - pi/2
+                ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+                # Accept the angles only if they do not immediately cause new scattering:
+                if no_new_scattering(ph):
+                    break
+
+
+def bottom_parabola_scattering(ph, scattering_types):
+    """Scattering on bottom parabolic boundary"""
+    x, y, z = move(ph, cf.timestep)
+
+    # If phonon is below the parabola:
+    y_cept = (cf.width/2)**2 / (4*cf.bottom_parabola_focus + cf.bottom_parabola_tip)
+    if y < y_cept and (x**2 - 4*cf.bottom_parabola_focus*(y - cf.bottom_parabola_tip)) >= 0:
+
+        # Calculate angle to the surface and specular scattering probability:
+        normal_theta =  pi * (x < 0) - atan(-2*cf.bottom_parabola_focus/x)
+        dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
+        angle = acos(dot_product)
+        p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+
+        # Specular scattering:
+        if random() < p:
+            if abs(ph.theta) > pi/2:
+                ph.theta = ph.theta - 2*normal_theta
+            else :
+                ph.theta = 2*normal_theta - ph.theta
+            scattering_types.walls = Scattering.SPECULAR
+
+        # Diffuse scattering:
+        else :
+            scattering_types.walls = Scattering.DIFFUSE
+            attempt = 0
+            while attempt < 10:
+                attempt += 1
+
                 # Lambertian distribution
                 ph.theta = normal_theta + asin(2*random() - 1) - pi/2
                 ph.phi = asin((asin(2*random() - 1))/(pi/2))
@@ -472,9 +513,9 @@ def bottom_scattering(ph, scattering_types):
 
 
 def surface_scattering(ph, scattering_types):
-    """This function checks if there will be a surface scattering on this timestep and returns a new direction"""
+    """Check if there will be a surface scattering on this timestep and return new direction"""
 
-    # Scattering on top surface:
+    # Scattering on top surface with and without pillars:
     if cf.include_pillars:
         top_scattering_with_pillars(ph, scattering_types)
     else:
@@ -486,8 +527,12 @@ def surface_scattering(ph, scattering_types):
 
     # Scattering on sidewalls:
     side_wall_scattering(ph, scattering_types)
+
+    # Scattering on parabolic walls:
     if cf.include_top_parabola:
         top_parabola_scattering(ph, scattering_types)
+    if cf.include_bottom_parabola:
+        bottom_parabola_scattering(ph, scattering_types)
 
     # Scattering on holes:
     if cf.include_holes:
