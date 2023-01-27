@@ -46,7 +46,7 @@ LENGTH                         = 2200e-9
 FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
 HOT_SIDE_X                     = 0
-HOT_SIDE_WIDTH                 = WIDTH
+HOT_SIDE_WIDTH_X               = WIDTH
 
 
 # Roughness [m]:

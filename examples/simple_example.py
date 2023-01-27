@@ -1,3 +1,5 @@
+"""Simple input file to simulate a box with phonons launched from the bottom to the top"""
+
 OUTPUT_FOLDER_NAME             = "Simple example"
 NUMBER_OF_PHONONS              = 500
 NUMBER_OF_TIMESTEPS            = 60000

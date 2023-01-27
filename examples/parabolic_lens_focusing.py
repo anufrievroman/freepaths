@@ -1,7 +1,5 @@
-"""Config file to simulate a simple nanowire"""
-
-import numpy as np
-
+"""Config file to simulate a structure with a parabolic surface at the top
+which acts like a focusing mirror for a flux of parallel phonons emitted vertically"""
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Parabolic lens focusing'
@@ -27,7 +25,6 @@ NUMBER_OF_TIMEFRAMES           = 6
 # Material parameters:
 MEDIA                          = 'Si'
 SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-#SPECIFIC_HEAT_CAPACITY        = 714     # [J/kg/K] for Si at 300 K
 
 
 # Internal scattering:
@@ -45,7 +42,6 @@ LENGTH                         = 1100e-9
 FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
 HOT_SIDE_X                     = 0.0
-HOT_SIDE_Y                     = 0.0
 HOT_SIDE_WIDTH_X               = WIDTH
 
 # Roughness [m]:

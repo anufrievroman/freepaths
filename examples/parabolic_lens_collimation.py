@@ -1,7 +1,5 @@
-"""Config file to simulate a simple nanowire"""
-
-import numpy as np
-
+"""Config file to simulate a structure with parabolic surface at the bottom
+which acts like a collimator for phonon flux emitted from the hot spot of 10x10nm"""
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Parabolic lens collimation'
@@ -45,8 +43,8 @@ FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
 HOT_SIDE_X                     = 0
 HOT_SIDE_Y                     = 300e-9
-HOT_SIDE_WIDTH_X               = 0e-9
-HOT_SIDE_WIDTH_Y               = 0e-9
+HOT_SIDE_WIDTH_X               = 10e-9
+HOT_SIDE_WIDTH_Y               = 10e-9
 HOT_SIDE_ANGLE_DISTRIBUTION    = 'uniform'
 
 # Roughness [m]:

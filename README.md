@@ -13,7 +13,7 @@ Install the package from PyPi repository by entering this command into a termina
 
 `pip install --upgrade freepaths`
 
-For more details about installation, see (this wiki page](https://github.com/anufrievroman/freepaths/wiki/Installation).
+For more details about installation, see [this wiki page](https://github.com/anufrievroman/freepaths/wiki/Installation).
 
 ## Usage
 
@@ -60,7 +60,8 @@ The code is still in development and provided as is. It likely contains bugs or 
 
 ## References and acknowledgments
 
-The code has been developed by [Roman Anufriev](https://anufrievroman.com) in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo in 2018-2022. If you would like to use this code for your research, please cite the papers above, if it is appropriate.
+The code has been developed by [Roman Anufriev](https://anufrievroman.com) in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo in 2018-2022.
+If you would like to use this code for your research, please see the disclaimer above and consider citing the papers below, if it is appropriate.
 Details of the code and examples of the output can be found in the following papers:
 
 1. Anufriev et al. [Materials Today Physics 15, 100272 (2021)](https://www.sciencedirect.com/science/article/pii/S2542529320300961)

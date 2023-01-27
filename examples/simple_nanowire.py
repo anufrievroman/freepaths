@@ -1,4 +1,4 @@
-"""Config file to simulate a simple nanowire"""
+"""Config file to simulate a simple nanowire at 4 K"""
 
 import numpy as np
 
@@ -45,7 +45,7 @@ LENGTH                         = 2000e-9
 FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
 HOT_SIDE_X                     = 0
-HOT_SIDE_WIDTH                 = WIDTH
+HOT_SIDE_WIDTH_X               = WIDTH
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9

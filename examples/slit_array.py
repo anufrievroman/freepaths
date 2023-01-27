@@ -1,4 +1,4 @@
-"""Config file to simulate a phononic crystal with square lattice of holes"""
+"""Config file to simulate a membrane with a staggered lattice of rectangular slits"""
 
 import numpy as np
 
@@ -27,8 +27,6 @@ NUMBER_OF_TIMEFRAMES           = 6
 # Material parameters:
 MEDIA                          = 'Si'
 SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-#SPECIFIC_HEAT_CAPACITY        = 714  # [J/kg/K] for Si at 300 K
-# SPECIFIC_HEAT_CAPACITY       = 606  # [J/kg/K] for SiC at 300 K
 
 
 # Internal scattering:
@@ -46,7 +44,7 @@ LENGTH                         = 2200e-9
 FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
 HOT_SIDE_X                     = 0
-HOT_SIDE_WIDTH                 = WIDTH
+HOT_SIDE_WIDTH_X               = WIDTH
 
 
 # Roughness [m]:
