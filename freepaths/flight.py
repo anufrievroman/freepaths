@@ -31,17 +31,17 @@ class Flight:
     def __init__(self, phonon):
         """Initialize a phonon flight"""
         self.phonon = phonon
-        self.path = Path(self.phonon.x, self.phonon.y, self.phonon.z)
-        self.initial_theta = self.phonon.theta
         self.initial_frequency = self.phonon.f
+        self.initial_theta = self.phonon.theta
+        self.path = Path(self.phonon.x, self.phonon.y, self.phonon.z)
         self.exit_theta = 0.0
         self.detected_frequency = 0.0
-        self.travel_time = 0.0
-        self.free_paths = []
-        self.free_paths_along_y = []
-        self.time_since_previous_scattering = 0.0
         self.free_path = 0.0
         self.free_path_along_y = 0.0
+        self.travel_time = 0.0
+        self.time_since_previous_scattering = 0.0
+        self.free_paths = []
+        self.free_paths_along_y = []
 
     @property
     def mean_free_path(self):

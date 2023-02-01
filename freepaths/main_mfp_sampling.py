@@ -8,6 +8,7 @@ import scipy
 import math
 
 # Modules:
+import freepaths.animation as animation
 from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
 from freepaths.phonon import Phonon, Polarization
@@ -23,7 +24,7 @@ from freepaths.output_plots import plot_data
 def main(input_file):
     """This is the main function, which integrates phonon dispersion to get thermal conductivity"""
 
-    print(f'Mean free path sampling for {cf.output_folder_name} started.')
+    print(f'Mean free path sampling of {cf.output_folder_name}')
     start_time = time.time()
     progress = Progress()
 
@@ -99,6 +100,13 @@ def main(input_file):
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")
     plot_data()
+
+    # Generate animation of phonon paths:
+    if cf.output_path_animation:
+        sys.stdout.write("\rGenerating path animation...")
+        animation.generate_frames_xy()
+        animation.generate_animation_xy()
+        animation.delete_frames_xy()
 
     sys.stdout.write(f'\rSee the results in "Results/{cf.output_folder_name}" folder.\n')
     sys.stdout.write(f"\rThermal conductivity = {thermal_conductivity}\n")

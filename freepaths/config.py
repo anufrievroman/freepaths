@@ -42,6 +42,8 @@ class Config:
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_raw_thermal_map = OUTPUT_RAW_THERMAL_MAP
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
+        self.output_path_animation = OUTPUT_PATH_ANIMATION
+        self.phonons_in_animation = PHONONS_IN_ANIMATION
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
         self.hot_side_angle_distribution = HOT_SIDE_ANGLE_DISTRIBUTION
 
@@ -146,10 +148,6 @@ class Config:
 
         if self.hot_side_width_x > self.width:
             print("ERROR: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
-            sys.exit()
-
-        if self.hot_side_y == 0 and self.hot_side_angle_distribution == Distributions.UNIFORM:
-            print("ERROR: Uniform angle distribution should not be used with HOT_SIDE_Y = 0.\n")
             sys.exit()
 
 

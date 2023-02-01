@@ -6,6 +6,7 @@ import time
 import shutil
 
 # Modules:
+import freepaths.animation as animation
 from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
 from freepaths.phonon import Phonon
@@ -22,7 +23,7 @@ def main(input_file):
     """This is the main function, which works under Debye approximation.
     It should be used to simulate phonon paths at low temperatures"""
 
-    print(f'Simulation for {cf.output_folder_name} started.')
+    print(f'Simulation of {cf.output_folder_name}')
     start_time = time.time()
     progress = Progress()
 
@@ -58,9 +59,11 @@ def main(input_file):
     thermal_maps.calculate_thermal_conductivity()
 
     # Create the folder if it does not exist and copy input file there:
-    if not os.path.exists("Results/" + cf.output_folder_name):
-        os.makedirs("Results/" + cf.output_folder_name)
-        os.makedirs("Results/" + cf.output_folder_name + '/Data')
+    if not os.path.exists(f"Results/{cf.output_folder_name}"):
+        os.makedirs(f"Results/{cf.output_folder_name}")
+        os.makedirs(f"Results/{cf.output_folder_name}/Data")
+    if cf.output_path_animation and not os.path.exists(f"Results/{cf.output_folder_name}/Frames"):
+        os.makedirs(f"Results/{cf.output_folder_name}/Frames")
     if input_file:
         shutil.copy(input_file, "Results/" + cf.output_folder_name)
     os.chdir("Results/" + cf.output_folder_name)
@@ -76,6 +79,13 @@ def main(input_file):
     # Output general information:
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
+
+    # Generate animation of phonon paths:
+    if cf.output_path_animation:
+        sys.stdout.write("\rGenerating path animation...")
+        animation.generate_frames_xy()
+        animation.generate_animation_xy()
+        animation.delete_frames_xy()
 
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")

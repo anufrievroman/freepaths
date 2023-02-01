@@ -28,6 +28,11 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
                 if cf.output_scattering_map:
                     scatter_maps.add_scattering_to_map(phonon, scattering_types)
 
+            # Otherwise, record only if animation is requested:
+            else:
+                if cf.output_path_animation:
+                    flight.add_point_to_path()
+
             # If diffuse scattering has occurred, reset phonon free path:
             if scattering_types.is_diffuse or scattering_types.is_internal:
                 flight.save_free_paths()
