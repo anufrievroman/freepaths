@@ -8,7 +8,7 @@ import scipy
 import math
 
 # Modules:
-import freepaths.animation as animation
+from freepaths.animation import create_animation
 from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
 from freepaths.phonon import Phonon, Polarization
@@ -89,9 +89,9 @@ def main(input_file):
     general_stats.write_into_files()
     scatter_stats.write_into_files()
     segment_stats.write_into_files()
-    path_stats.write_into_files()
     thermal_maps.write_into_files()
     scatter_maps.write_into_files()
+    path_stats.write_into_files()
 
     # Output general information:
     output_general_information(start_time)
@@ -104,9 +104,7 @@ def main(input_file):
     # Generate animation of phonon paths:
     if cf.output_path_animation:
         sys.stdout.write("\rGenerating path animation...")
-        animation.generate_frames_xy()
-        animation.generate_animation_xy()
-        animation.delete_frames_xy()
+        create_animation()
 
     sys.stdout.write(f'\rSee the results in "Results/{cf.output_folder_name}" folder.\n')
     sys.stdout.write(f"\rThermal conductivity = {thermal_conductivity}\n")

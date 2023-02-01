@@ -6,7 +6,6 @@ import time
 import shutil
 
 # Modules:
-import freepaths.animation as animation
 from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
 from freepaths.phonon import Phonon
@@ -16,6 +15,7 @@ from freepaths.progress import Progress
 from freepaths.materials import Material
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information
+from freepaths.animation import create_animation
 from freepaths.output_plots import plot_data
 
 
@@ -36,7 +36,7 @@ def main(input_file):
     scatter_maps = ScatteringMap()
     thermal_maps = ThermalMaps()
 
-    # For each phonon:
+    # For each phonon
     for index in range(cf.number_of_phonons):
         progress.render(index, cf.number_of_phonons)
 
@@ -72,24 +72,22 @@ def main(input_file):
     general_stats.write_into_files()
     scatter_stats.write_into_files()
     segment_stats.write_into_files()
-    path_stats.write_into_files()
     thermal_maps.write_into_files()
     scatter_maps.write_into_files()
+    path_stats.write_into_files()
 
     # Output general information:
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
 
-    # Generate animation of phonon paths:
-    if cf.output_path_animation:
-        sys.stdout.write("\rGenerating path animation...")
-        animation.generate_frames_xy()
-        animation.generate_animation_xy()
-        animation.delete_frames_xy()
-
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")
     plot_data()
+
+    # Generate animation of phonon paths:
+    if cf.output_path_animation:
+        sys.stdout.write("\rGenerating path animation...")
+        create_animation()
 
     sys.stdout.write(f'\rSee the results in "Results/{cf.output_folder_name}" folder.\n')
     sys.stdout.write("\rThank you for using FreePATHS.\n")
