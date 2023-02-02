@@ -52,6 +52,7 @@ The thermal conductivity will be output in the terminal. However, other statisti
 
 - [Troubles with installation](https://github.com/anufrievroman/freepaths/wiki/Installation)
 - Rarely, phonons may enter a hole in the structure or break out of structure boundaries. To reduce the impact of this bug, reduce the TIMESTEP parameter. However, this is usually happens once per many thousand collisions and has negligible impact on the final statistics.
+- If you have error similar to `Cannot mix incompatible Qt library (5.15.7) with this library (5.15.8)` that likely means that you have a program like qt5ct that didn't upgrade to the latest Qt library with rest of the system.
 
 ## Disclaimer
 

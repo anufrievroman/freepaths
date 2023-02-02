@@ -12,13 +12,10 @@ T                              = 300
 PLOTS_IN_TERMINAL              = False
 OUTPUT_SCATTERING_MAP          = False
 OUTPUT_RAW_THERMAL_MAP         = True
+OUTPUT_PATH_ANIMATION          = False
 OUTPUT_TRAJECTORIES_OF_FIRST   = 10
 NUMBER_OF_LENGTH_SEGMENTS      = 10
 HOT_SIDE_ANGLE_DISTRIBUTION    = "random"
-
-# Animation:
-OUTPUT_PATH_ANIMATION          = False
-PHONONS_IN_ANIMATION           = 3
 
 # Map & profiles parameters:
 NUMBER_OF_PIXELS_X             = 100

@@ -41,9 +41,8 @@ class Config:
         self.plots_in_terminal = PLOTS_IN_TERMINAL
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_raw_thermal_map = OUTPUT_RAW_THERMAL_MAP
-        self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.output_path_animation = OUTPUT_PATH_ANIMATION
-        self.phonons_in_animation = PHONONS_IN_ANIMATION
+        self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
         self.hot_side_angle_distribution = HOT_SIDE_ANGLE_DISTRIBUTION
 
