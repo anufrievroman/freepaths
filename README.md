@@ -21,6 +21,9 @@ FreePATHS is a command line application, so it runs inside Linux, MacOS, or Wind
 
 There are two modes of using the program. Main mode traces a large number of phonons through a structure and collects statistics about their paths. The MFP sampling mode measures phonon mean free paths using a small number of phonons and calculates the thermal conductivity by integrating phonon dispersion. 
 
+### Demo
+
+First, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
 
 ### Main mode
 
@@ -34,25 +37,23 @@ See [wiki page](https://github.com/anufrievroman/freepaths/wiki/Creating-input-f
 
 `freepaths simple_nanowire.py`
 
-Also, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
-
 After the simulation, see the results in a newly created **Results** folder.
 
 
 ### MFP sampling mode
 
-Alternatively, you can run FreePATHS in the mean free path sampling mode, which is designed to calculate the thermal conductivity by integrating phonon dispersion. To run the program in this mode, reduce the number of phonons to about 30 and add `-s` flag in the command:
+Alternatively, you can run FreePATHS in the mean free path sampling mode, which is designed to calculate the thermal conductivity by integrating phonon dispersion. To run the program in this mode, it is advised to reduce the number of phonons to about 30 and add `-s` flag in the command:
 
 `freepaths -s simple_nanowire.py`
 
-The thermal conductivity will be output in the terminal. However, other statistical quantities and plots will still be calculated and output in the `Results` folder.
+The calculated thermal conductivity will be output in the terminal. However, other statistical quantities and plots will still be calculated and output in the `Results` folder.
 
 
 ## Troubleshooting
 
 - [Troubles with installation](https://github.com/anufrievroman/freepaths/wiki/Installation)
-- Rarely, phonons may enter a hole in the structure or break out of structure boundaries. To reduce the impact of this bug, reduce the TIMESTEP parameter. However, this is usually happens once per many thousand collisions and has negligible impact on the final statistics.
-- If you have error similar to `Cannot mix incompatible Qt library (5.15.7) with this library (5.15.8)` that likely means that you have a program like qt5ct that didn't upgrade to the latest Qt library with rest of the system.
+- [Troubles with usage](https://github.com/anufrievroman/freepaths/wiki/Usage)
+
 
 ## Disclaimer
 
