@@ -93,18 +93,18 @@ def main(input_file):
     scatter_maps.write_into_files()
     path_stats.write_into_files()
 
-    # Output general information:
-    output_general_information(start_time)
-    output_scattering_information(scatter_stats)
+    # Generate animation of phonon paths:
+    if cf.output_path_animation:
+        sys.stdout.write("\rGenerating path animation...")
+        create_animation()
 
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")
     plot_data()
 
-    # Generate animation of phonon paths:
-    if cf.output_path_animation:
-        sys.stdout.write("\rGenerating path animation...")
-        create_animation()
+    # Output general information:
+    output_general_information(start_time)
+    output_scattering_information(scatter_stats)
 
     sys.stdout.write(f'\rSee the results in "Results/{cf.output_folder_name}" folder.\n')
     sys.stdout.write(f"\rThermal conductivity = {thermal_conductivity}\n")
