@@ -11,7 +11,7 @@ import math
 from freepaths.animation import create_animation
 from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
-from freepaths.phonon import Phonon, Polarization
+from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData
 from freepaths.progress import Progress
@@ -19,6 +19,7 @@ from freepaths.materials import Material
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information
 from freepaths.output_plots import plot_data
+from freepaths.options import Polarizations
 
 
 def main(input_file):
@@ -40,7 +41,7 @@ def main(input_file):
     thermal_conductivity = 0
 
     # For each polarization branch:
-    for polarization in [Polarization.LA, Polarization.TA, Polarization.TA]:
+    for polarization in [Polarizations.LA, Polarizations.TA, Polarizations.TA]:
         sys.stdout.write(f"\rIntegrating {polarization.name} branch.\n")
 
         # For each phonon:
@@ -95,7 +96,6 @@ def main(input_file):
 
     # Generate animation of phonon paths:
     if cf.output_path_animation:
-        sys.stdout.write("\rGenerating path animation...")
         create_animation()
 
     # Analyze and plot the data:

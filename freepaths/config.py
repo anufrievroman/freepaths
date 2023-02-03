@@ -41,10 +41,13 @@ class Config:
         self.plots_in_terminal = PLOTS_IN_TERMINAL
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_raw_thermal_map = OUTPUT_RAW_THERMAL_MAP
-        self.output_path_animation = OUTPUT_PATH_ANIMATION
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
         self.hot_side_angle_distribution = HOT_SIDE_ANGLE_DISTRIBUTION
+
+        # Animation:
+        self.output_path_animation = OUTPUT_PATH_ANIMATION
+        self.output_animation_fps = OUTPUT_ANIMATION_FPS
 
         # Map & profiles parameters:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
@@ -109,44 +112,54 @@ class Config:
 
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
-        if self.hot_side_angle_distribution in ["random", "lambert", "directional", "uniform"]:
+        correct_distributions =[member.name.lower() for member in Distributions]
+        if self.hot_side_angle_distribution in correct_distributions:
             self.hot_side_angle_distribution = Distributions[self.hot_side_angle_distribution.upper()]
         else:
             print("ERROR: Parameter HOT_SIDE_ANGLE_DISTRIBUTION is not set correctly.\n")
             sys.exit()
 
-        if self.media in ["Si", "SiC", "Diamond", "AlN"]:
+        correct_materials = [member.name for member in Materials]
+        if self.media in correct_materials:
             self.media = Materials[self.media]
         else:
             print(f"ERROR: Material {self.media} is not in the database.\n")
+            print(f"MEDIA should be one of thses: {correct_materials}\n")
             sys.exit()
 
-        if self.cold_side_position in ["top", "top_and_right", "top_and_bottom", "right"]:
+        correct_positions = [member.name.lower() for member in Positions]
+        if self.cold_side_position in correct_positions:
             self.cold_side_position = Positions[self.cold_side_position.upper()]
         else:
             print("ERROR: Parameter COLD_SIDE_POSITION is not set correctly.\n")
+            print(f"COLD_SIDE_POSITION should be of these: {correct_positions}\n")
             sys.exit()
 
     def check_parameter_validity(self):
         """Check if some parameteres are valid"""
         if self.number_of_phonons < self.output_trajectories_of_first:
-            print("ERROR: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeds NUMBER_OF_PHONONS.\n")
+            self.output_trajectories_of_first = self.number_of_phonons
+            print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
             sys.exit()
 
         if self.hot_side_y > self.length:
-            print("ERROR: Parameter HOT_SIDE_Y exceeds LENGHT.\n")
+            self.hot_side_y = self.length
+            print("WARNING: Parameter HOT_SIDE_Y exceeded LENGHT.\n")
             sys.exit()
 
         if self.hot_side_y < 0:
-            print("ERROR: Parameter HOT_SIDE_Y is negative.\n")
+            self.hot_side_y = 0
+            print("WARNING: Parameter HOT_SIDE_Y was negative.\n")
             sys.exit()
 
         if self.hot_side_y - self.hot_side_width_y / 2 < 0:
-            print("ERROR: Parameter HOT_SIDE_WIDTH_Y is too large.\n")
+            self.self.hot_side_width_y = self.hot_side_y * 2
+            print("WARNING: Parameter HOT_SIDE_WIDTH_Y was too large.\n")
             sys.exit()
 
         if self.hot_side_width_x > self.width:
-            print("ERROR: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
+            self.hot_side_width_x = self.width
+            print("WARNING: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
             sys.exit()
 
 

@@ -8,14 +8,8 @@ import numpy as np
 import enum
 
 from freepaths.config import cf
-from freepaths.options import Distributions, Materials, Positions
+from freepaths.options import Distributions, Materials, Positions, Polarizations
 import freepaths.move
-
-
-class Polarization(enum.Enum):
-    """Possible polarizations of phonon"""
-    LA = 1
-    TA = 2
 
 
 class Phonon:
@@ -67,7 +61,7 @@ class Phonon:
 
     def assign_polarization(self):
         """Assign branch of phonon dispersion"""
-        self.polarization = choice([Polarization.TA, Polarization.TA, Polarization.LA])
+        self.polarization = choice([Polarizations.TA, Polarizations.TA, Polarizations.LA])
 
     def assign_coordinates(self):
         """Assign initial coordinates at the hot side"""
@@ -118,7 +112,7 @@ class Phonon:
 
     def assign_speed(self, material):
         """Calculate group velocity dw/dk according to the frequency and polarization"""
-        if self.polarization == Polarization.TA and self.f < max(material.dispersion[:,2]):
+        if self.polarization == Polarizations.TA and self.f < max(material.dispersion[:,2]):
             point_num = abs((np.abs(material.dispersion[:, 2] - self.f)).argmin() - 1)
             d_w = 2*pi*abs(material.dispersion[point_num+1, 2] - material.dispersion[point_num, 2])
         else:

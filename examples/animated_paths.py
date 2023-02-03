@@ -8,8 +8,9 @@ TIMESTEP                       = 20e-12
 T                              = 4
 THICKNESS                      = 150e-9
 WIDTH                          = 500e-9
-LENGTH                         = 2200e-9
+LENGTH                         = 4000e-9
 
 # Animation parameters:
 OUTPUT_PATH_ANIMATION          = True
-PHONONS_IN_ANIMATION           = 5
+OUTPUT_TRAJECTORIES_OF_FIRST   = 30
+OUTPUT_ANIMATION_FPS           = 24

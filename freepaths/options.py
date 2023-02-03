@@ -25,3 +25,9 @@ class Positions(enum.Enum):
     RIGHT = 2
     TOP_AND_RIGHT = 3
     TOP_AND_BOTTOM = 4
+
+
+class Polarizations(enum.Enum):
+    """Possible polarizations of a phonon"""
+    LA = 1
+    TA = 2

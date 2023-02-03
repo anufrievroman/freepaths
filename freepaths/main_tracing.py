@@ -78,7 +78,6 @@ def main(input_file):
 
     # Generate animation of phonon paths:
     if cf.output_path_animation:
-        sys.stdout.write("\rGenerating path animation...")
         create_animation()
 
     # Analyze and plot the data:
