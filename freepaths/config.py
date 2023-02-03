@@ -42,6 +42,7 @@ class Config:
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_raw_thermal_map = OUTPUT_RAW_THERMAL_MAP
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
+        self.output_structure_color = OUTPUT_STRUCTURE_COLOR
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
         self.hot_side_angle_distribution = HOT_SIDE_ANGLE_DISTRIBUTION
 
@@ -140,27 +141,22 @@ class Config:
         if self.number_of_phonons < self.output_trajectories_of_first:
             self.output_trajectories_of_first = self.number_of_phonons
             print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
-            sys.exit()
 
         if self.hot_side_y > self.length:
             self.hot_side_y = self.length
             print("WARNING: Parameter HOT_SIDE_Y exceeded LENGHT.\n")
-            sys.exit()
 
         if self.hot_side_y < 0:
             self.hot_side_y = 0
             print("WARNING: Parameter HOT_SIDE_Y was negative.\n")
-            sys.exit()
 
         if self.hot_side_y - self.hot_side_width_y / 2 < 0:
             self.self.hot_side_width_y = self.hot_side_y * 2
             print("WARNING: Parameter HOT_SIDE_WIDTH_Y was too large.\n")
-            sys.exit()
 
         if self.hot_side_width_x > self.width:
             self.hot_side_width_x = self.width
             print("WARNING: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
-            sys.exit()
 
 
 cf = Config()

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from pygifsicle import optimize
 
 from freepaths.config import cf
+from freepaths.output_structure import draw_structure
 
 
 def generate_frames_xy():
@@ -23,12 +24,22 @@ def generate_frames_xy():
     # Create XY plots for each timestep where all phonon shown at the same time:
     number_of_steps = np.shape(data)[0]
     number_of_phonons = np.shape(data)[1]//3
+
     for step in range(1, number_of_steps):
         fig, ax = plt.subplots()
+
+        # Draw the structure:
+        patches = draw_structure(cf)
+        for patch in patches:
+            ax.add_patch(patch)
+
+        # Draw the paths:
         for phonon_num in range(number_of_phonons):
             x_coords = np.trim_zeros(data[:, 3 * phonon_num], trim='b')
             y_coords = np.trim_zeros(data[:, 3 * phonon_num + 1], trim='b')
             ax.plot(x_coords[:step], y_coords[:step], linewidth=0.5)
+
+        # Plot settings:
         ax.set_xlim([-0.55*cf.width*1e6, 0.55*cf.width*1e6])
         ax.set_ylim([0, cf.length*1e6])
         ax.set_aspect('equal')

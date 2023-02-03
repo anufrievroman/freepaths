@@ -3,8 +3,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from matplotlib.patches import Rectangle, Circle
 
 from freepaths.config import cf
+from freepaths.output_structure import draw_structure
 import matplotlib.pyplot as plt
 
 # Style of the plots:
@@ -235,10 +237,19 @@ def plot_trajectories():
 
     # Create XY plot:
     fig, ax = plt.subplots()
+
+    # Draw structures:
+    patches = draw_structure(cf)
+    for patch in patches:
+        ax.add_patch(patch)
+
+    # Draw paths:
     for index in range(cf.output_trajectories_of_first):
         x_coordinates = np.trim_zeros(data[:, 3 * index], trim='b')
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
         ax.plot(x_coordinates, y_coordinates, linewidth=0.2)
+
+    # Set labels:
     ax.set_xlabel('X (μm)', fontsize=12)
     ax.set_ylabel('Y (μm)', fontsize=12)
     ax.set_aspect('equal', 'datalim')
