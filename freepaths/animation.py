@@ -6,7 +6,6 @@ import shutil
 import imageio
 import numpy as np
 import matplotlib.pyplot as plt
-from pygifsicle import optimize
 
 from freepaths.config import cf
 from freepaths.output_structure import draw_structure
