@@ -23,7 +23,7 @@ There are two modes of using the program. Main mode traces a large number of pho
 
 ### Demo
 
-First, if you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
+If you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
 
 ### Main mode
 

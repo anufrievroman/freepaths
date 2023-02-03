@@ -20,7 +20,7 @@ args = parser.parse_args()
 
 # If a file is provided, overwrite the default values:
 if args.input_file:
-    exec(open(args.input_file).read(), globals())
+    exec(open(args.input_file, encoding='utf-8').read(), globals())
 else:
     print("You didn't provide any input file, so we run a demo simulation:\n")
 
@@ -113,27 +113,31 @@ class Config:
 
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
-        correct_distributions =[member.name.lower() for member in Distributions]
-        if self.hot_side_angle_distribution in correct_distributions:
+        valid_distributions =[member.name.lower() for member in Distributions]
+        if self.hot_side_angle_distribution in valid_distributions:
             self.hot_side_angle_distribution = Distributions[self.hot_side_angle_distribution.upper()]
         else:
-            print("ERROR: Parameter HOT_SIDE_ANGLE_DISTRIBUTION is not set correctly.\n")
+            print("ERROR: Parameter HOT_SIDE_ANGLE_DISTRIBUTION is not set correctly.")
+            print("HOT_SIDE_ANGLE_DISTRIBUTION should be one of the following:")
+            print(*valid_distributions, sep = ", ")
             sys.exit()
 
-        correct_materials = [member.name for member in Materials]
-        if self.media in correct_materials:
+        valid_materials = [member.name for member in Materials]
+        if self.media in valid_materials:
             self.media = Materials[self.media]
         else:
-            print(f"ERROR: Material {self.media} is not in the database.\n")
-            print(f"MEDIA should be one of thses: {correct_materials}\n")
+            print(f"ERROR: Material {self.media} is not in the database.")
+            print("MEDIA should be one of the following:")
+            print(*valid_materials, sep = ", ")
             sys.exit()
 
-        correct_positions = [member.name.lower() for member in Positions]
-        if self.cold_side_position in correct_positions:
+        valid_positions = [member.name.lower() for member in Positions]
+        if self.cold_side_position in valid_positions:
             self.cold_side_position = Positions[self.cold_side_position.upper()]
         else:
-            print("ERROR: Parameter COLD_SIDE_POSITION is not set correctly.\n")
-            print(f"COLD_SIDE_POSITION should be of these: {correct_positions}\n")
+            print("ERROR: Parameter COLD_SIDE_POSITION is not set correctly.")
+            print("COLD_SIDE_POSITION should be one of the following:")
+            print(*valid_positions, sep = ", ")
             sys.exit()
 
     def check_parameter_validity(self):
@@ -154,9 +158,16 @@ class Config:
             self.self.hot_side_width_y = self.hot_side_y * 2
             print("WARNING: Parameter HOT_SIDE_WIDTH_Y was too large.\n")
 
+        if self.hot_side_x > self.width/2:
+            self.hot_side_x = 0
+            print("WARNING: Parameter HOT_SIDE_X was larger than WIDTH.\n")
+
         if self.hot_side_width_x > self.width:
             self.hot_side_width_x = self.width
             print("WARNING: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
+
+        if self.output_path_animation and self.number_of_timesteps > 5000:
+            print("WARNING: NUMBER_OF_TIMESTEPS is rather large for animation.\n")
 
 
 cf = Config()
