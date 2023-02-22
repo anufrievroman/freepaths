@@ -1,19 +1,16 @@
 # FreePATHS - Free Phonon And THermal Simulator
 
-This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nanostructures, which consists of a box with holes or pillars of various shapes. The algorithm outputs phonon trajectories, heat fluxes, temperature maps and profiles, the thermal conductivity, scattering maps and statistics and other information. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) for the details of the simulation.
+This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nanostructures, which consists of a box with holes or pillars of various shapes. The algorithm outputs phonon trajectories, heat fluxes, temperature maps and profiles, the thermal conductivity, scattering maps and statistics and other information. See [documentation](https://anufrievroman.gitbook.io/freepaths/) for the details of the simulation.
 
 ![Screenshot](https://github.com/anufrievroman/Monte-Carlo/blob/master/screenshot.png)
 
 
 ## Installation
 
-FreePATHS requires python 3. On Linux and MacOS, it is probably already installed. On Windows, you may choose to install [Anaconda](https://www.anaconda.com) package, which will install everything for you.
-
-Install the package from PyPi repository by entering this command into a terminal or a python console:
+[Installation is detailed in documentation](https://anufrievroman.gitbook.io/freepaths/installation). In short, install the package from PyPi repository by entering this command into a terminal or a python console:
 
 `pip install --upgrade freepaths`
 
-For more details about installation, see [this wiki page](https://github.com/anufrievroman/freepaths/wiki/Installation).
 
 ## Usage
 
@@ -33,7 +30,7 @@ Run the program as:
 
 `freepaths your_input_file.py`
 
-See [wiki page](https://github.com/anufrievroman/freepaths/wiki/Creating-input-files) for explanations about creating your own input files. In the [examples](https://github.com/anufrievroman/freepaths/tree/master/examples) folder, you will find examples of various input files. Try using one of them, for instance as:
+See [documentation](https://anufrievroman.gitbook.io/freepaths/examples) for explanations about creating your own input files. In the [examples](https://github.com/anufrievroman/freepaths/tree/master/examples) folder, you will find examples of various input files. Try using one of them, for instance as:
 
 `freepaths simple_nanowire.py`
 
@@ -51,13 +48,13 @@ The calculated thermal conductivity will be output in the terminal. However, oth
 
 ## Troubleshooting
 
-- [Troubles with installation](https://github.com/anufrievroman/freepaths/wiki/Installation)
-- [Troubles with usage](https://github.com/anufrievroman/freepaths/wiki/Usage)
+- [Troubles with installation](https://anufrievroman.gitbook.io/freepaths/installation)
+- [Troubles with usage](https://anufrievroman.gitbook.io/freepaths/usage)
 
 
 ## Disclaimer
 
-The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [the wiki pages](https://github.com/anufrievroman/Monte-Carlo/wiki/General-algorithm-flow) and the references below for more details on the code.
+The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [documentation](https://anufrievroman.gitbook.io/freepaths/algorithm) and the references below for more details on the code.
 
 
 ## References and acknowledgments
