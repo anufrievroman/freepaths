@@ -5,7 +5,7 @@ import numpy as np
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Phononic crystal square'
-NUMBER_OF_PHONONS              = 300
+NUMBER_OF_PHONONS              = 500
 NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1e-12

@@ -3,7 +3,7 @@ which acts like a collimator for phonon flux emitted from the hot spot of 10x10n
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Parabolic lens collimation'
-NUMBER_OF_PHONONS              = 1000
+NUMBER_OF_PHONONS              = 2000
 NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12

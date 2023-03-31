@@ -3,7 +3,7 @@ which acts like a focusing mirror for a flux of parallel phonons emitted vertica
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Parabolic lens focusing'
-NUMBER_OF_PHONONS              = 1000
+NUMBER_OF_PHONONS              = 2000
 NUMBER_OF_TIMESTEPS            = 3000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12

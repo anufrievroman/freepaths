@@ -70,7 +70,7 @@ def plot_angle_distribution():
     ax.plot(angle_distributions[:, 0], angle_distributions[:, 2], 'r')
     ax.set_xlabel('Angle (degree)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
-    ax.legend(["At hot side", "At cold side"])
+    ax.legend(["At cold side", "At hot side"])
     fig.savefig("Distribution of angles.pdf", dpi=300, format='pdf', bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
