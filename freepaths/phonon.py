@@ -50,13 +50,19 @@ class Phonon:
         Depending on where we set the cold side, we check if phonon crossed that line"""
         small_offset = 10e-9
         if cf.cold_side_position == Positions.TOP:
-            return cf.length > self.y
+            return self.y < cf.length
+        if cf.cold_side_position == Positions.BOTTOM:
+            return self.y > 0
         if cf.cold_side_position == Positions.RIGHT:
-            return (self.y < cf.length - 1.1e-6) or (self.y > cf.length - 1.1e-6 and self.x < cf.width / 2.0 - small_offset)
-        if cf.cold_side_position == Positions.TOP_AND_RIGHT:
-            return (self.y < 1.0e-6) or (1.0e-6 < self.y < cf.length and self.x < cf.width / 2.0 - small_offset)
-        if cf.cold_side_position == Positions.TOP_AND_BOTTOM:
-            return cf.length > self.y > 0
+            # return (self.y < cf.length - 1.1e-6) or (self.y > cf.length - 1.1e-6 and self.x < cf.width / 2.0 - small_offset)
+            return self.x < cf.width / 2.0
+        if cf.cold_side_position == Positions.LEFT:
+            # return (self.y < cf.length - 1.1e-6) or (self.y > cf.length - 1.1e-6 and self.x < cf.width / 2.0 - small_offset)
+            return self.x > - cf.width / 2.0
+        # if cf.cold_side_position == Positions.TOP_AND_RIGHT:
+            # return (self.y < 1.0e-6) or (1.0e-6 < self.y < cf.length and self.x < cf.width / 2.0 - small_offset)
+        # if cf.cold_side_position == Positions.TOP_AND_BOTTOM:
+            # return cf.length > self.y > 0
         raise ValueError('Specified "cold_side" is not valid. Only TOP, RIGHT, TOP_AND_RIGH, TOP_AND_BOTTOM')
 
     def assign_polarization(self):
@@ -71,8 +77,18 @@ class Phonon:
 
     def assign_angles(self):
         """Depending on angle distribution, assign angles"""
-        if cf.hot_side_angle_distribution == Distributions.RANDOM:
+        if cf.hot_side_angle_distribution == Distributions.RANDOM_UP:
             self.theta = -pi/2 + pi*random()
+            self.phi = asin(2*random() - 1)
+        if cf.hot_side_angle_distribution == Distributions.RANDOM_DOWN:
+            rand_sign = sign((2*random() - 1))
+            self.theta = rand_sign*(pi/2 + pi/2*random())
+            self.phi = asin(2*random() - 1)
+        if cf.hot_side_angle_distribution == Distributions.RANDOM_RIGHT:
+            self.theta = pi*random()
+            self.phi = asin(2*random() - 1)
+        if cf.hot_side_angle_distribution == Distributions.RANDOM_LEFT:
+            self.theta = - pi*random()
             self.phi = asin(2*random() - 1)
         if cf.hot_side_angle_distribution == Distributions.DIRECTIONAL:
             self.theta = 0

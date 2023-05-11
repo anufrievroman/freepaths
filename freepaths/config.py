@@ -1,4 +1,4 @@
-"""Module that reads the user input file, privides default values, and converts the variables into enums"""
+"""Module that reads the user input file, provides default values, and converts the variables into enums"""
 
 import sys
 import argparse
@@ -10,7 +10,7 @@ from freepaths.default_config import *
 
 
 # Parse user arguments:
-WEBSITE = 'https://github.com/anufrievroman/freepaths'
+WEBSITE = 'https://anufrievroman.gitbook.io/freepaths'
 parser = argparse.ArgumentParser(prog='FreePATHS', description='Monte Carlo simulator',
                                  epilog=f'For more information, visit: {WEBSITE}')
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
@@ -22,7 +22,7 @@ args = parser.parse_args()
 if args.input_file:
     exec(open(args.input_file, encoding='utf-8').read(), globals())
 else:
-    print("You didn't provide any input file, so we run a demo simulation:\n")
+    print("You didn't provide any input file, so let's run a demo simulation!\n")
 
 
 class Config:
@@ -68,10 +68,15 @@ class Config:
         self.thickness = THICKNESS
         self.width = WIDTH
         self.length = LENGTH
+        self.include_right_sidewall = INCLUDE_RIGHT_SIDEWALL
+        self.include_left_sidewall = INCLUDE_LEFT_SIDEWALL
+        self.include_top_sidewall = INCLUDE_TOP_SIDEWALL
+        self.include_bottom_sidewall = INCLUDE_BOTTOM_SIDEWALL
 
         # Hot and cold sides:
         self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
         self.cold_side_position = COLD_SIDE_POSITION
+        self.hot_side_position = HOT_SIDE_POSITION
         self.hot_side_x = HOT_SIDE_X
         self.hot_side_y = HOT_SIDE_Y
         self.hot_side_width_x = HOT_SIDE_WIDTH_X
@@ -111,8 +116,11 @@ class Config:
         self.pillar_height = PILLAR_HEIGHT
         self.pillar_wall_angle = PILLAR_WALL_ANGLE
 
+
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
+
+        # Distributions:
         valid_distributions =[member.name.lower() for member in Distributions]
         if self.hot_side_angle_distribution in valid_distributions:
             self.hot_side_angle_distribution = Distributions[self.hot_side_angle_distribution.upper()]
@@ -122,6 +130,7 @@ class Config:
             print(*valid_distributions, sep = ", ")
             sys.exit()
 
+        # Materials:
         valid_materials = [member.name for member in Materials]
         if self.media in valid_materials:
             self.media = Materials[self.media]
@@ -131,6 +140,7 @@ class Config:
             print(*valid_materials, sep = ", ")
             sys.exit()
 
+        # Positions:
         valid_positions = [member.name.lower() for member in Positions]
         if self.cold_side_position in valid_positions:
             self.cold_side_position = Positions[self.cold_side_position.upper()]
@@ -140,8 +150,17 @@ class Config:
             print(*valid_positions, sep = ", ")
             sys.exit()
 
+        if self.hot_side_position in valid_positions:
+            self.hot_side_position = Positions[self.hot_side_position.upper()]
+        else:
+            print("ERROR: Parameter HOT_SIDE_POSITION is not set correctly.")
+            print("HOT_SIDE_POSITION should be one of the following:")
+            print(*valid_positions, sep = ", ")
+            sys.exit()
+
+
     def check_parameter_validity(self):
-        """Check if some parameteres are valid"""
+        """Check if various parameters are valid"""
         if self.number_of_phonons < self.output_trajectories_of_first:
             self.output_trajectories_of_first = self.number_of_phonons
             print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
@@ -155,7 +174,7 @@ class Config:
             print("WARNING: Parameter HOT_SIDE_Y was negative.\n")
 
         if self.hot_side_y - self.hot_side_width_y / 2 < 0:
-            self.self.hot_side_width_y = self.hot_side_y * 2
+            self.hot_side_width_y = self.hot_side_y * 2
             print("WARNING: Parameter HOT_SIDE_WIDTH_Y was too large.\n")
 
         if self.hot_side_x > self.width/2:
@@ -165,6 +184,10 @@ class Config:
         if self.hot_side_width_x > self.width:
             self.hot_side_width_x = self.width
             print("WARNING: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
+
+        if self.cold_side_position == self.hot_side_position:
+            print(f"ERROR: Hot and cold sides are set at {self.cold_side_position}.")
+            sys.exit()
 
         if self.output_path_animation and self.number_of_timesteps > 5000:
             print("WARNING: NUMBER_OF_TIMESTEPS is rather large for animation.\n")

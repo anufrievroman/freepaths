@@ -15,7 +15,6 @@ OUTPUT_SCATTERING_MAP          = False
 OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 30
 NUMBER_OF_LENGTH_SEGMENTS      = 10
-HOT_SIDE_ANGLE_DISTRIBUTION    = 'random'
 
 
 # Map & profiles parameters:

@@ -7,6 +7,7 @@ from numpy import sign
 from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_types import Scattering
+from freepaths.options import Positions
 
 
 def specularity(angle, roughness, wavelength):
@@ -25,10 +26,15 @@ def internal_scattering(ph, flight, scattering_types):
 
 def reinitialization(ph, scattering_types):
     """Re-thermalize phonon if it comes back to the hot side"""
-    _, y, _ = move(ph, cf.timestep)
+    x, y, _ = move(ph, cf.timestep)
 
-    # If phonon returns to the staring line y = 0, generate it again:
-    if y < 0:
+    # If phonon returns to the hot side, generate it again:
+    if (
+        (cf.hot_side_position == Positions.BOTTOM and y < 0) or
+        (cf.hot_side_position == Positions.TOP and y > cf.length) or
+        (cf.hot_side_position == Positions.RIGHT and x > cf.width/2) or
+        (cf.hot_side_position == Positions.LEFT and x < -cf.width/2)
+        ):
         ph.assign_angles()
         scattering_types.hot_side = Scattering.DIFFUSE
 
@@ -364,12 +370,12 @@ def no_new_scattering(ph):
     return True if (abs(z) < cf.thickness / 2 and abs(x) < cf.width / 2 and y > 0) else False
 
 
-def side_wall_scattering(ph, scattering_types):
-    """Check if the phonon hits a side wall and output new vector"""
+def scattering_on_right_sidewall(ph, scattering_types):
+    """Check if the phonon hits right side wall and output new vector"""
     x, y, z = move(ph, cf.timestep)
 
     # If phonon is beyond the side wall:
-    if abs(x) > cf.width/2:
+    if x > cf.width/2:
 
         # Calculate angle to the surface and specular scattering probability:
         a = acos(cos(ph.phi)*sin(abs(ph.theta))) # Angle to the surface
@@ -396,6 +402,107 @@ def side_wall_scattering(ph, scattering_types):
                 ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
                 # Accept the angles if they do not cause new scattering:
+                if no_new_scattering(ph):
+                    break
+
+
+def scattering_on_left_sidewall(ph, scattering_types):
+    """Check if the phonon hits left side wall and output new vector"""
+    x, y, z = move(ph, cf.timestep)
+
+    # If phonon is beyond the side wall:
+    if x < -cf.width/2:
+
+        # Calculate angle to the surface and specular scattering probability:
+        a = acos(cos(ph.phi)*sin(abs(ph.theta))) # Angle to the surface
+        p = specularity(a, cf.side_wall_roughness, ph.wavelength)
+
+        # Specular scattering:
+        if random() < p:
+            scattering_types.walls = Scattering.SPECULAR
+            ph.theta = - ph.theta
+
+        # Diffuse scattering:
+        else:
+            scattering_types.walls = Scattering.DIFFUSE
+            attempt = 0
+            while attempt < 10:
+                attempt += 1
+
+                # Random distribution:
+                # theta = -sign(x)*pi+sign(x)*pi*random()
+                # phi = asin(2*random() - 1)
+
+                # Lambert cosine distribution:
+                ph.theta = -sign(x)*pi/2 + asin(2*random() - 1)
+                ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+                # Accept the angles if they do not cause new scattering:
+                if no_new_scattering(ph):
+                    break
+
+
+def scattering_on_top_sidewall(ph, scattering_types):
+    """Check if the phonon hits top side wall and output new vector"""
+    x, y, z = move(ph, cf.timestep)
+
+    # If phonon is beyond the side wall:
+    if y > cf.length:
+
+        # Calculate angle to the surface and specular scattering probability:
+        a = acos(cos(ph.phi)*cos(ph.theta))
+        p = specularity(a, cf.hole_roughness, ph.wavelength)
+
+        # Specular scattering:
+        if random() < p:
+            scattering_types.holes = Scattering.SPECULAR
+            ph.theta = sign(ph.theta)*pi - ph.theta
+
+        # Diffuse scattering:
+        else:
+            scattering_types.holes = Scattering.DIFFUSE
+            attempt = 0
+            while attempt < 10:
+                attempt += 1
+
+                # Lambert cosine distribution:
+                rand_sign = sign((2*random() - 1))
+                ph.theta = rand_sign*pi/2 + rand_sign*acos(random())
+                ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+                # Accept the angles only if they do not immediately cause new scattering:
+                if no_new_scattering(ph):
+                    break
+
+
+def scattering_on_bottom_sidewall(ph, scattering_types):
+    """Check if the phonon hits bottom side wall and output new vector"""
+    x, y, z = move(ph, cf.timestep)
+
+    # If phonon is beyond the side wall:
+    if y < 0.0:
+
+        # Calculate angle to the surface and specular scattering probability:
+        a = acos(cos(ph.phi)*cos(ph.theta))
+        p = specularity(a, cf.hole_roughness, ph.wavelength)
+
+        # Specular scattering:
+        if random() < p:
+            scattering_types.holes = Scattering.SPECULAR
+            ph.theta = sign(ph.theta)*pi - ph.theta
+
+        # Diffuse scattering:
+        else:
+            scattering_types.holes = Scattering.DIFFUSE
+            attempt = 0
+            while attempt < 10:
+                attempt += 1
+
+                # Lambert cosine distribution:
+                ph.theta = asin(2*random() - 1)
+                ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+                # Accept the angles only if they do not immediately cause new scattering:
                 if no_new_scattering(ph):
                     break
 
@@ -526,7 +633,14 @@ def surface_scattering(ph, scattering_types):
         bottom_scattering(ph, scattering_types)
 
     # Scattering on sidewalls:
-    side_wall_scattering(ph, scattering_types)
+    if cf.include_right_sidewall:
+        scattering_on_right_sidewall(ph, scattering_types)
+    if cf.include_left_sidewall:
+        scattering_on_left_sidewall(ph, scattering_types)
+    if cf.include_top_sidewall:
+        scattering_on_top_sidewall(ph, scattering_types)
+    if cf.include_bottom_sidewall:
+        scattering_on_bottom_sidewall(ph, scattering_types)
 
     # Scattering on parabolic walls:
     if cf.include_top_parabola:
@@ -565,6 +679,8 @@ def surface_scattering(ph, scattering_types):
                 Lx = cf.rectangular_hole_side_x * (cf.hole_coordinates[i, 2] + 1)
                 Ly = cf.rectangular_hole_side_y * (cf.hole_coordinates[i, 2] + 1)
                 scattering_on_triangle_down_holes(ph, x0, y0, Lx, Ly, scattering_types, x, y, z)
+            else:
+                pass
 
             # If there was any scattering, then no need to check other holes:
             if scattering_types.holes is not None:

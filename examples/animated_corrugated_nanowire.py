@@ -16,7 +16,6 @@ PLOTS_IN_TERMINAL              = False
 OUTPUT_SCATTERING_MAP          = False
 OUTPUT_RAW_THERMAL_MAP         = True
 NUMBER_OF_LENGTH_SEGMENTS      = 10
-HOT_SIDE_ANGLE_DISTRIBUTION    = 'random'
 
 
 # Animation parameters:

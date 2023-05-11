@@ -13,7 +13,6 @@ OUTPUT_SCATTERING_MAP          = False
 OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 30
 NUMBER_OF_LENGTH_SEGMENTS      = 10
-HOT_SIDE_ANGLE_DISTRIBUTION    = 'directional'
 
 
 # Map & profiles parameters:
@@ -43,6 +42,7 @@ FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
 HOT_SIDE_X                     = 0.0
 HOT_SIDE_WIDTH_X               = WIDTH
+HOT_SIDE_ANGLE_DISTRIBUTION    = 'directional'
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9

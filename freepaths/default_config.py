@@ -15,7 +15,7 @@ OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 10
 OUTPUT_STRUCTURE_COLOR         = "#F0F0F0"
 NUMBER_OF_LENGTH_SEGMENTS      = 10
-HOT_SIDE_ANGLE_DISTRIBUTION    = "random"
+HOT_SIDE_ANGLE_DISTRIBUTION    = "random_up"
 
 # Animation:
 OUTPUT_PATH_ANIMATION          = False
@@ -39,10 +39,15 @@ GRAY_APPROXIMATION_MFP         = None
 THICKNESS                      = 150e-9
 WIDTH                          = 500e-9
 LENGTH                         = 2200e-9
+INCLUDE_RIGHT_SIDEWALL         = True
+INCLUDE_LEFT_SIDEWALL          = True
+INCLUDE_TOP_SIDEWALL           = False
+INCLUDE_BOTTOM_SIDEWALL        = False
 
 # Hot and cold sides [m]:
 FREQUENCY_DETECTOR_SIZE        = WIDTH
 COLD_SIDE_POSITION             = 'top'
+HOT_SIDE_POSITION              = 'bottom'
 HOT_SIDE_X                     = 0
 HOT_SIDE_WIDTH_X               = WIDTH
 HOT_SIDE_Y                     = 0

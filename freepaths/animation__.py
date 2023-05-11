@@ -80,17 +80,8 @@ def generate_animation_xy():
     filenames = os.listdir("Frames/")
     for filename in filenames:
         images.append(imageio.imread(f"Frames/{filename}"))
-
-    # Create a GIF file:
     imageio.mimsave("Animated paths XY.gif", images,
                     fps=cf.output_animation_fps, subrectangles=True)
-
-    # Create an MP4 file:
-    # writer = imageio.get_writer('Animated paths XY.mp4', fps=cf.output_animation_fps)
-
-    # for im in images:
-        # writer.append_data(imageio.imread(im))
-    # writer.close()
 
 
 def delete_frames():

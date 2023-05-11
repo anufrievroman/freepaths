@@ -78,17 +78,17 @@ class ScatteringData:
 
     def __init__(self):
         """Initialize arrays according to the number of segments"""
-        self.wall_diffuse = np.zeros(cf.number_of_length_segments)
-        self.wall_specular = np.zeros(cf.number_of_length_segments)
-        self.top_diffuse = np.zeros(cf.number_of_length_segments)
-        self.top_specular = np.zeros(cf.number_of_length_segments)
-        self.hole_diffuse = np.zeros(cf.number_of_length_segments)
-        self.hole_specular = np.zeros(cf.number_of_length_segments)
-        self.pillar_diffuse = np.zeros(cf.number_of_length_segments)
-        self.pillar_specular = np.zeros(cf.number_of_length_segments)
-        self.hot_side = np.zeros(cf.number_of_length_segments)
-        self.internal = np.zeros(cf.number_of_length_segments)
-        self.total = np.zeros(cf.number_of_length_segments)
+        self.wall_diffuse = np.zeros(cf.number_of_length_segments+1)
+        self.wall_specular = np.zeros(cf.number_of_length_segments+1)
+        self.top_diffuse = np.zeros(cf.number_of_length_segments+1)
+        self.top_specular = np.zeros(cf.number_of_length_segments+1)
+        self.hole_diffuse = np.zeros(cf.number_of_length_segments+1)
+        self.hole_specular = np.zeros(cf.number_of_length_segments+1)
+        self.pillar_diffuse = np.zeros(cf.number_of_length_segments+1)
+        self.pillar_specular = np.zeros(cf.number_of_length_segments+1)
+        self.hot_side = np.zeros(cf.number_of_length_segments+1)
+        self.internal = np.zeros(cf.number_of_length_segments+1)
+        self.total = np.zeros(cf.number_of_length_segments+1)
 
     def save_scattering_events(self, y, scattering_types):
         """Analyze types of scattering at the current timestep and add it to the statistics"""

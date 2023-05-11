@@ -308,6 +308,7 @@ def plot_scattering_statistics():
 
 def plot_data():
     """Create plots of various distributions"""
+    plot_trajectories()
     plot_angle_distribution()
     plot_free_path_distribution()
     plot_frequency_distribution()
@@ -320,7 +321,6 @@ def plot_data():
     plot_temperature_profile()
     plot_heat_flux_profile()
     plot_thermal_map()
-    plot_trajectories()
     plot_scattering_statistics()
     if cf.output_scattering_map:
         plot_scattering_map()
