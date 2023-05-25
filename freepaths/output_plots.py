@@ -25,7 +25,6 @@ plt.rcParams['figure.dpi'] = 200
 plt.rcParams['savefig.dpi'] = 200
 plt.rcParams['legend.fontsize'] = 8
 
-
 def distribution_calculation(filename, data_range, number_of_nodes):
     """Calculate distribution of numbers (histogram) in a given file"""
     data = np.loadtxt(filename, encoding='utf-8')
@@ -41,11 +40,11 @@ def angle_distribution_calculation():
     """Analyse measured phonon angles and create their distribution"""
     all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
     initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((180, 3))
-    distribution[:, 0] = range(-90, 90)
+    distribution = np.zeros((360, 3))
+    distribution[:, 0] = range(-180, 180)
     exit_angles = all_exit_angles[all_exit_angles != 0]
-    distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 180, range=(-90, 90))
-    distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 180, range=(-90, 90))
+    distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
+    distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
     return distribution
 
 
@@ -66,10 +65,11 @@ def plot_angle_distribution():
     """Plot distribution of angles"""
     angle_distributions = angle_distribution_calculation()
     fig, ax = plt.subplots()
-    ax.plot(angle_distributions[:, 0], angle_distributions[:, 1], 'b')
-    ax.plot(angle_distributions[:, 0], angle_distributions[:, 2], 'r')
+    ax.plot(angle_distributions[:, 0], angle_distributions[:, 1], 'royalblue')
+    ax.plot(angle_distributions[:, 0], angle_distributions[:, 2], 'deeppink')
     ax.set_xlabel('Angle (degree)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
+    ax.set_ylim(bottom=0)
     ax.legend(["At cold side", "At hot side"])
     fig.savefig("Distribution of angles.pdf", dpi=300, format='pdf', bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()
@@ -81,7 +81,7 @@ def plot_free_path_distribution():
     filename = "Data/All free paths.csv"
     free_path_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1])
+    ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Free flights (μm)', fontsize=12)
     ax.set_ylabel('Number of flights', fontsize=12)
     # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
@@ -95,7 +95,7 @@ def plot_frequency_distribution():
     filename = "Data/All initial frequencies.csv"
     frequency_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(frequency_distribution[:, 0], frequency_distribution[:, 1])
+    ax.plot(frequency_distribution[:, 0], frequency_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Frequency (Hz)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of initial frequencies.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -107,7 +107,7 @@ def plot_wavelength_distribution():
     """Plot distribution of wavelength"""
     wavelength_distribution = wavelength_distribution_calculation(cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(wavelength_distribution[:, 0] * 1e9, wavelength_distribution[:, 1])
+    ax.plot(wavelength_distribution[:, 0] * 1e9, wavelength_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Wavelength (nm)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of wavelengths.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -119,7 +119,7 @@ def plot_travel_time_distribution():
     """Plot distribution of wavelength"""
     travel_time_distribution = distribution_calculation("Data/All travel times.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(travel_time_distribution[:, 0] * 1e9, travel_time_distribution[:, 1])
+    ax.plot(travel_time_distribution[:, 0] * 1e9, travel_time_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Travel time (ns)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of travel times.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -127,11 +127,23 @@ def plot_travel_time_distribution():
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
 
 
+def plot_mean_free_path_distribution():
+    """Plot distribution of MFP per phonon"""
+    mean_free_path_distribution = distribution_calculation("Data/All mean free paths.csv", None, cf.number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot(mean_free_path_distribution[:, 0] * 1e9, mean_free_path_distribution[:, 1], 'royalblue')
+    ax.set_xlabel('Mean free path (nm)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of MFPs.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+    np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
+
+
 def plot_detected_frequency_distribution():
     """Plot distribution of detected frequencies"""
     detected_frequency_distribution = distribution_calculation("Data/All detected frequencies.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(detected_frequency_distribution[:, 0], detected_frequency_distribution[:, 1])
+    ax.plot(detected_frequency_distribution[:, 0], detected_frequency_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Frequency (Hz)', fontsize=12)
     ax.set_ylabel('Number of phonons', fontsize=12)
     fig.savefig("Distribution of detected frequencies.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -144,7 +156,7 @@ def plot_velocity_distribution():
     fig, ax = plt.subplots()
     speeds = np.loadtxt("Data/All group velocities.csv")
     frequencies = np.loadtxt("Data/All initial frequencies.csv")
-    ax.plot(frequencies, speeds, '.')
+    ax.plot(frequencies, speeds, '.', c='royalblue')
     ax.set_xlabel('Frequency (Hz)', fontsize=12)
     ax.set_ylabel('Group velocity (m/s)', fontsize=12)
     fig.savefig('Group velocities.pdf', dpi=300, format='pdf', bbox_inches="tight")
@@ -155,7 +167,7 @@ def plot_time_in_segments():
     """Plot time spent in segments"""
     fig, ax = plt.subplots()
     segment, time = np.genfromtxt("Data/Time spent in segments.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
-    ax.plot(segment, time, '-')
+    ax.plot(segment, time, '-', c='royalblue')
     ax.set_xlabel('Y (μm)', fontsize=12)
     ax.set_ylabel('Time spent (ns)', fontsize=12)
     fig.savefig("Time spent in segments.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -166,7 +178,7 @@ def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
     time, thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
-    ax.plot(time, thermal_conductivity, linewidth=1)
+    ax.plot(time, thermal_conductivity, linewidth=1, c='royalblue')
     ax.set_ylabel('Thermal conductivity (W/mK)', fontsize=12)
     ax.set_xlabel('Time (ns)', fontsize=12)
     fig.savefig("Thermal conductivity.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -316,6 +328,7 @@ def plot_data():
     plot_frequency_distribution()
     plot_wavelength_distribution()
     plot_travel_time_distribution()
+    plot_mean_free_path_distribution()
     plot_detected_frequency_distribution()
     plot_velocity_distribution()
     plot_time_in_segments()

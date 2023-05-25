@@ -46,7 +46,11 @@ class Flight:
     @property
     def mean_free_path(self):
         """Mean value of all free flights"""
-        return sum(self.free_paths)/len(self.free_paths)
+        try:
+            mfp = sum(self.free_paths)/len(self.free_paths)
+        except:
+            mfp = 0
+        return mfp
 
     def add_point_to_path(self):
         """Add a scattering point to the path"""

@@ -46,6 +46,7 @@ class GeneralData:
         self.detected_frequencies = []
         self.group_velocities = []
         self.travel_times = []
+        self.mean_free_paths = []
 
     def save_phonon_data(self, ph):
         """Add information about the phonon to the dataset"""
@@ -60,6 +61,7 @@ class GeneralData:
         self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.travel_times.append(flight.travel_time)
         self.detected_frequencies.append(flight.detected_frequency)
+        self.mean_free_paths.append(flight.mean_free_path)
 
     def write_into_files(self):
         """Write all the data into files"""
@@ -71,6 +73,7 @@ class GeneralData:
         np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]", encoding='utf-8')
         np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', delimiter=",", header="Travel time [s]", encoding='utf-8')
+        np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', delimiter=",", header="MFPs [m]", encoding='utf-8')
 
 
 class ScatteringData:
