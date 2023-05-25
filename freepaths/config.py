@@ -179,17 +179,29 @@ class Config:
         if self.output_path_animation and self.number_of_timesteps > 5000:
             print("WARNING: NUMBER_OF_TIMESTEPS is rather large for animation.\n")
 
-        if self.cold_side_position_top and self.include_top_sidewall:
-            print("WARNING: Top side is assigned both as cold side and a wall.\n")
+        if (self.cold_side_position_top and self.include_top_sidewall or
+            self.hot_side_position_top and self.include_top_sidewall or
+            self.cold_side_position_top and self.hot_side_position_top):
+            print("ERROR: Top side is assigned multiple functions.\n")
+            sys.exit()
 
-        if self.cold_side_position_bottom and self.include_bottom_sidewall:
-            print("WARNING: Bottom side is assigned both as cold side and a wall.\n")
+        if (self.cold_side_position_bottom and self.include_bottom_sidewall or
+            self.hot_side_position_bottom and self.include_bottom_sidewall or
+            self.cold_side_position_bottom and self.hot_side_position_bottom):
+            print("ERROR: Bottom side is assigned multiple functions.\n")
+            sys.exit()
 
-        if self.cold_side_position_right and self.include_right_sidewall:
-            print("WARNING: Right side is assigned both as cold side and a wall.\n")
+        if (self.cold_side_position_right and self.include_right_sidewall or
+            self.hot_side_position_right and self.include_right_sidewall or
+            self.cold_side_position_right and self.hot_side_position_right):
+            print("ERROR: Right side is assigned multiple functions.\n")
+            sys.exit()
 
-        if self.cold_side_position_left and self.include_left_sidewall:
-            print("WARNING: Left side is assigned both as cold side and a wall.\n")
+        if (self.cold_side_position_left and self.include_left_sidewall or
+            self.hot_side_position_left and self.include_left_sidewall or
+            self.cold_side_position_left and self.hot_side_position_left):
+            print("ERROR: Left side is assigned multiple functions.\n")
+            sys.exit()
 
 
     def check_depricated_parameters(self):

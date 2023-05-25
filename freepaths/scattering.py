@@ -27,13 +27,52 @@ def reinitialization(ph, scattering_types):
     """Re-thermalize phonon if it comes back to the hot side"""
     x, y, _ = move(ph, cf.timestep)
 
-    # If phonon returns to the hot side, generate it again:
-    if ((cf.hot_side_position_bottom and y < 0) or
-        (cf.hot_side_position_top and y > cf.length) or
-        (cf.hot_side_position_right and x > cf.width/2) or
-        (cf.hot_side_position_left and x < -cf.width/2)):
-        ph.assign_angles()
+    # Bottom sidewall:
+    if cf.hot_side_position_bottom and y < 0:
         scattering_types.hot_side = Scattering.DIFFUSE
+        attempt = 0
+        while attempt < 10:
+            attempt += 1
+
+            # Lambert cosine distribution:
+            ph.theta = asin(2*random() - 1)
+            ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+            # Accept the angles only if they do not immediately cause new scattering:
+            if no_new_scattering(ph):
+                break
+
+    # Top sidewall:
+    if cf.hot_side_position_top and y > cf.length:
+        scattering_types.hot_side = Scattering.DIFFUSE
+        attempt = 0
+        while attempt < 10:
+            attempt += 1
+
+            # Lambert cosine distribution:
+            rand_sign = sign((2*random() - 1))
+            ph.theta = rand_sign*pi/2 + rand_sign*acos(random())
+            ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+            # Accept the angles only if they do not immediately cause new scattering:
+            if no_new_scattering(ph):
+                break
+
+    # Right and left sidewalls:
+    if ((cf.hot_side_position_right and x > cf.width/2) or
+          (cf.hot_side_position_left and x < -cf.width/2)):
+        scattering_types.hot_side = Scattering.DIFFUSE
+        attempt = 0
+        while attempt < 10:
+            attempt += 1
+
+            # Lambert cosine distribution:
+            ph.theta = -sign(x)*pi/2 + asin(2*random() - 1)
+            ph.phi = asin((asin(2*random() - 1))/(pi/2))
+
+            # Accept the angles if they do not cause new scattering:
+            if no_new_scattering(ph):
+                break
 
 
 def top_parabola_scattering(ph, scattering_types):
@@ -364,7 +403,9 @@ def no_new_scattering(ph):
     """Check if new angles do not immediately lead to new top/bottom or sidewall scattering.
     This is necessary to prevent phonons leaving the structure boundaries."""
     x, y, z = move(ph, cf.timestep)
-    return True if (abs(z) < cf.thickness / 2 and abs(x) < cf.width / 2 and y > 0) else False
+    return (abs(z) < cf.thickness / 2 and
+            abs(x) < cf.width / 2 and
+            cf.length > y > 0)
 
 
 def scattering_on_right_sidewall(ph, scattering_types):
