@@ -247,7 +247,8 @@ def plot_trajectories():
     for index in range(cf.output_trajectories_of_first):
         x_coordinates = np.trim_zeros(data[:, 3 * index], trim='b')
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
-        ax.plot(x_coordinates, y_coordinates, linewidth=0.2)
+        max_steps = min([x_coordinates.shape[0], y_coordinates.shape[0]])
+        ax.plot(x_coordinates[:max_steps], y_coordinates[:max_steps], linewidth=0.2)
 
     # Set labels:
     ax.set_xlabel('X (μm)', fontsize=12)
@@ -261,7 +262,8 @@ def plot_trajectories():
     for index in range(cf.output_trajectories_of_first):
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
         z_coordinates = np.trim_zeros(data[:, 3 * index + 2], trim='b')
-        ax.plot(y_coordinates, z_coordinates, linewidth=0.2)
+        max_steps = min([y_coordinates.shape[0], z_coordinates.shape[0]])
+        ax.plot(y_coordinates[:max_steps], z_coordinates[:max_steps], linewidth=0.2)
     ax.set_xlabel('Y (μm)', fontsize=12)
     ax.set_ylabel('Z (μm)', fontsize=12)
     ax.set_aspect('equal', 'datalim')

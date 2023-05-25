@@ -7,7 +7,6 @@ from numpy import sign
 from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_types import Scattering
-from freepaths.options import Positions
 
 
 def specularity(angle, roughness, wavelength):
@@ -29,12 +28,10 @@ def reinitialization(ph, scattering_types):
     x, y, _ = move(ph, cf.timestep)
 
     # If phonon returns to the hot side, generate it again:
-    if (
-        (cf.hot_side_position == Positions.BOTTOM and y < 0) or
-        (cf.hot_side_position == Positions.TOP and y > cf.length) or
-        (cf.hot_side_position == Positions.RIGHT and x > cf.width/2) or
-        (cf.hot_side_position == Positions.LEFT and x < -cf.width/2)
-        ):
+    if ((cf.hot_side_position_bottom and y < 0) or
+        (cf.hot_side_position_top and y > cf.length) or
+        (cf.hot_side_position_right and x > cf.width/2) or
+        (cf.hot_side_position_left and x < -cf.width/2)):
         ph.assign_angles()
         scattering_types.hot_side = Scattering.DIFFUSE
 

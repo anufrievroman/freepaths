@@ -103,4 +103,4 @@ def create_animation():
     """Main function that creates the animation"""
     generate_frames_xy()
     generate_animation_xy()
-    delete_frames()
+    # delete_frames()

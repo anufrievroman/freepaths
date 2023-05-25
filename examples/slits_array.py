@@ -39,11 +39,11 @@ THICKNESS                      = 150e-9
 WIDTH                          = 1200e-9
 LENGTH                         = 2200e-9
 
+
 # Hot and cold sides [m]:
 FREQUENCY_DETECTOR_SIZE        = WIDTH
-COLD_SIDE_POSITION             = 'top'
-HOT_SIDE_X                     = 0
-HOT_SIDE_WIDTH_X               = WIDTH
+PHONON_SOURCE_X                = 0
+PHONON_SOURCE_WIDTH_X          = WIDTH
 
 
 # Roughness [m]:

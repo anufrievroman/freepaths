@@ -93,29 +93,32 @@ class ScatteringData:
     def save_scattering_events(self, y, scattering_types):
         """Analyze types of scattering at the current timestep and add it to the statistics"""
 
-        # Calculate in which length segment (starting from zero) we are:
-        segment = int(y // (cf.length / cf.number_of_length_segments))
-        self.total[segment] += 1
+        try:
+            # Calculate in which length segment (starting from zero) we are:
+            segment = int(y // (cf.length / cf.number_of_length_segments))
+            self.total[segment] += 1
 
-        # Scattering on side walls:
-        self.wall_diffuse[segment]  += 1 if scattering_types.walls == Scattering.DIFFUSE else 0
-        self.wall_specular[segment] += 1 if scattering_types.walls == Scattering.SPECULAR else 0
+            # Scattering on side walls:
+            self.wall_diffuse[segment]  += 1 if scattering_types.walls == Scattering.DIFFUSE else 0
+            self.wall_specular[segment] += 1 if scattering_types.walls == Scattering.SPECULAR else 0
 
-        # Scattering on top and bottom:
-        self.top_diffuse[segment]  += 1 if scattering_types.top_bottom == Scattering.DIFFUSE else 0
-        self.top_specular[segment] += 1 if scattering_types.top_bottom == Scattering.SPECULAR else 0
+            # Scattering on top and bottom:
+            self.top_diffuse[segment]  += 1 if scattering_types.top_bottom == Scattering.DIFFUSE else 0
+            self.top_specular[segment] += 1 if scattering_types.top_bottom == Scattering.SPECULAR else 0
 
-        # Scattering on holes:
-        self.hole_diffuse[segment]  += 1 if scattering_types.holes == Scattering.DIFFUSE else 0
-        self.hole_specular[segment] += 1 if scattering_types.holes == Scattering.SPECULAR else 0
+            # Scattering on holes:
+            self.hole_diffuse[segment]  += 1 if scattering_types.holes == Scattering.DIFFUSE else 0
+            self.hole_specular[segment] += 1 if scattering_types.holes == Scattering.SPECULAR else 0
 
-        # Scattering on pillars:
-        self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == Scattering.DIFFUSE else 0
-        self.pillar_specular[segment] += 1 if scattering_types.pillars == Scattering.SPECULAR else 0
+            # Scattering on pillars:
+            self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == Scattering.DIFFUSE else 0
+            self.pillar_specular[segment] += 1 if scattering_types.pillars == Scattering.SPECULAR else 0
 
-        # Internal scattering and rethermalization on hot side:
-        self.hot_side[segment] += 1 if scattering_types.hot_side == Scattering.DIFFUSE else 0
-        self.internal[segment] += 1 if scattering_types.internal == Scattering.DIFFUSE else 0
+            # Internal scattering and rethermalization on hot side:
+            self.hot_side[segment] += 1 if scattering_types.hot_side == Scattering.DIFFUSE else 0
+            self.internal[segment] += 1 if scattering_types.internal == Scattering.DIFFUSE else 0
+        except:
+            pass
 
     def write_into_files(self):
         """Write data into a file"""

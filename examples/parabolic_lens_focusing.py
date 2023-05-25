@@ -37,17 +37,19 @@ THICKNESS                      = 150e-9
 WIDTH                          = 1000e-9
 LENGTH                         = 1100e-9
 
+
 # Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE        = WIDTH
-COLD_SIDE_POSITION             = 'top'
-HOT_SIDE_X                     = 0.0
-HOT_SIDE_WIDTH_X               = WIDTH
-HOT_SIDE_ANGLE_DISTRIBUTION    = 'directional'
+FREQUENCY_DETECTOR_SIZE             = WIDTH
+PHONON_SOURCE_X                     = 0.0
+PHONON_SOURCE_WIDTH_X               = WIDTH
+PHONON_SOURCE_ANGLE_DISTRIBUTION    = 'directional'
+
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
+
 
 # Parabolic boundaries:
 INCLUDE_TOP_PARABOLA           = True

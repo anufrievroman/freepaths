@@ -41,13 +41,15 @@ INCLUDE_TOP_SIDEWALL           = True
 INCLUDE_BOTTOM_SIDEWALL        = True
 
 # Hot and cold sides [m]:
-COLD_SIDE_POSITION             = 'right'
-HOT_SIDE_POSITION              = 'left'
-HOT_SIDE_X                     = -WIDTH/2
-HOT_SIDE_Y                     = LENGTH/2
-HOT_SIDE_WIDTH_X               = 0
-HOT_SIDE_WIDTH_Y               = LENGTH
-HOT_SIDE_ANGLE_DISTRIBUTION    = 'random_right'
+COLD_SIDE_POSITION_RIGHT            = False
+COLD_SIDE_POSITION_RIGHT            = True
+HOT_SIDE_POSITION_LEFT              = True
+HOT_SIDE_POSITION_BOTTOM            = False
+PHONON_SOURCE_X                     = -WIDTH/2
+PHONON_SOURCE_Y                     = LENGTH/2
+PHONON_SOURCE_WIDTH_X               = 0
+PHONON_SOURCE_WIDTH_Y               = LENGTH
+PHONON_SOURCE_ANGLE_DISTRIBUTION    = 'random_right'
 
 
 # Hole array parameters [m]:

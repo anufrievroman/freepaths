@@ -3,7 +3,7 @@
 import sys
 import argparse
 
-from freepaths.options import Materials, Distributions, Positions
+from freepaths.options import Materials, Distributions
 
 # Import a default input file:
 from freepaths.default_config import *
@@ -44,7 +44,7 @@ class Config:
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.output_structure_color = OUTPUT_STRUCTURE_COLOR
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
-        self.hot_side_angle_distribution = HOT_SIDE_ANGLE_DISTRIBUTION
+        self.phonon_source_angle_distribution = PHONON_SOURCE_ANGLE_DISTRIBUTION
 
         # Animation:
         self.output_path_animation = OUTPUT_PATH_ANIMATION
@@ -73,14 +73,23 @@ class Config:
         self.include_top_sidewall = INCLUDE_TOP_SIDEWALL
         self.include_bottom_sidewall = INCLUDE_BOTTOM_SIDEWALL
 
-        # Hot and cold sides:
+        # Hot side positions:
+        self.hot_side_position_top = HOT_SIDE_POSITION_TOP
+        self.hot_side_position_bottom = HOT_SIDE_POSITION_BOTTOM
+        self.hot_side_position_right = HOT_SIDE_POSITION_RIGHT
+        self.hot_side_position_left = HOT_SIDE_POSITION_LEFT
+
         self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
-        self.cold_side_position = COLD_SIDE_POSITION
-        self.hot_side_position = HOT_SIDE_POSITION
-        self.hot_side_x = HOT_SIDE_X
-        self.hot_side_y = HOT_SIDE_Y
-        self.hot_side_width_x = HOT_SIDE_WIDTH_X
-        self.hot_side_width_y = HOT_SIDE_WIDTH_Y
+        self.phonon_source_x = PHONON_SOURCE_X
+        self.phonon_source_y = PHONON_SOURCE_Y
+        self.phonon_source_width_x = PHONON_SOURCE_WIDTH_X
+        self.phonon_source_width_y = PHONON_SOURCE_WIDTH_Y
+
+        # Cold side positions:
+        self.cold_side_position_top = COLD_SIDE_POSITION_TOP
+        self.cold_side_position_bottom = COLD_SIDE_POSITION_BOTTOM
+        self.cold_side_position_right = COLD_SIDE_POSITION_RIGHT
+        self.cold_side_position_left = COLD_SIDE_POSITION_LEFT
 
         # Roughness:
         self.side_wall_roughness = SIDE_WALL_ROUGHNESS
@@ -122,11 +131,11 @@ class Config:
 
         # Distributions:
         valid_distributions =[member.name.lower() for member in Distributions]
-        if self.hot_side_angle_distribution in valid_distributions:
-            self.hot_side_angle_distribution = Distributions[self.hot_side_angle_distribution.upper()]
+        if self.phonon_source_angle_distribution in valid_distributions:
+            self.phonon_source_angle_distribution = Distributions[self.phonon_source_angle_distribution.upper()]
         else:
-            print("ERROR: Parameter HOT_SIDE_ANGLE_DISTRIBUTION is not set correctly.")
-            print("HOT_SIDE_ANGLE_DISTRIBUTION should be one of the following:")
+            print("ERROR: Parameter phonon_source_ANGLE_DISTRIBUTION is not set correctly.")
+            print("phonon_source_ANGLE_DISTRIBUTION should be one of the following:")
             print(*valid_distributions, sep = ", ")
             sys.exit()
 
@@ -140,24 +149,6 @@ class Config:
             print(*valid_materials, sep = ", ")
             sys.exit()
 
-        # Positions:
-        valid_positions = [member.name.lower() for member in Positions]
-        if self.cold_side_position in valid_positions:
-            self.cold_side_position = Positions[self.cold_side_position.upper()]
-        else:
-            print("ERROR: Parameter COLD_SIDE_POSITION is not set correctly.")
-            print("COLD_SIDE_POSITION should be one of the following:")
-            print(*valid_positions, sep = ", ")
-            sys.exit()
-
-        if self.hot_side_position in valid_positions:
-            self.hot_side_position = Positions[self.hot_side_position.upper()]
-        else:
-            print("ERROR: Parameter HOT_SIDE_POSITION is not set correctly.")
-            print("HOT_SIDE_POSITION should be one of the following:")
-            print(*valid_positions, sep = ", ")
-            sys.exit()
-
 
     def check_parameter_validity(self):
         """Check if various parameters are valid"""
@@ -165,34 +156,69 @@ class Config:
             self.output_trajectories_of_first = self.number_of_phonons
             print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
 
-        if self.hot_side_y > self.length:
-            self.hot_side_y = self.length
-            print("WARNING: Parameter HOT_SIDE_Y exceeded LENGHT.\n")
+        if self.phonon_source_y > self.length:
+            self.phonon_source_y = self.length
+            print("WARNING: Parameter phonon_source_Y exceeded LENGHT.\n")
 
-        if self.hot_side_y < 0:
-            self.hot_side_y = 0
-            print("WARNING: Parameter HOT_SIDE_Y was negative.\n")
+        if self.phonon_source_y < 0:
+            self.phonon_source_y = 0
+            print("WARNING: Parameter PHONON_SOURCE_Y was negative.\n")
 
-        if self.hot_side_y - self.hot_side_width_y / 2 < 0:
-            self.hot_side_width_y = self.hot_side_y * 2
-            print("WARNING: Parameter HOT_SIDE_WIDTH_Y was too large.\n")
+        if self.phonon_source_y - self.phonon_source_width_y / 2 < 0:
+            self.phonon_source_width_y = self.phonon_source_y * 2
+            print("WARNING: Parameter PHONON_SOURCE_WIDTH_Y was too large.\n")
 
-        if self.hot_side_x > self.width/2:
-            self.hot_side_x = 0
-            print("WARNING: Parameter HOT_SIDE_X was larger than WIDTH.\n")
+        if self.phonon_source_x > self.width/2:
+            self.phonon_source_x = 0
+            print("WARNING: Parameter PHONON_SOURCE_X was larger than WIDTH.\n")
 
-        if self.hot_side_width_x > self.width:
-            self.hot_side_width_x = self.width
-            print("WARNING: Parameter HOT_SIDE_WIDTH_X exceeds WIDTH.\n")
-
-        if self.cold_side_position == self.hot_side_position:
-            print(f"ERROR: Hot and cold sides are set at {self.cold_side_position}.")
-            sys.exit()
+        if self.phonon_source_width_x > self.width:
+            self.phonon_source_width_x = self.width
+            print("WARNING: Parameter PHONON_SOURCE_WIDTH_X exceeds WIDTH.\n")
 
         if self.output_path_animation and self.number_of_timesteps > 5000:
             print("WARNING: NUMBER_OF_TIMESTEPS is rather large for animation.\n")
 
+        if self.cold_side_position_top and self.include_top_sidewall:
+            print("WARNING: Top side is assigned both as cold side and a wall.\n")
+
+        if self.cold_side_position_bottom and self.include_bottom_sidewall:
+            print("WARNING: Bottom side is assigned both as cold side and a wall.\n")
+
+        if self.cold_side_position_right and self.include_right_sidewall:
+            print("WARNING: Right side is assigned both as cold side and a wall.\n")
+
+        if self.cold_side_position_left and self.include_left_sidewall:
+            print("WARNING: Left side is assigned both as cold side and a wall.\n")
+
+
+    def check_depricated_parameters(self):
+        """Check for depricated parameters and warn about them"""
+
+        if 'COLD_SIDE_POSITION' in globals():
+            print("WARNING: parameter COLD_SIDE_POSITION is depricated. ")
+            print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
+
+        if 'HOT_SIDE_POSITION' in globals():
+            print("WARNING: parameter HOT_SIDE_POSITION is depricated. ")
+            print("Use specific boolean parameters like HOT_SIDE_POSITION_BOTTOM = True.\n")
+
+        if 'HOT_SIDE_X' in globals():
+            print("WARNING: parameter HOT_SIDE_X was renamed to PHONON_SOURCE_X.\n")
+
+        if 'HOT_SIDE_Y' in globals():
+            print("WARNING: parameter HOT_SIDE_Y was renamed to PHONON_SOURCE_Y.\n")
+
+        if 'HOT_SIDE_WIDTH_X' in globals():
+            print("WARNING: parameter HOT_SIDE_WIDTH_X was renamed to PHONON_SOURCE_WIDTH_X.\n")
+
+        if 'HOT_SIDE_WIDTH_Y' in globals():
+            print("WARNING: parameter HOT_SIDE_WIDTH_Y was renamed to PHONON_SOURCE_WIDTH_Y.\n")
+
+        if 'HOT_SIDE_ANGLE_DISTRIBUTION' in globals():
+            print("WARNING: parameter HOT_SIDE_ANGLE_DISTRIBUTION was renamed to PHONON_SOURCE_ANGLE_DISTRIBUTION.\n")
 
 cf = Config()
 cf.convert_to_enums()
 cf.check_parameter_validity()
+cf.check_depricated_parameters()

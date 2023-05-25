@@ -39,13 +39,13 @@ WIDTH                          = 2000e-9
 LENGTH                         = 2000e-9
 
 # Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE        = WIDTH
-COLD_SIDE_POSITION             = 'top'
-HOT_SIDE_X                     = 0
-HOT_SIDE_Y                     = 300e-9
-HOT_SIDE_WIDTH_X               = 10e-9
-HOT_SIDE_WIDTH_Y               = 10e-9
-HOT_SIDE_ANGLE_DISTRIBUTION    = 'uniform'
+FREQUENCY_DETECTOR_SIZE             = WIDTH
+COLD_SIDE_POSITION_TOP              = True
+PHONON_SOURCE_X                     = 0
+PHONON_SOURCE_Y                     = 300e-9
+PHONON_SOURCE_WIDTH_X               = 10e-9
+PHONON_SOURCE_WIDTH_Y               = 10e-9
+PHONON_SOURCE_ANGLE_DISTRIBUTION    = 'uniform'
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9

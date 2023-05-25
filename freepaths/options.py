@@ -22,16 +22,6 @@ class Distributions(enum.Enum):
     UNIFORM = 7
 
 
-class Positions(enum.Enum):
-    """Possible positions of cold and hot sides"""
-    TOP = 1
-    BOTTOM = 2
-    RIGHT = 3
-    LEFT = 4
-    # TOP_AND_RIGHT = 5
-    # TOP_AND_BOTTOM = 6
-
-
 class Polarizations(enum.Enum):
     """Possible polarizations of a phonon"""
     LA = 1
