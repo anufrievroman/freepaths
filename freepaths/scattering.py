@@ -1421,6 +1421,68 @@ def surface_scattering(ph, scattering_types):
             if cf.hole_shapes[i] == "circle":
                 rad = cf.circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
                 scattering_on_circular_holes(ph, x0, y0, rad, scattering_types, x, y, z)
+            elif cf.hole_shapes[i] == "semicircle":
+                rad = cf.circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_semicircular_holes(ph, x0, y0, rad,scattering_types, x, y, z)
+                
+            elif cf.hole_shapes[i] == "arccircle_v":
+                rad = cf.circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                rad_inner = cf.inner_circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_v_holes(ph, x0, y0, rad,rad_inner, cf.alphaARC, scattering_types, x, y, z)
+                
+            elif cf.hole_shapes[i] == "arccircle_v_scaling":
+                rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_v_holes(ph, x0, y0, rad,rad_inner, cf.alphaARC, scattering_types, x, y, z)
+                
+            elif cf.hole_shapes[i] == "arccircle_v_scaling_wire":
+                rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                angle_sca= cf.alphaARC* cf.scale_angle_v
+                rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_v_holes(ph, x0, y0, rad,rad_inner, angle_sca, scattering_types, x, y, z)
+                
+            elif cf.hole_shapes[i] == "arccircle_v_lattice":
+                rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                angle_sca= cf.alphaARC* cf.scale_angle_m[i%6]
+                scattering_on_arccircular_v_holes(ph, x0, y0, rad,rad_inner, angle_sca, scattering_types, x, y, z)
+                
+            elif cf.hole_shapes[i] == "arccircle_v_demi_down":
+                rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                angle_sca= cf.alphaARC* cf.scale_angle_m[i%6]
+                rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_v_demi_down_holes(ph, x0, y0, rad,rad_inner, angle_sca,cf.angle0, scattering_types, x, y, z)
+            
+            
+            elif cf.hole_shapes[i] == "arccircle_v_demi_up":
+                 rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                 angle_sca= cf.alphaARC* cf.scale_angle_m[i%6]
+                 rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                 scattering_on_arccircular_v_demi_up_holes(ph, x0, y0, rad,rad_inner, angle_sca,cf.angle0, scattering_types, x, y, z)        
+                 
+            
+            elif cf.hole_shapes[i] == "arccircle_h":
+                rad = cf.circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                rad_inner = cf.inner_circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_h_holes(ph, x0, y0, rad,rad_inner, cf.alphaARC, scattering_types, x, y, z)
+            
+                
+            elif cf.hole_shapes[i] == "arccircle_h_reverse":
+                rad = cf.circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                rad_inner = cf.inner_circular_hole_diameter * (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_h_reverse_holes(ph, x0, y0, rad,rad_inner, cf.alphaARC, scattering_types, x, y, z)
+                 
+            elif cf.hole_shapes[i] == "arccircle_h_scaling":
+                rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                angle_sca= cf.alphaARC *cf.scale_angle_h
+                rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_h_holes(ph, x0, y0, rad,rad_inner, angle_sca, scattering_types, x, y, z)
+                
+            elif cf.hole_shapes[i] == "arccircle_h_scaling_reverse":
+                rad = cf.circular_hole_diameter *cf.scaling_factor_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                angle_sca= cf.alphaARC *cf.scale_angle_h_reverse
+                rad_inner = cf.inner_circular_hole_diameter *cf.scaling_factor_inner_radius[i]* (1 + cf.hole_coordinates[i, 2]) / 2
+                scattering_on_arccircular_h_reverse_holes(ph, x0, y0, rad,rad_inner, angle_sca, scattering_types, x, y, z)
 
             elif cf.hole_shapes[i] == "rectangle":
                 # Correction of the hole size if there are holes of non-standard size:
