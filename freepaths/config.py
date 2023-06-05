@@ -115,8 +115,19 @@ class Config:
         self.period_x = PERIOD_X
         self.period_y = PERIOD_Y
         
-        # New paramer:
-        self.radius = RADIUS
+        # New parameter:
+        self.inner_circular_hole_diameter = INNER_CIRCULAR_HOLE_DIAMETER
+        self.alphaARC = ALPHA_ARC
+        self.angle0 = ANGLE0 
+        
+        # New parameters: factor of scaling to the original parameter
+        self.scale_angle_v= SCALE_ANGLE_V
+        self.scale_angle_h = SCALE_ANGLE_H
+        self.scale_angle_h_reverse = SCALE_ANGLE_H_REVERSE
+        self.scaling_factor_radius = SCALING_FACTOR_RADIUS 
+        self.scaling_factor_inner_radius = SCALING_FACTOR_INNER_RADIUS
+        self.scale_angle_m = SCALE_ANGLE
+        
 
         # Lattice of holes:
         self.hole_coordinates = HOLE_COORDINATES
