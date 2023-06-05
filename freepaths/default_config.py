@@ -85,6 +85,9 @@ RECTANGULAR_HOLE_SIDE_Y          = 200e-9
 PERIOD_X                         = 300e-9
 PERIOD_Y                         = 300e-9
 
+# Circle parameters
+RADIUS                          = 100e-9
+
 # Lattice of holes:
 HOLE_COORDINATES = np.zeros((1, 3))
 HOLE_SHAPES = ["circle" for x in range(1)]

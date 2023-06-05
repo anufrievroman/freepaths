@@ -114,6 +114,9 @@ class Config:
         self.rectangular_hole_side_y = RECTANGULAR_HOLE_SIDE_Y
         self.period_x = PERIOD_X
         self.period_y = PERIOD_Y
+        
+        # New paramer:
+        self.radius = RADIUS
 
         # Lattice of holes:
         self.hole_coordinates = HOLE_COORDINATES
