@@ -80,6 +80,7 @@ class Config:
         self.hot_side_position_left = HOT_SIDE_POSITION_LEFT
 
         self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
+        self.frequency_detector_center = FREQUENCY_DETECTOR_CENTER
         self.phonon_source_x = PHONON_SOURCE_X
         self.phonon_source_y = PHONON_SOURCE_Y
         self.phonon_source_width_x = PHONON_SOURCE_WIDTH_X

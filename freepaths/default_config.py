@@ -45,6 +45,7 @@ INCLUDE_BOTTOM_SIDEWALL          = False
 
 # Hot and cold sides [m]:
 FREQUENCY_DETECTOR_SIZE          = WIDTH
+FREQUENCY_DETECTOR_CENTER        = 0
 COLD_SIDE_POSITION_TOP           = True
 COLD_SIDE_POSITION_BOTTOM        = False
 COLD_SIDE_POSITION_RIGHT         = False
