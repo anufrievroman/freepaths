@@ -46,11 +46,7 @@ class Flight:
     @property
     def mean_free_path(self):
         """Mean value of all free flights"""
-        try:
-            mfp = sum(self.free_paths)/len(self.free_paths)
-        except:
-            mfp = 0
-        return mfp
+        return sum(self.free_paths)/len(self.free_paths)
 
     def add_point_to_path(self):
         """Add a scattering point to the path"""
@@ -67,13 +63,13 @@ class Flight:
         self.free_path = 0.0
         self.free_path_along_y = 0.0
 
-    def finish(self, step, timestep, detector_size):
+    def finish(self, step, timestep, detector_size,detector_center):
         """Finish the flight and record final state"""
-        self.exit_theta = self.phonon.theta
+        
         self.travel_time = step * timestep
-        if abs(self.phonon.x) < detector_size / 2.0:
+        if abs(self.phonon.x-detector_center) < detector_size / 2.0:
             self.detected_frequency = self.phonon.f
-
+            self.exit_theta = self.phonon.theta
     def add_step(self, timestep):
         """Increase parameters of the flight by length of one step"""
         step_length = self.phonon.speed * timestep

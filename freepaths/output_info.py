@@ -9,7 +9,7 @@ from freepaths.config import cf
 def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     exit_angles = np.loadtxt("Data/All exit angles.csv")
-    percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
+    percentage = (100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
     print(f'\r{percentage}% of phonons reached the cold side.')
     print(f'The simulation took about {int((time.time() - start_time)//60)} min. to run.')
 
@@ -28,7 +28,7 @@ def output_general_information(start_time):
                 f'\nHole roughness = {cf.hole_roughness * 1e9:.1f} nm',
                 f'\nTop roughness = {cf.top_roughness * 1e9:.1f} nm',
                 f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm\n',
-                f'\n{percentage:.0f}% of phonons reached the cold side\n'
+                f'\n{percentage}% of phonons reached the cold side\n'
         )
         file.writelines(info)
 

@@ -8,8 +8,14 @@ import numpy as np
 import enum
 
 from freepaths.config import cf
-from freepaths.options import Distributions, Materials, Polarizations
+from freepaths.options import Distributions, Materials, Positions
 import freepaths.move
+
+
+class Polarization(enum.Enum):
+    """Possible polarizations of phonon"""
+    LA = 1
+    TA = 2
 
 
 class Phonon:
@@ -47,48 +53,48 @@ class Phonon:
     @property
     def is_in_system(self):
         """Checks if the phonon at this timestep did not reach the cold side.
-        Depending on where user set cold sides, we check if phonon crossed that line"""
-        is_inside_top = self.y < cf.length
-        is_inside_bottom = self.y > 0
-        is_inside_right = self.x < cf.width / 2.0
-        is_inside_left = self.x > - cf.width / 2.0
-        return ((not cf.cold_side_position_top or is_inside_top) and
-                (not cf.cold_side_position_bottom or is_inside_bottom) and
-                (not cf.cold_side_position_right or is_inside_right) and
-                (not cf.cold_side_position_left or is_inside_left))
+        Depending on where we set the cold side, we check if phonon crossed that line"""
+        small_offset = 10e-9
+        if cf.cold_side_position == Positions.TOP:
+            return cf.length > self.y
+        if cf.cold_side_position == Positions.RIGHT:
+            return (self.y < cf.length - 1.1e-6) or (self.y > cf.length - 1.1e-6 and self.x < cf.width / 2.0 - small_offset)
+        if cf.cold_side_position == Positions.TOP_AND_RIGHT:
+            return (self.y < 1.0e-6) or (1.0e-6 < self.y < cf.length and self.x < cf.width / 2.0 - small_offset)
+        if cf.cold_side_position == Positions.TOP_AND_BOTTOM:
+            return cf.length > self.y > 0
+        raise ValueError('Specified "cold_side" is not valid. Only TOP, RIGHT, TOP_AND_RIGH, TOP_AND_BOTTOM')
 
     def assign_polarization(self):
         """Assign branch of phonon dispersion"""
-        self.polarization = choice([Polarizations.TA, Polarizations.TA, Polarizations.LA])
+        self.polarization = choice([Polarization.TA, Polarization.TA, Polarization.LA])
 
     def assign_coordinates(self):
         """Assign initial coordinates at the hot side"""
-        self.x = cf.phonon_source_x + 0.49 * cf.phonon_source_width_x * (2 * random() - 1)
-        self.y = cf.phonon_source_y + 0.49 * cf.phonon_source_width_y * (2 * random() - 1)
+        ran= random()
+        nu=1
+        if ran<1/3:
+            nu=0
+        if 1/3<= ran <2/3:
+            nu=1
+        if ran>=2/3:
+            nu=2
+        self.x = cf.hot_side_x[nu] + 0.49 * cf.hot_side_width_x * (2 * random() - 1)
+        self.y = cf.hot_side_y + 0.49 * cf.hot_side_width_y * (2 * random() - 1)
         self.z = 0.49 * cf.thickness * (2 * random() - 1)
 
     def assign_angles(self):
         """Depending on angle distribution, assign angles"""
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_UP:
+        if cf.hot_side_angle_distribution == Distributions.RANDOM:
             self.theta = -pi/2 + pi*random()
             self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_DOWN:
-            rand_sign = sign((2*random() - 1))
-            self.theta = rand_sign*(pi/2 + pi/2*random())
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_RIGHT:
-            self.theta = pi*random()
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_LEFT:
-            self.theta = - pi*random()
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.DIRECTIONAL:
+        if cf.hot_side_angle_distribution == Distributions.DIRECTIONAL:
             self.theta = 0
             self.phi = -pi/2 + pi*random()
-        if cf.phonon_source_angle_distribution == Distributions.LAMBERT:
+        if cf.hot_side_angle_distribution == Distributions.LAMBERT:
             self.theta = asin(2*random() - 1)
             self.phi = asin((asin(2*random() - 1))/(pi/2))
-        if cf.phonon_source_angle_distribution == Distributions.UNIFORM:
+        if cf.hot_side_angle_distribution == Distributions.UNIFORM:
             self.theta = -pi + 2*pi*random()
             self.phi = asin(2*random() - 1)
 
@@ -120,7 +126,7 @@ class Phonon:
 
     def assign_speed(self, material):
         """Calculate group velocity dw/dk according to the frequency and polarization"""
-        if self.polarization == Polarizations.TA and self.f < max(material.dispersion[:,2]):
+        if self.polarization == Polarization.TA and self.f < max(material.dispersion[:,2]):
             point_num = abs((np.abs(material.dispersion[:, 2] - self.f)).argmin() - 1)
             d_w = 2*pi*abs(material.dispersion[point_num+1, 2] - material.dispersion[point_num, 2])
         else:

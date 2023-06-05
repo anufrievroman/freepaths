@@ -51,5 +51,5 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
         else:
             flight.add_point_to_path()
             flight.save_free_paths()
-            flight.finish(step_number, cf.timestep, cf.frequency_detector_size)
+            flight.finish(step_number, cf.timestep, cf.frequency_detector_size,cf.frequency_detector_center)
             break

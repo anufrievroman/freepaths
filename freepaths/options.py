@@ -13,16 +13,15 @@ class Materials(enum.Enum):
 
 class Distributions(enum.Enum):
     """Possible distributions of angles"""
-    RANDOM_UP = 1
-    RANDOM_DOWN = 2
-    RANDOM_RIGHT = 3
-    RANDOM_LEFT = 4
-    LAMBERT = 5
-    DIRECTIONAL = 6
-    UNIFORM = 7
+    RANDOM = 1
+    LAMBERT = 2
+    DIRECTIONAL = 3
+    UNIFORM = 4
 
 
-class Polarizations(enum.Enum):
-    """Possible polarizations of a phonon"""
-    LA = 1
-    TA = 2
+class Positions(enum.Enum):
+    """Possible positions of cold side"""
+    TOP = 1
+    RIGHT = 2
+    TOP_AND_RIGHT = 3
+    TOP_AND_BOTTOM = 4

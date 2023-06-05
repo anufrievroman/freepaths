@@ -1,7 +1,7 @@
 """Module that draws shape of the structure"""
 
-from matplotlib.patches import Rectangle, Circle, Polygon
-
+from matplotlib.patches import Rectangle, Circle, Polygon ,Arc
+#patch = Arc((x_coor, y_coor), hole_radius,hole_radius-1e-12,-180, facecolor='white')
 
 def draw_structure(cf):
     """Draw shape of the structure using patches from matplotlib"""
@@ -22,6 +22,22 @@ def draw_structure(cf):
                 hole_radius = 1e6*(1 + scale_factor)*cf.circular_hole_diameter/2
                 patch = Circle((x_coor, y_coor), hole_radius, facecolor='white')
                 patches.append(patch)
+                
+            if shape == 'semicircle':
+                hole_radius = 1e6*(1 + scale_factor)*cf.circular_hole_diameter/2
+                #patch = Circle((x_coor, y_coor), hole_radius, facecolor='white')
+                patch = Arc((x_coor, y_coor), hole_radius,hole_radius,-180, facecolor='white')
+                patches.append(patch)
+                
+            if shape == 'arccircle_v':
+                hole_radius = 1e6*(1 + scale_factor)*cf.circular_hole_diameter/2
+                patch = Arc((x_coor, y_coor), hole_radius, cf.inner_hole_diamater/2,cf.alphaArc, facecolor='white')
+                patches.append(patch)
+                
+            if shape == 'arccircle_h':
+                hole_radius = 1e6*(1 + scale_factor)*cf.circular_hole_diameter/2
+                patch = Arc((x_coor, y_coor), hole_radius, cf.inner_hole_diamater/2,cf.alphaArc, facecolor='white')
+                patches.append(patch) 
 
             if shape == 'rectangle':
                 hole_size_x = 1e6*(1 + scale_factor)*cf.rectangular_hole_side_x

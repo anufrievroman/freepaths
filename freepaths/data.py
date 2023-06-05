@@ -46,7 +46,6 @@ class GeneralData:
         self.detected_frequencies = []
         self.group_velocities = []
         self.travel_times = []
-        self.mean_free_paths = []
 
     def save_phonon_data(self, ph):
         """Add information about the phonon to the dataset"""
@@ -61,7 +60,6 @@ class GeneralData:
         self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.travel_times.append(flight.travel_time)
         self.detected_frequencies.append(flight.detected_frequency)
-        self.mean_free_paths.append(flight.mean_free_path)
 
     def write_into_files(self):
         """Write all the data into files"""
@@ -73,7 +71,6 @@ class GeneralData:
         np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]", encoding='utf-8')
         np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', delimiter=",", header="Travel time [s]", encoding='utf-8')
-        np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', delimiter=",", header="MFPs [m]", encoding='utf-8')
 
 
 class ScatteringData:
@@ -81,47 +78,44 @@ class ScatteringData:
 
     def __init__(self):
         """Initialize arrays according to the number of segments"""
-        self.wall_diffuse = np.zeros(cf.number_of_length_segments+1)
-        self.wall_specular = np.zeros(cf.number_of_length_segments+1)
-        self.top_diffuse = np.zeros(cf.number_of_length_segments+1)
-        self.top_specular = np.zeros(cf.number_of_length_segments+1)
-        self.hole_diffuse = np.zeros(cf.number_of_length_segments+1)
-        self.hole_specular = np.zeros(cf.number_of_length_segments+1)
-        self.pillar_diffuse = np.zeros(cf.number_of_length_segments+1)
-        self.pillar_specular = np.zeros(cf.number_of_length_segments+1)
-        self.hot_side = np.zeros(cf.number_of_length_segments+1)
-        self.internal = np.zeros(cf.number_of_length_segments+1)
-        self.total = np.zeros(cf.number_of_length_segments+1)
+        self.wall_diffuse = np.zeros(cf.number_of_length_segments)
+        self.wall_specular = np.zeros(cf.number_of_length_segments)
+        self.top_diffuse = np.zeros(cf.number_of_length_segments)
+        self.top_specular = np.zeros(cf.number_of_length_segments)
+        self.hole_diffuse = np.zeros(cf.number_of_length_segments)
+        self.hole_specular = np.zeros(cf.number_of_length_segments)
+        self.pillar_diffuse = np.zeros(cf.number_of_length_segments)
+        self.pillar_specular = np.zeros(cf.number_of_length_segments)
+        self.hot_side = np.zeros(cf.number_of_length_segments)
+        self.internal = np.zeros(cf.number_of_length_segments)
+        self.total = np.zeros(cf.number_of_length_segments)
 
     def save_scattering_events(self, y, scattering_types):
         """Analyze types of scattering at the current timestep and add it to the statistics"""
 
-        try:
-            # Calculate in which length segment (starting from zero) we are:
-            segment = int(y // (cf.length / cf.number_of_length_segments))
-            self.total[segment] += 1
+        # Calculate in which length segment (starting from zero) we are:
+        segment = int(y // (cf.length / cf.number_of_length_segments))
+        self.total[segment] += 1
 
-            # Scattering on side walls:
-            self.wall_diffuse[segment]  += 1 if scattering_types.walls == Scattering.DIFFUSE else 0
-            self.wall_specular[segment] += 1 if scattering_types.walls == Scattering.SPECULAR else 0
+        # Scattering on side walls:
+        self.wall_diffuse[segment]  += 1 if scattering_types.walls == Scattering.DIFFUSE else 0
+        self.wall_specular[segment] += 1 if scattering_types.walls == Scattering.SPECULAR else 0
 
-            # Scattering on top and bottom:
-            self.top_diffuse[segment]  += 1 if scattering_types.top_bottom == Scattering.DIFFUSE else 0
-            self.top_specular[segment] += 1 if scattering_types.top_bottom == Scattering.SPECULAR else 0
+        # Scattering on top and bottom:
+        self.top_diffuse[segment]  += 1 if scattering_types.top_bottom == Scattering.DIFFUSE else 0
+        self.top_specular[segment] += 1 if scattering_types.top_bottom == Scattering.SPECULAR else 0
 
-            # Scattering on holes:
-            self.hole_diffuse[segment]  += 1 if scattering_types.holes == Scattering.DIFFUSE else 0
-            self.hole_specular[segment] += 1 if scattering_types.holes == Scattering.SPECULAR else 0
+        # Scattering on holes:
+        self.hole_diffuse[segment]  += 1 if scattering_types.holes == Scattering.DIFFUSE else 0
+        self.hole_specular[segment] += 1 if scattering_types.holes == Scattering.SPECULAR else 0
 
-            # Scattering on pillars:
-            self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == Scattering.DIFFUSE else 0
-            self.pillar_specular[segment] += 1 if scattering_types.pillars == Scattering.SPECULAR else 0
+        # Scattering on pillars:
+        self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == Scattering.DIFFUSE else 0
+        self.pillar_specular[segment] += 1 if scattering_types.pillars == Scattering.SPECULAR else 0
 
-            # Internal scattering and rethermalization on hot side:
-            self.hot_side[segment] += 1 if scattering_types.hot_side == Scattering.DIFFUSE else 0
-            self.internal[segment] += 1 if scattering_types.internal == Scattering.DIFFUSE else 0
-        except:
-            pass
+        # Internal scattering and rethermalization on hot side:
+        self.hot_side[segment] += 1 if scattering_types.hot_side == Scattering.DIFFUSE else 0
+        self.internal[segment] += 1 if scattering_types.internal == Scattering.DIFFUSE else 0
 
     def write_into_files(self):
         """Write data into a file"""

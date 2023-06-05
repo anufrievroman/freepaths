@@ -57,6 +57,8 @@ def main(input_file):
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()
+    thermal_maps.calculate_normalized_flux()
+    
 
     # Create the folder if it does not exist and copy input file there:
     if not os.path.exists(f"Results/{cf.output_folder_name}"):
@@ -78,6 +80,7 @@ def main(input_file):
 
     # Generate animation of phonon paths:
     if cf.output_path_animation:
+        sys.stdout.write("\rGenerating path animation...")
         create_animation()
 
     # Analyze and plot the data:
