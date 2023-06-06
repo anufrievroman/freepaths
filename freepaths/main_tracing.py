@@ -57,7 +57,7 @@ def main(input_file):
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()
-
+    thermal_maps.calculate_normalized_flux()
     # Create the folder if it does not exist and copy input file there:
     if not os.path.exists(f"Results/{cf.output_folder_name}"):
         os.makedirs(f"Results/{cf.output_folder_name}")

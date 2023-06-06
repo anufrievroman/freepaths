@@ -213,6 +213,85 @@ def plot_thermal_map():
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()
 
+def plot_heat_flux_map_norm():
+    """Plot thermal map as color map"""
+    fig = plt.figure()
+    heat_flux_map = np.genfromtxt("Data/heat_flux_map_norm map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    heat_flux_map = np.flipud(heat_flux_map)
+    minimum_of_colorbar = 1e5  # Cannot be zero!
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
+               norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
+    plt.xlabel('X (μm)', fontsize=12)
+    plt.ylabel('Y (μm)', fontsize=12)
+    cbar = plt.colorbar()
+    cbar.set_label('Energy flux norm', rotation=90)
+    fig.savefig("Heat flux map norm.pdf", bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+
+def plot_heat_flux_map_x():
+    """Plot thermal map as color map"""
+    fig = plt.figure()
+    heat_flux_map = np.genfromtxt("Data/heat_flux_map_x map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    heat_flux_map = np.flipud(heat_flux_map)
+    minimum_of_colorbar = 1e5  # Cannot be zero!
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
+               norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
+    plt.xlabel('X (μm)', fontsize=12)
+    plt.ylabel('Y (μm)', fontsize=12)
+    cbar = plt.colorbar()
+    cbar.set_label('Energy flux x', rotation=90)
+    fig.savefig("Heat flux map x.pdf", bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+
+def plot_heat_flux_map_y():
+    """Plot thermal map as color map"""
+    fig = plt.figure()
+    heat_flux_map = np.genfromtxt("Data/heat_flux_map_y map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    heat_flux_map = np.flipud(heat_flux_map)
+    minimum_of_colorbar = 1e5  # Cannot be zero!
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
+               norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
+    plt.xlabel('X (μm)', fontsize=12)
+    plt.ylabel('Y (μm)', fontsize=12)
+    cbar = plt.colorbar()
+    cbar.set_label('Energy flux y', rotation=90)
+    fig.savefig("Heat flux map y.pdf", bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+
+def plot_nor_heat_flux_map_x():
+    """Plot thermal map as color map"""
+    fig = plt.figure()
+    heat_flux_map = np.genfromtxt("Data/nor_heat_flux_x map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    heat_flux_map = np.flipud(heat_flux_map)
+    minimum_of_colorbar = 1e9  # Cannot be zero!
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
+               norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
+    plt.xlabel('X (μm)', fontsize=12)
+    plt.ylabel('Y (μm)', fontsize=12)
+    cbar = plt.colorbar()
+    cbar.set_label('Energy flux normalized x', rotation=90)
+    fig.savefig("Heat flux map normalised.pdf", bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+
+def plot_nor_heat_flux_map_y():
+    """Plot thermal map as color map"""
+    fig = plt.figure()
+    heat_flux_map = np.genfromtxt("Data/nor_heat_flux_y map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    heat_flux_map = np.flipud(heat_flux_map)
+    minimum_of_colorbar = 1e9  # Cannot be zero!
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
+               norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
+    plt.xlabel('X (μm)', fontsize=12)
+    plt.ylabel('Y (μm)', fontsize=12)
+    cbar = plt.colorbar()
+    cbar.set_label('Energy flux normalizedy', rotation=90)
+    fig.savefig("Heat flux map normalised.pdf", bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()  
 
 def plot_scattering_map():
     """Plot the map of scattering events"""
