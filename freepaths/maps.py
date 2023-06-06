@@ -4,7 +4,7 @@ import random
 from math import cos
 from scipy.constants import hbar, pi
 import numpy as np
-
+from math import cos , sin
 from freepaths.config import cf
 
 
@@ -74,6 +74,12 @@ class ThermalMaps:
         self.temperature_profile_x = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
         self.temperature_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
         self.thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
+        self.heat_flux_map_norm = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.heat_flux_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.heat_flux_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.nor = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.nor_heat_flux_y_map = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.nor_heat_flux_x_map = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
 
     def add_energy_to_maps(self, ph, timestep_number, material):
         """This function registers the phonon in the pixel corresponding to its current position
@@ -88,7 +94,7 @@ class ThermalMaps:
         vol_cell = cf.length * cf.thickness * cf.width
         vol_cell_x = vol_cell / cf.number_of_pixels_x
         vol_cell_y = vol_cell / cf.number_of_pixels_y
-
+        vol_pixel =  vol_cell/(cf.number_of_pixels_x*cf.number_of_pixels_y)
         # Here we arbitrarily correct the volume of the unit cells in pillars:
         if cf.include_pillars == 'yes':
             vol_cell_x += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
@@ -100,7 +106,10 @@ class ThermalMaps:
             # Record energy h*w of this phonon into the pixel of thermal map:
             energy = hbar * 2 * pi * ph.f
             self.thermal_map[index_y, index_x] += energy
-
+            self.heat_flux_map_norm[index_y, index_x] += np.sqrt((energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed /vol_pixel)**2 +(energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed /vol_pixel)**2)
+            self.heat_flux_map_x[index_y, index_x] += (energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed /cf.thickness/ vol_pixel)
+            self.heat_flux_map_y[index_y, index_x] += (energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed /cf.thickness/ vol_pixel)
+            self.nor[index_y, index_x] += 1
             # Record energy of this phonon into flux and temperature profiles: (DOUBLE-CHECK THIS)
             random_timeframe = random.randint(0, cf.number_of_timesteps)
             assigned_time = (timestep_number + random_timeframe) * cf.timestep * cf.number_of_timeframes
@@ -112,7 +121,16 @@ class ThermalMaps:
                 self.heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / vol_cell_y
                 self.temperature_profile_x[index_x, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / vol_cell_x
                 self.temperature_profile_y[index_y, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / vol_cell_y
+    
+    def calculate_normalized_flux(self):
 
+        for j in range(cf.number_of_pixels_x):
+            for i in range(cf.number_of_pixels_y):
+                if self.nor[i,j] != 0:
+                    self.nor_heat_flux_y_map[i,j] = self.heat_flux_map_y[i,j] / self.nor[i,j]
+                    self.nor_heat_flux_x_map[i,j] = self.heat_flux_map_x[i,j] / self.nor[i,j]
+
+    
     def calculate_thermal_conductivity(self):
         """Calculate the thermal conductivity for each time interval from heat flux
         and temperature profiles accumulated in that interval"""
@@ -145,7 +163,15 @@ class ThermalMaps:
 
         if cf.output_raw_thermal_map:
             np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
-
+        if cf.output_raw_thermal_map:
+            np.savetxt("Data/heat_flux_map_norm map.csv", self.heat_flux_map_norm, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        if cf.output_raw_thermal_map:
+            np.savetxt("Data/heat_flux_map_x map.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        if cf.output_raw_thermal_map:
+            np.savetxt("Data/heat_flux_map_y map.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        if cf.output_raw_thermal_map:
+            np.savetxt("Data/nor_heat_flux_y map.csv", self.nor_heat_flux_y_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
+            np.savetxt("Data/nor_heat_flux_x map.csv", self.nor_heat_flux_x_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
         # Create coordinate arrays [um]
         num_of_points_x = self.temperature_profile_x.shape[0]
         num_of_points_y = self.temperature_profile_y.shape[0]
@@ -163,3 +189,4 @@ class ThermalMaps:
         np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
         np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
         np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK)", encoding='utf-8')
+        
