@@ -44,7 +44,13 @@ INCLUDE_TOP_SIDEWALL             = False
 INCLUDE_BOTTOM_SIDEWALL          = False
 
 # Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE          = WIDTH
+FREQUENCY_DETECTOR_SIZE        = WIDTH
+FREQUENCY_DETECTOR_CENTER       = 0
+FREQUENCY_DETECTOR_2_SIZE        = WIDTH
+FREQUENCY_DETECTOR_2_CENTER       = 0
+FREQUENCY_DETECTOR_3_SIZE        = WIDTH
+FREQUENCY_DETECTOR_3_CENTER       = 0
+
 COLD_SIDE_POSITION_TOP           = True
 COLD_SIDE_POSITION_BOTTOM        = False
 COLD_SIDE_POSITION_RIGHT         = False
@@ -85,6 +91,19 @@ RECTANGULAR_HOLE_SIDE_Y          = 200e-9
 PERIOD_X                         = 300e-9
 PERIOD_Y                         = 300e-9
 
+# New parameter:
+INNER_CIRCULAR_HOLE_DIAMETER    = 200e-9
+ALPHA_ARC                       = 90*np.pi/180
+ANGLE0                          = 0
+
+# New parameters: factor of scaling to the original parameter
+SCALE_ANGLE_V                   = 1
+SCALE_ANGLE_H                   = 1 
+SCALE_ANGLE_H_REVERSE           = 1  
+SCALING_FACTOR_RADIUS           = 1 
+SCALING_FACTOR_INNER_RADIUS     = 1 
+SCALE_ANGLE                     = 1 
+ 
 # Lattice of holes:
 HOLE_COORDINATES = np.zeros((1, 3))
 HOLE_SHAPES = ["circle" for x in range(1)]

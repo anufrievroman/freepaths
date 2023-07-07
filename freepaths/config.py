@@ -80,6 +80,11 @@ class Config:
         self.hot_side_position_left = HOT_SIDE_POSITION_LEFT
 
         self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
+        self.frequency_detector_center = FREQUENCY_DETECTOR_CENTER
+        self.frequency_detector_size_2 = FREQUENCY_DETECTOR_2_SIZE
+        self.frequency_detector_center_2 = FREQUENCY_DETECTOR_2_CENTER 
+        self.frequency_detector_size_3 = FREQUENCY_DETECTOR_3_SIZE
+        self.frequency_detector_center_3 = FREQUENCY_DETECTOR_3_CENTER
         self.phonon_source_x = PHONON_SOURCE_X
         self.phonon_source_y = PHONON_SOURCE_Y
         self.phonon_source_width_x = PHONON_SOURCE_WIDTH_X
@@ -114,6 +119,20 @@ class Config:
         self.rectangular_hole_side_y = RECTANGULAR_HOLE_SIDE_Y
         self.period_x = PERIOD_X
         self.period_y = PERIOD_Y
+        
+        # New parameter:
+        self.inner_circular_hole_diameter = INNER_CIRCULAR_HOLE_DIAMETER
+        self.alphaARC = ALPHA_ARC
+        self.angle0 = ANGLE0 
+        
+        # New parameters: factor of scaling to the original parameter
+        self.scale_angle_v= SCALE_ANGLE_V
+        self.scale_angle_h = SCALE_ANGLE_H
+        self.scale_angle_h_reverse = SCALE_ANGLE_H_REVERSE
+        self.scaling_factor_radius = SCALING_FACTOR_RADIUS 
+        self.scaling_factor_inner_radius = SCALING_FACTOR_INNER_RADIUS
+        self.scale_angle_m = SCALE_ANGLE
+        
 
         # Lattice of holes:
         self.hole_coordinates = HOLE_COORDINATES

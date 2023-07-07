@@ -9,9 +9,19 @@ from freepaths.config import cf
 def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     exit_angles = np.loadtxt("Data/All exit angles.csv")
-    percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
+    percentage = (100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
     print(f'\r{percentage}% of phonons reached the cold side.')
+    exit_freq = np.loadtxt("Data/All detected frequencies.csv")
+    percentage_detector_1 = (100 * np.count_nonzero(exit_freq) / cf.number_of_phonons)
+    print(f'\r{percentage_detector_1}% of phonons passsed the detector.')
+    exit_freq_2 = np.loadtxt("Data/All detected frequencies_2.csv")
+    percentage_detector_2 = (100 * np.count_nonzero(exit_freq_2) / cf.number_of_phonons)
+    print(f'\r{percentage_detector_2}% of phonons passsed the detector.')
+    exit_freq_3 = np.loadtxt("Data/All detected frequencies_3.csv")
+    percentage_detector_3 = (100 * np.count_nonzero(exit_freq_3) / cf.number_of_phonons)
+    print(f'\r{percentage_detector_3}% of phonons passsed the detector.')
     print(f'The simulation took about {int((time.time() - start_time)//60)} min. to run.')
+    rest =percentage -percentage_detector_1 -percentage_detector_2 -percentage_detector_3 
 
     with open("Information.txt", "w+", encoding="utf-8") as file:
         info = (
@@ -28,7 +38,11 @@ def output_general_information(start_time):
                 f'\nHole roughness = {cf.hole_roughness * 1e9:.1f} nm',
                 f'\nTop roughness = {cf.top_roughness * 1e9:.1f} nm',
                 f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm\n',
-                f'\n{percentage:.0f}% of phonons reached the cold side\n'
+                f'\n{percentage}% of phonons reached the cold side\n',
+                f'\n{percentage_detector_1}% of phonons passsed the detector.\n'
+                f'\n{percentage_detector_2}% of phonons passsed the detector 2.\n'
+                f'\n{percentage_detector_3}% of phonons passsed the detecto 3.\n'
+                f'\n{rest}% of the rest of phonons .\n'
         )
         file.writelines(info)
 
