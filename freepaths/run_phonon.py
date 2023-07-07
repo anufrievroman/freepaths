@@ -18,8 +18,9 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
             # Check if different scattering events happened during current time step:
             if cf.include_internal_scattering:
                 internal_scattering(phonon, flight, scattering_types)
-            surface_scattering(phonon, scattering_types)
             reinitialization(phonon, scattering_types)
+            surface_scattering(phonon, scattering_types)
+            
 
             # If any scattering has occurred, record it:
             if scattering_types.is_scattered:
@@ -51,5 +52,5 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
         else:
             flight.add_point_to_path()
             flight.save_free_paths()
-            flight.finish(step_number, cf.timestep, cf.frequency_detector_size,cf.frequency_detector_center)
+            flight.finish(step_number, cf.timestep, cf.frequency_detector_size,cf.frequency_detector_center,cf.frequency_detector_size_2,cf.frequency_detector_center_2,cf.frequency_detector_size_3,cf.frequency_detector_center_3)
             break

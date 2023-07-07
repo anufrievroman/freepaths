@@ -88,7 +88,32 @@ def plot_free_path_distribution():
     fig.savefig("Distribution of free paths.pdf", dpi=300, format='pdf', bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of free paths.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
+    
+def plot_free_path_in_x_distribution():
+    """Plot distribution of free path"""
+    filename = "Data/All free paths in plane in x.csv"
+    free_path_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1], 'royalblue')
+    ax.set_xlabel('Free flights in X direction(μm)', fontsize=12)
+    ax.set_ylabel('Number of flights', fontsize=12)
+    # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
+    fig.savefig("Distribution of free paths.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+    np.savetxt('Data/Distribution of free paths in X direction.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
 
+def plot_free_path_in_y_distribution():
+    """Plot distribution of free path"""
+    filename = "Data/All free paths in plane in y.csv"
+    free_path_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1], 'royalblue')
+    ax.set_xlabel('Free flights in Y direction(μm)', fontsize=12)
+    ax.set_ylabel('Number of flights', fontsize=12)
+    # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
+    fig.savefig("Distribution of free paths.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+    np.savetxt('Data/Distribution of free paths in Y direction.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
 
 def plot_frequency_distribution():
     """Plot distribution of frequencies"""
@@ -138,7 +163,29 @@ def plot_mean_free_path_distribution():
     if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
 
+def plot_mean_free_path_in_x_distribution():
+    """Plot distribution of MFP per phonon"""
+    mean_free_path_distribution = distribution_calculation("Data/All mean free paths in x.csv", None, cf.number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot(mean_free_path_distribution[:, 0] * 1e9, mean_free_path_distribution[:, 1], 'royalblue')
+    ax.set_xlabel('Mean free path in X direction (nm)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of MFPs in X.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+    np.savetxt('Data/Distribution of MFPs in .csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
 
+def plot_mean_free_path_in_y_distribution():
+    """Plot distribution of MFP per phonon"""
+    mean_free_path_distribution = distribution_calculation("Data/All mean free paths in y.csv", None, cf.number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot(mean_free_path_distribution[:, 0] * 1e9, mean_free_path_distribution[:, 1], 'royalblue')
+    ax.set_xlabel('Mean free path in y direction (nm)', fontsize=12)
+    ax.set_ylabel('Number of phonons', fontsize=12)
+    fig.savefig("Distribution of MFPs in Y.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+    np.savetxt('Data/Distribution of MFPs in Y.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
+
+        
 def plot_detected_frequency_distribution():
     """Plot distribution of detected frequencies"""
     detected_frequency_distribution = distribution_calculation("Data/All detected frequencies.csv", None, cf.number_of_nodes)
@@ -230,7 +277,7 @@ def plot_heat_flux_map_norm():
     fig = plt.figure()
     heat_flux_map = np.genfromtxt("Data/heat_flux_map_norm map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e5  # Cannot be zero!
+    minimum_of_colorbar = 1e13  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
@@ -246,8 +293,10 @@ def plot_heat_flux_map_x():
     fig = plt.figure()
     heat_flux_map = np.genfromtxt("Data/heat_flux_map_x map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e5  # Cannot be zero!
+    minimum_of_colorbar = 1e13  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    #cmap = plt.cm.get_cmap('viridis')  # Utilisation de la colormap 'viridis'
+    #cmap.set_under('red')  # Attribution de la couleur rouge aux valeurs en dessous de la valeur minimale
     plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
     plt.xlabel('X (μm)', fontsize=12)
@@ -262,7 +311,7 @@ def plot_heat_flux_map_y():
     fig = plt.figure()
     heat_flux_map = np.genfromtxt("Data/heat_flux_map_y map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e5  # Cannot be zero!
+    minimum_of_colorbar = 1e13  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
@@ -278,7 +327,7 @@ def plot_nor_heat_flux_map_x():
     fig = plt.figure()
     heat_flux_map = np.genfromtxt("Data/nor_heat_flux_x map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e9  # Cannot be zero!
+    minimum_of_colorbar = 1e11  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
@@ -286,7 +335,7 @@ def plot_nor_heat_flux_map_x():
     plt.ylabel('Y (μm)', fontsize=12)
     cbar = plt.colorbar()
     cbar.set_label('Energy flux normalized x', rotation=90)
-    fig.savefig("Heat flux map normalised.pdf", bbox_inches="tight")
+    fig.savefig("Heat flux map normalised_x.pdf", bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()
 
 def plot_nor_heat_flux_map_y():
@@ -294,7 +343,7 @@ def plot_nor_heat_flux_map_y():
     fig = plt.figure()
     heat_flux_map = np.genfromtxt("Data/nor_heat_flux_y map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e9  # Cannot be zero!
+    minimum_of_colorbar = 1e11  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(heat_flux_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
@@ -302,7 +351,7 @@ def plot_nor_heat_flux_map_y():
     plt.ylabel('Y (μm)', fontsize=12)
     cbar = plt.colorbar()
     cbar.set_label('Energy flux normalizedy', rotation=90)
-    fig.savefig("Heat flux map normalised.pdf", bbox_inches="tight")
+    fig.savefig("Heat flux map normalised_y.pdf", bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()  
 
 def plot_scattering_map():
@@ -402,19 +451,28 @@ def plot_scattering_statistics():
 def plot_data():
     """Create plots of various distributions"""
     plot_trajectories()
-    plot_angle_distribution()
-    plot_free_path_distribution()
-    plot_frequency_distribution()
-    plot_wavelength_distribution()
-    plot_travel_time_distribution()
-    plot_mean_free_path_distribution()
-    plot_detected_frequency_distribution()
-    plot_velocity_distribution()
-    plot_time_in_segments()
-    plot_thermal_conductivity()
-    plot_temperature_profile()
-    plot_heat_flux_profile()
+    #plot_angle_distribution()
+    #plot_free_path_distribution()
+    #plot_frequency_distribution()
+    #plot_wavelength_distribution()
+    #plot_travel_time_distribution()
+    #plot_mean_free_path_distribution()
+    #plot_free_path_in_x_distribution()
+    #plot_free_path_in_y_distribution()
+    #plot_mean_free_path_in_x_distribution()
+    #plot_mean_free_path_in_y_distribution()
+    #plot_detected_frequency_distribution()
+    #plot_velocity_distribution()
+    #plot_time_in_segments()
+    #plot_thermal_conductivity()
+    #plot_temperature_profile()
+    #plot_heat_flux_profile()
     plot_thermal_map()
-    plot_scattering_statistics()
+    plot_heat_flux_map_norm()
+    plot_heat_flux_map_x()
+    plot_heat_flux_map_y()
+    #plot_nor_heat_flux_map_x()
+    #plot_nor_heat_flux_map_y()
+    #plot_scattering_statistics()
     if cf.output_scattering_map:
         plot_scattering_map()

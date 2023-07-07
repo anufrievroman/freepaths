@@ -63,7 +63,18 @@ class Phonon:
 
     def assign_coordinates(self):
         """Assign initial coordinates at the hot side"""
+        e=94*1e-9
+        dd=2*800e-9
+        er=e/dd*2
+        ar=1/3-er
+        #phonon_source_x= [-2*ar*dd/2-5*e/2, -ar*dd/2-3*e/2, -e/2, ar*dd/2+e/2,2*ar*dd/2+3*e/2,3*ar*dd/2+5*e/2]
+        #phonon_source_y= [165*1e-9,1435*1e-9]
+        # Here we choose randomly a source:
+        #source_number = choice(range(len(phonon_source_x)))
+        #source_number = choice(range(len(phonon_source_y)))
+        #self.x = phonon_source_x[source_number] + 0.49 * cf.phonon_source_width_x * (2 * random() - 1)
         self.x = cf.phonon_source_x + 0.49 * cf.phonon_source_width_x * (2 * random() - 1)
+        #self.y =  phonon_source_y[source_number] + 0.49 * cf.phonon_source_width_y * (2 * random() - 1)
         self.y = cf.phonon_source_y + 0.49 * cf.phonon_source_width_y * (2 * random() - 1)
         self.z = 0.49 * cf.thickness * (2 * random() - 1)
 

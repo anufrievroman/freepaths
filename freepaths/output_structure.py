@@ -45,5 +45,19 @@ def draw_structure(cf):
                                  [x_coor+hole_size_x/2, y_coor+hole_size_y/2],
                                  [x_coor, y_coor-hole_size_y/2]], closed=True, facecolor='white')
                 patches.append(patch)
-
+                
+    # Det 1:
+    patch = Rectangle((cf.frequency_detector_center*1e6-1e6*cf.frequency_detector_size/2, cf.length*1e6), 1e6*cf.frequency_detector_size, 1e6*cf.length/100, facecolor="red")
+    patches.append(patch)
+    
+    # Det 2:
+    patch = Rectangle((cf.frequency_detector_center_2*1e6-1e6*cf.frequency_detector_size_2/2, cf.length*1e6), 1e6*cf.frequency_detector_size_2, 1e6*cf.length/100, facecolor="blue")
+    patches.append(patch)
+    
+    # Det 3:
+    patch = Rectangle((cf.frequency_detector_center_3*1e6-1e6*cf.frequency_detector_size_3/2, cf.length*1e6), 1e6*cf.frequency_detector_size_3, 1e6*cf.length/100, facecolor="black")
+    patches.append(patch)
+    
+    
     return patches
+

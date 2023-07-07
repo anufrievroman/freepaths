@@ -106,7 +106,7 @@ class ThermalMaps:
             # Record energy h*w of this phonon into the pixel of thermal map:
             energy = hbar * 2 * pi * ph.f
             self.thermal_map[index_y, index_x] += energy
-            self.heat_flux_map_norm[index_y, index_x] += np.sqrt((energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed /vol_pixel)**2 +(energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed /vol_pixel)**2)
+            self.heat_flux_map_norm[index_y, index_x] += np.sqrt((energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed /cf.thickness/vol_pixel)**2 +(energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed /cf.thickness/vol_pixel)**2)
             self.heat_flux_map_x[index_y, index_x] += (energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed /cf.thickness/ vol_pixel)
             self.heat_flux_map_y[index_y, index_x] += (energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed /cf.thickness/ vol_pixel)
             self.nor[index_y, index_x] += 1
