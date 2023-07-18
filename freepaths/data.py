@@ -43,7 +43,6 @@ class GeneralData:
         self.free_paths = []
         self.free_paths_along_y = []
         self.frequencies = []
-        self.detected_frequencies = []
         self.group_velocities = []
         self.travel_times = []
         self.mean_free_paths = []
@@ -60,7 +59,6 @@ class GeneralData:
         self.free_paths.extend(flight.free_paths)
         self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.travel_times.append(flight.travel_time)
-        self.detected_frequencies.append(flight.detected_frequency)
         self.mean_free_paths.append(flight.mean_free_path)
 
     def write_into_files(self):
@@ -68,7 +66,6 @@ class GeneralData:
         np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', delimiter=",", header="L [m]", encoding='utf-8')
         np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', delimiter=",", header="Ly [m]", encoding='utf-8')
         np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]", encoding='utf-8')
-        np.savetxt("Data/All detected frequencies.csv", self.detected_frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]", encoding='utf-8')
         np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]", encoding='utf-8')

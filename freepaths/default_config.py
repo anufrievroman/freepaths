@@ -1,6 +1,8 @@
 """Default config file"""
 
 import numpy as np
+from freepaths.sources import Source
+
 
 # General parameters:
 OUTPUT_FOLDER_NAME               = "Si nanowire at 300 K"
@@ -44,7 +46,6 @@ INCLUDE_TOP_SIDEWALL             = False
 INCLUDE_BOTTOM_SIDEWALL          = False
 
 # Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE          = WIDTH
 COLD_SIDE_POSITION_TOP           = True
 COLD_SIDE_POSITION_BOTTOM        = False
 COLD_SIDE_POSITION_RIGHT         = False
@@ -55,11 +56,7 @@ HOT_SIDE_POSITION_RIGHT          = False
 HOT_SIDE_POSITION_LEFT           = False
 
 # Phonon source:
-PHONON_SOURCE_ANGLE_DISTRIBUTION = "random_up"
-PHONON_SOURCE_X                  = 0
-PHONON_SOURCE_WIDTH_X            = WIDTH
-PHONON_SOURCE_Y                  = 0
-PHONON_SOURCE_WIDTH_Y            = 0
+PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=0,  size_y=0, size_z=0, angle_distribution="random_up")]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS              = 2e-9
@@ -77,20 +74,6 @@ INCLUDE_BOTTOM_PARABOLA          = False
 BOTTOM_PARABOLA_TIP              = 1000e-9
 BOTTOM_PARABOLA_FOCUS            = 100e-9
 
-# Hole array parameters [m]:
-INCLUDE_HOLES                    = False
-CIRCULAR_HOLE_DIAMETER           = 200e-9
-RECTANGULAR_HOLE_SIDE_X          = 200e-9
-RECTANGULAR_HOLE_SIDE_Y          = 200e-9
-PERIOD_X                         = 300e-9
-PERIOD_Y                         = 300e-9
-
-# Lattice of holes:
-HOLE_COORDINATES = np.zeros((1, 3))
-HOLE_SHAPES = ["circle" for x in range(1)]
-
-# Pillar array parameters [m]
-INCLUDE_PILLARS                  = False
-PILLAR_HEIGHT                    = 100e-9
-PILLAR_WALL_ANGLE                = 0.0
-PILLAR_COORDINATES = np.zeros((1, 3))
+# Holes and pillars:
+HOLES                            = []
+PILLARS                          = []

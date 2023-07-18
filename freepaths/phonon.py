@@ -16,7 +16,7 @@ class Phonon:
     """A phonon particle with various physical properties"""
 
     def __init__(self, material, polarization=None, phonon_number=None):
-        """Initialize a phonon by assigning coordinates and other properties"""
+        """Initialize a phonon by assigning initial properties"""
         self.polarization = polarization
         self.phonon_number = phonon_number
         self.x = None
@@ -27,15 +27,23 @@ class Phonon:
         self.theta = None
         self.speed = None
 
+        # Assigning initial properties of the phonon:
         if polarization is None:
-            self.assign_polarization()
-        self.assign_coordinates()
-        self.assign_angles()
+            self.polarization = choice([Polarizations.TA, Polarizations.TA, Polarizations.LA])
+        source = choice(cf.phonon_sources)
+        self.x, self.y, self.z = source.generate_coordinates()
+        self.theta, self.phi = source.generate_angles()
+
+        # Frequency is assigned based on Planckian distribution in case MFP sampling mode:
         if phonon_number is None:
             self.assign_frequency(material)
+
+        # Otherwise, frequency is just asigned depending on the phonon number:
         else:
             branch = polarization.value
             self.f = abs((material.dispersion[phonon_number+1, branch] + material.dispersion[phonon_number, branch]) / 2)
+
+        # self.f = 6e12 # FIX THIS
         self.assign_speed(material)
         self.assign_internal_scattering_time(material)
 
@@ -56,41 +64,6 @@ class Phonon:
                 (not cf.cold_side_position_bottom or is_inside_bottom) and
                 (not cf.cold_side_position_right or is_inside_right) and
                 (not cf.cold_side_position_left or is_inside_left))
-
-    def assign_polarization(self):
-        """Assign branch of phonon dispersion"""
-        self.polarization = choice([Polarizations.TA, Polarizations.TA, Polarizations.LA])
-
-    def assign_coordinates(self):
-        """Assign initial coordinates at the hot side"""
-        self.x = cf.phonon_source_x + 0.49 * cf.phonon_source_width_x * (2 * random() - 1)
-        self.y = cf.phonon_source_y + 0.49 * cf.phonon_source_width_y * (2 * random() - 1)
-        self.z = 0.49 * cf.thickness * (2 * random() - 1)
-
-    def assign_angles(self):
-        """Depending on angle distribution, assign angles"""
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_UP:
-            self.theta = -pi/2 + pi*random()
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_DOWN:
-            rand_sign = sign((2*random() - 1))
-            self.theta = rand_sign*(pi/2 + pi/2*random())
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_RIGHT:
-            self.theta = pi*random()
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.RANDOM_LEFT:
-            self.theta = - pi*random()
-            self.phi = asin(2*random() - 1)
-        if cf.phonon_source_angle_distribution == Distributions.DIRECTIONAL:
-            self.theta = 0
-            self.phi = -pi/2 + pi*random()
-        if cf.phonon_source_angle_distribution == Distributions.LAMBERT:
-            self.theta = asin(2*random() - 1)
-            self.phi = asin((asin(2*random() - 1))/(pi/2))
-        if cf.phonon_source_angle_distribution == Distributions.UNIFORM:
-            self.theta = -pi + 2*pi*random()
-            self.phi = asin(2*random() - 1)
 
     def assign_frequency(self, material):
         """Assigning frequency with probability according to Planckian distribution"""

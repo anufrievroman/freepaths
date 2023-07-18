@@ -4,6 +4,7 @@ import sys
 import argparse
 
 from freepaths.options import Materials, Distributions
+from freepaths.scatterers import *
 
 # Import a default input file:
 from freepaths.default_config import *
@@ -44,7 +45,6 @@ class Config:
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.output_structure_color = OUTPUT_STRUCTURE_COLOR
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
-        self.phonon_source_angle_distribution = PHONON_SOURCE_ANGLE_DISTRIBUTION
 
         # Animation:
         self.output_path_animation = OUTPUT_PATH_ANIMATION
@@ -79,11 +79,7 @@ class Config:
         self.hot_side_position_right = HOT_SIDE_POSITION_RIGHT
         self.hot_side_position_left = HOT_SIDE_POSITION_LEFT
 
-        self.frequency_detector_size = FREQUENCY_DETECTOR_SIZE
-        self.phonon_source_x = PHONON_SOURCE_X
-        self.phonon_source_y = PHONON_SOURCE_Y
-        self.phonon_source_width_x = PHONON_SOURCE_WIDTH_X
-        self.phonon_source_width_y = PHONON_SOURCE_WIDTH_Y
+        self.phonon_sources = PHONON_SOURCES
 
         # Cold side positions:
         self.cold_side_position_top = COLD_SIDE_POSITION_TOP
@@ -108,36 +104,22 @@ class Config:
         self.bottom_parabola_focus = BOTTOM_PARABOLA_FOCUS
 
         # Hole array parameters:
-        self.include_holes = INCLUDE_HOLES
-        self.circular_hole_diameter = CIRCULAR_HOLE_DIAMETER
-        self.rectangular_hole_side_x = RECTANGULAR_HOLE_SIDE_X
-        self.rectangular_hole_side_y = RECTANGULAR_HOLE_SIDE_Y
-        self.period_x = PERIOD_X
-        self.period_y = PERIOD_Y
-
-        # Lattice of holes:
-        self.hole_coordinates = HOLE_COORDINATES
-        self.hole_shapes = HOLE_SHAPES
-
-        # Pillar array parameters [m]
-        self.include_pillars = INCLUDE_PILLARS
-        self.pillar_coordinates = PILLAR_COORDINATES
-        self.pillar_height = PILLAR_HEIGHT
-        self.pillar_wall_angle = PILLAR_WALL_ANGLE
-
+        self.holes = HOLES
+        self.pillars = PILLARS
 
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
 
         # Distributions:
         valid_distributions =[member.name.lower() for member in Distributions]
-        if self.phonon_source_angle_distribution in valid_distributions:
-            self.phonon_source_angle_distribution = Distributions[self.phonon_source_angle_distribution.upper()]
-        else:
-            print("ERROR: Parameter phonon_source_ANGLE_DISTRIBUTION is not set correctly.")
-            print("phonon_source_ANGLE_DISTRIBUTION should be one of the following:")
-            print(*valid_distributions, sep = ", ")
-            sys.exit()
+        for source in self.phonon_sources:
+            if source.angle_distribution in valid_distributions:
+                source.angle_distribution = Distributions[source.angle_distribution.upper()]
+            else:
+                print("ERROR: Parameter angle_distribution of a source is not set correctly.")
+                print("The angle_distribution should be one of the following:")
+                print(*valid_distributions, sep = ", ")
+                sys.exit()
 
         # Materials:
         valid_materials = [member.name for member in Materials]
@@ -156,25 +138,34 @@ class Config:
             self.output_trajectories_of_first = self.number_of_phonons
             print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
 
-        if self.phonon_source_y > self.length:
-            self.phonon_source_y = self.length
-            print("WARNING: Parameter phonon_source_Y exceeded LENGHT.\n")
+        for source in self.phonon_sources:
+            if source.y > self.length:
+                print("ERROR: Y coordinate of a source exceeded LENGHT.\n")
+                sys.exit()
 
-        if self.phonon_source_y < 0:
-            self.phonon_source_y = 0
-            print("WARNING: Parameter PHONON_SOURCE_Y was negative.\n")
+            if source.y < 0:
+                print("ERROR: Y coordinate of a source is negative.\n")
+                sys.exit()
 
-        if self.phonon_source_y - self.phonon_source_width_y / 2 < 0:
-            self.phonon_source_width_y = self.phonon_source_y * 2
-            print("WARNING: Parameter PHONON_SOURCE_WIDTH_Y was too large.\n")
+            if source.y - source.size_y / 2 < 0:
+                print("ERROR: Source size along Y coordinate is too large.\n")
+                sys.exit()
 
-        if self.phonon_source_x > self.width/2:
-            self.phonon_source_x = 0
-            print("WARNING: Parameter PHONON_SOURCE_X was larger than WIDTH.\n")
+            if abs(source.x) > self.width/2:
+                print("ERROR: X coordinate of a source exceeds WIDTH.\n")
+                sys.exit()
 
-        if self.phonon_source_width_x > self.width:
-            self.phonon_source_width_x = self.width
-            print("WARNING: Parameter PHONON_SOURCE_WIDTH_X exceeds WIDTH.\n")
+            if abs(source.x + source.size_x / 2) > self.width/2:
+                print("ERROR: Source size along X coordinate is too large.\n")
+                sys.exit()
+
+            if abs(source.z) > self.thickness/2:
+                print("ERROR: Z coordinate of a source exceeds THICKNESS.\n")
+                sys.exit()
+
+            if abs(source.z + source.size_z / 2) > self.thickness/2:
+                print("ERROR: Source size along Z coordinate is too large.\n")
+                sys.exit()
 
         if self.output_path_animation and self.number_of_timesteps > 5000:
             print("WARNING: NUMBER_OF_TIMESTEPS is rather large for animation.\n")
@@ -208,27 +199,27 @@ class Config:
         """Check for depricated parameters and warn about them"""
 
         if 'COLD_SIDE_POSITION' in globals():
-            print("WARNING: parameter COLD_SIDE_POSITION is depricated. ")
+            print("ERROR: parameter COLD_SIDE_POSITION is depricated. ")
             print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
+            sys.exit()
 
-        if 'HOT_SIDE_POSITION' in globals():
-            print("WARNING: parameter HOT_SIDE_POSITION is depricated. ")
-            print("Use specific boolean parameters like HOT_SIDE_POSITION_BOTTOM = True.\n")
-
-        if 'HOT_SIDE_X' in globals():
-            print("WARNING: parameter HOT_SIDE_X was renamed to PHONON_SOURCE_X.\n")
-
-        if 'HOT_SIDE_Y' in globals():
-            print("WARNING: parameter HOT_SIDE_Y was renamed to PHONON_SOURCE_Y.\n")
-
-        if 'HOT_SIDE_WIDTH_X' in globals():
-            print("WARNING: parameter HOT_SIDE_WIDTH_X was renamed to PHONON_SOURCE_WIDTH_X.\n")
-
-        if 'HOT_SIDE_WIDTH_Y' in globals():
-            print("WARNING: parameter HOT_SIDE_WIDTH_Y was renamed to PHONON_SOURCE_WIDTH_Y.\n")
-
-        if 'HOT_SIDE_ANGLE_DISTRIBUTION' in globals():
-            print("WARNING: parameter HOT_SIDE_ANGLE_DISTRIBUTION was renamed to PHONON_SOURCE_ANGLE_DISTRIBUTION.\n")
+        if any([
+            'HOT_SIDE_POSITION' in globals(),
+            'HOT_SIDE_X' in globals(),
+            'HOT_SIDE_Y' in globals(),
+            'HOT_SIDE_WIDTH_X' in globals(),
+            'HOT_SIDE_WIDTH_Y' in globals(),
+            'HOT_SIDE_ANGLE_DISTRIBUTION' in globals(),
+            'PHONON_SOURCE_X' in globals(),
+            'PHONON_SOURCE_Y' in globals(),
+            'PHONON_SOURCE_WIDTH_X' in globals(),
+            'PHONON_SOURCE_WIDTH_Y' in globals(),
+            'PHONON_SOURCE_ANGLE_DISTRIBUTION' in globals(),
+            ]):
+            print("ERROR: parameters related to HOT_SIDE_... or PHONON_SOURCE_.. are depricated. ")
+            print("Phonon source should be defined through the PHONON_SOURCES variable.\n")
+            print("See updated documentation for more details.\n")
+            sys.exit()
 
 cf = Config()
 cf.convert_to_enums()

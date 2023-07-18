@@ -139,18 +139,6 @@ def plot_mean_free_path_distribution():
     np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
-def plot_detected_frequency_distribution():
-    """Plot distribution of detected frequencies"""
-    detected_frequency_distribution = distribution_calculation("Data/All detected frequencies.csv", None, cf.number_of_nodes)
-    fig, ax = plt.subplots()
-    ax.plot(detected_frequency_distribution[:, 0], detected_frequency_distribution[:, 1], 'royalblue')
-    ax.set_xlabel('Frequency (Hz)', fontsize=12)
-    ax.set_ylabel('Number of phonons', fontsize=12)
-    fig.savefig("Distribution of detected frequencies.pdf", dpi=300, format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
-    np.savetxt('Data/Distribution of detected frequencies.csv', detected_frequency_distribution, fmt='%1.3e', delimiter=",")
-
-
 def plot_velocity_distribution():
     """Plot distribution of group velocities"""
     fig, ax = plt.subplots()
@@ -251,7 +239,7 @@ def plot_trajectories():
     fig, ax = plt.subplots()
 
     # Draw structures:
-    patches = draw_structure(cf)
+    patches = draw_structure(cf, color_holes='white', color_back=cf.output_structure_color)
     for patch in patches:
         ax.add_patch(patch)
 
@@ -320,8 +308,30 @@ def plot_scattering_statistics():
     np.savetxt(filename, data, fmt='%1.2e', delimiter=",", header=header)
 
 
+def plot_structure():
+    """Plot the structure with all the elements"""
+
+    # Create XY plot:
+    fig, ax = plt.subplots()
+
+    # Draw structures:
+    patches = draw_structure(cf, color_holes='black', color_back='royalblue')
+    for patch in patches:
+        ax.add_patch(patch)
+
+    # Set labels:
+    ax.set_xlabel('X (μm)', fontsize=12)
+    ax.set_ylabel('Y (μm)', fontsize=12)
+    ax.set_aspect('equal', 'datalim')
+    ax.set_xlim(1.2*-cf.width*1e6, 1.2*cf.width*1e6)
+    ax.set_ylim(0, cf.length*1e6)
+    fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+
+
 def plot_data():
     """Create plots of various distributions"""
+    plot_structure()
     plot_trajectories()
     plot_angle_distribution()
     plot_free_path_distribution()
@@ -329,7 +339,6 @@ def plot_data():
     plot_wavelength_distribution()
     plot_travel_time_distribution()
     plot_mean_free_path_distribution()
-    plot_detected_frequency_distribution()
     plot_velocity_distribution()
     plot_time_in_segments()
     plot_thermal_conductivity()

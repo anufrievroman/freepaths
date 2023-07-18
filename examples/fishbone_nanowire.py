@@ -40,10 +40,8 @@ WIDTH                          = 500e-9
 LENGTH                         = 1500e-9
 
 
-# Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE        = WIDTH
-PHONON_SOURCE_X                = 0
-PHONON_SOURCE_WIDTH_X          = 100e-9
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=100e-9,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
 
 # Roughness [m]:
@@ -54,22 +52,14 @@ BOTTOM_ROUGHNESS               = 0.2e-9
 
 
 # Hole array parameters [m]:
-INCLUDE_HOLES                  = True
-CIRCULAR_HOLE_DIAMETER         = None
-RECTANGULAR_HOLE_SIDE_X        = 300e-9
-RECTANGULAR_HOLE_SIDE_Y        = 150e-9
+HOLES = []
+
 PERIOD_X                       = WIDTH
 PERIOD_Y                       = 300e-9
-
-FIRST_HOLE_COORDINATE = 0
 NUMBER_OF_PERIODS_X = 2
 NUMBER_OF_PERIODS_Y = 6
-HOLE_COORDINATES = np.zeros((NUMBER_OF_PERIODS_X * NUMBER_OF_PERIODS_Y, 3))
-HOLE_SHAPES = ['rectangle' for x in range(HOLE_COORDINATES.shape[0])]
-hole_number = 0
 for i in range(NUMBER_OF_PERIODS_Y):
     for j in range(NUMBER_OF_PERIODS_X):
-        HOLE_COORDINATES[hole_number, 0] = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X
-        HOLE_COORDINATES[hole_number, 1] = FIRST_HOLE_COORDINATE + i * PERIOD_Y
-        hole_number += 1
-
+        x_coor = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X
+        y_coor = i * PERIOD_Y
+        HOLES.append(RectangularHole(x=x_coor, y=y_coor, size_x=300e-9, size_y=150e-9))

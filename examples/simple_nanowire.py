@@ -40,12 +40,10 @@ THICKNESS                      = 150e-9
 WIDTH                          = 200e-9
 LENGTH                         = 2000e-9
 
-# Hot and cold sides [m]:
-PHONON_SOURCE_X                = 0
-PHONON_SOURCE_WIDTH_X          = WIDTH
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
-

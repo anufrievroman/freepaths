@@ -1,5 +1,7 @@
-"""Module that runs one phonon through the structure"""
-
+"""
+Module that runs one phonon through the structure, from phonon source to a cold side.
+After the run, we record various parameters of this run into flight object.
+"""
 
 from freepaths.config import cf
 from freepaths.scattering import internal_scattering, surface_scattering, reinitialization
@@ -9,6 +11,7 @@ from freepaths.scattering_types import ScatteringTypes
 def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatter_maps, material):
     """Run one phonon through the system and record parameters of this run"""
 
+    # Initialize object that will store scattering types:
     scattering_types = ScatteringTypes()
 
     # Run the phonon step-by-step:
@@ -51,5 +54,5 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
         else:
             flight.add_point_to_path()
             flight.save_free_paths()
-            flight.finish(step_number, cf.timestep, cf.frequency_detector_size)
+            flight.finish(step_number, cf.timestep)
             break

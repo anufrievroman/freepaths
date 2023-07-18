@@ -1,8 +1,5 @@
 """Config file to simulate a phononic crystal with square lattice of holes"""
 
-import numpy as np
-
-
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Phononic crystal square'
 NUMBER_OF_PHONONS              = 500
@@ -41,10 +38,9 @@ THICKNESS                      = 150e-9
 WIDTH                          = 1200e-9
 LENGTH                         = 2200e-9
 
-# Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE        = WIDTH
-PHONON_SOURCE_X                     = 0
-PHONON_SOURCE_WIDTH_X               = WIDTH
+
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
 
 # Roughness [m]:
@@ -54,26 +50,11 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
 
-# Hole array parameters [m]:
-INCLUDE_HOLES                  = True
-CIRCULAR_HOLE_DIAMETER         = 200e-9
-RECTANGULAR_HOLE_SIDE_X        = None
-RECTANGULAR_HOLE_SIDE_Y        = None
-PERIOD_X                       = 300e-9
-PERIOD_Y                       = 300e-9
-
-
 # Lattice of holes:
-FIRST_HOLE_COORDINATE = 300e-9
-NUMBER_OF_PERIODS_X = 5
-NUMBER_OF_PERIODS_Y = 6
-HOLE_COORDINATES = np.zeros((NUMBER_OF_PERIODS_X * NUMBER_OF_PERIODS_Y, 3))
-HOLE_SHAPES = ['circle' for x in range(HOLE_COORDINATES.shape[0])]
-hole_number = 0
-for i in range(NUMBER_OF_PERIODS_Y):
-    for j in range(NUMBER_OF_PERIODS_X):
-        HOLE_COORDINATES[hole_number, 0] = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X
-        HOLE_COORDINATES[hole_number, 1] = FIRST_HOLE_COORDINATE + i * PERIOD_Y
-        HOLE_COORDINATES[hole_number, 2] = 0
-        hole_number += 1
-
+HOLES = []
+period = 300e-9
+for row in range(5):
+    for column in range(5):
+        x = - 4 * period / 2 + column * period
+        y = (row + 1) * period
+        HOLES.append(CircularHole(x=x, y=y, diameter=200e-9))

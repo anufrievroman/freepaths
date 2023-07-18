@@ -90,9 +90,9 @@ class ThermalMaps:
         vol_cell_y = vol_cell / cf.number_of_pixels_y
 
         # Here we arbitrarily correct the volume of the unit cells in pillars:
-        if cf.include_pillars == 'yes':
-            vol_cell_x += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
-            vol_cell_y += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
+        # if cf.pillars:
+            # vol_cell_x += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
+            # vol_cell_y += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
 
         # Prevent error if the phonon is outside the structure:
         if (0 <= index_x < cf.number_of_pixels_x) and (0 <= index_y < cf.number_of_pixels_y):

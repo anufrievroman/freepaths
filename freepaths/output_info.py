@@ -67,7 +67,7 @@ def output_scattering_information(scatter_stats):
             f'\n{internal:.2f}% - internal scattering processes',
     )
 
-    if cf.include_holes:
+    if cf.holes:
         scat_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
                              np.sum(scatter_stats.hole_specular)) / total
         scat_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
@@ -78,7 +78,7 @@ def output_scattering_information(scatter_stats):
                 f'{scat_on_holes_spec:.2f}% - specular)',
         )
 
-    if cf.include_pillars:
+    if cf.pillars:
         scat_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
                             np.sum(scatter_stats.pillar_specular)) / total
         scat_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
@@ -92,7 +92,7 @@ def output_scattering_information(scatter_stats):
     # Write info into a text file:
     with open("Information.txt", "a", encoding="utf-8") as file:
         file.writelines(info1)
-        if cf.include_holes:
+        if cf.holes:
             file.writelines(info2)
-        if cf.include_pillars:
+        if cf.pillars:
             file.writelines(info3)

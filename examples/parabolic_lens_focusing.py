@@ -3,8 +3,8 @@ which acts like a focusing mirror for a flux of parallel phonons emitted vertica
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Parabolic lens focusing'
-NUMBER_OF_PHONONS              = 2000
-NUMBER_OF_TIMESTEPS            = 3000
+NUMBER_OF_PHONONS              = 200
+NUMBER_OF_TIMESTEPS            = 1000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12
 T                              = 4.0
@@ -38,11 +38,8 @@ WIDTH                          = 1000e-9
 LENGTH                         = 1100e-9
 
 
-# Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE             = WIDTH
-PHONON_SOURCE_X                     = 0.0
-PHONON_SOURCE_WIDTH_X               = WIDTH
-PHONON_SOURCE_ANGLE_DISTRIBUTION    = 'directional'
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="directional")]
 
 
 # Roughness [m]:
@@ -51,11 +48,5 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
 
-# Parabolic boundaries:
-INCLUDE_TOP_PARABOLA           = True
-TOP_PARABOLA_TIP               = 1000e-9
-TOP_PARABOLA_FOCUS             = 100e-9
-
-INCLUDE_BOTTOM_PARABOLA        = False
-BOTTOM_PARABOLA_TIP            = 0
-BOTTOM_PARABOLA_FOCUS          = 0
+# Parabolic boundary:
+HOLES = [ParabolaTop(tip=1000e-9, focus=100e-9)]

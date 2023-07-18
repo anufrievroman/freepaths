@@ -28,7 +28,8 @@ def generate_frames_xy():
         fig, ax = plt.subplots()
 
         # Draw the structure:
-        patches = draw_structure(cf)
+        patches = draw_structure(cf, color_back=cf.output_structure_color)
+
         for patch in patches:
             ax.add_patch(patch)
 
@@ -83,7 +84,7 @@ def generate_animation_xy():
 
     # Create a GIF file:
     imageio.mimsave("Animated paths XY.gif", images,
-                    fps=cf.output_animation_fps, subrectangles=True)
+                    duration=1000 * 1/cf.output_animation_fps, subrectangles=True)
 
     # Create an MP4 file:
     # writer = imageio.get_writer('Animated paths XY.mp4', fps=cf.output_animation_fps)

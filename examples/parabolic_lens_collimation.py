@@ -39,24 +39,17 @@ WIDTH                          = 2000e-9
 LENGTH                         = 2000e-9
 
 # Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE             = WIDTH
 COLD_SIDE_POSITION_TOP              = True
-PHONON_SOURCE_X                     = 0
-PHONON_SOURCE_Y                     = 300e-9
-PHONON_SOURCE_WIDTH_X               = 10e-9
-PHONON_SOURCE_WIDTH_Y               = 10e-9
-PHONON_SOURCE_ANGLE_DISTRIBUTION    = 'uniform'
+
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=300e-9, z=0, size_x=100e-9,  size_y=100e-9, size_z=THICKNESS, angle_distribution="uniform")]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
-# Parabolic boundaries:
-INCLUDE_TOP_PARABOLA           = False
-TOP_PARABOLA_TIP               = 1000e-9
-TOP_PARABOLA_FOCUS             = 100e-9
 
-INCLUDE_BOTTOM_PARABOLA        = True
-BOTTOM_PARABOLA_TIP            = 0.0
-BOTTOM_PARABOLA_FOCUS          = 300e-9
+# Parabolic mirror:
+HOLES = [ParabolaBottom(tip=0, focus=300e-9)]
+

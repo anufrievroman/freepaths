@@ -1,4 +1,8 @@
-"""Module that provides phonon scattering types that occur on each step"""
+"""
+Module that provides types of phonon scattering that might occur.
+These scattering types are returned on each step
+so that higher level modules know what has happened.
+"""
 
 import enum
 

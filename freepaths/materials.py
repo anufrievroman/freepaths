@@ -1,4 +1,10 @@
-"""Module that assigns physical properties according to chosen material"""
+"""
+Module that assigns physical properties according to chosen material. References:
+Si - Ref. APL 95 161901 (2009)
+SiC - Ref. PRB 50 17054 (1994)
+Diamond - Carbon 91 266-274 (2015)
+AlN - Ref. PRB 58 12899 (1998)
+"""
 
 import numpy as np
 from freepaths.options import Materials
@@ -10,7 +16,7 @@ class Material:
     def __init__(self, material, num_points=1000):
         self.name = material
 
-        if self.name == Materials.Si:  # Ref. APL 95 161901 (2009)
+        if self.name == Materials.Si:
             A1 = 1369.42
             B1 = -2.405e-8
             C1 = -9.70e-19
@@ -26,7 +32,7 @@ class Material:
             self.dispersion[:, 2] = [abs(A2 * k + B2 * k**2 + C2 * k**3 + D2 * k**4) for k in self.dispersion[:, 0]] # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
 
-        elif self.name == Materials.SiC:  # Ref. PRB 50 17054 (1994)
+        elif self.name == Materials.SiC:
             A1 = 1737.36296
             B1 = 1.7604452e-08
             C1 = -3.48834e-18
@@ -41,7 +47,7 @@ class Material:
             self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
 
-        elif self.name == Materials.Diamond:  # Ref. Carbon 91 266-274 (2015)
+        elif self.name == Materials.Diamond:
             A1 = 4309.95222
             B1 = -8.855338e-08
             C1 = -1.347265e-18
@@ -56,7 +62,7 @@ class Material:
             self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
 
-        elif self.name == Materials.AlN:  # Ref. PRB 58 12899 (1998)
+        elif self.name == Materials.AlN:
             A1 = 946.677
             B1 = 3.08258e-08
             C1 = -2.990977e-18

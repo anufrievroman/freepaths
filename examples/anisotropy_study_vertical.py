@@ -45,32 +45,19 @@ COLD_SIDE_POSITION_RIGHT            = False
 COLD_SIDE_POSITION_TOP              = True
 HOT_SIDE_POSITION_LEFT              = False
 HOT_SIDE_POSITION_BOTTOM            = True
-PHONON_SOURCE_X                     = 0
-PHONON_SOURCE_Y                     = 0
-PHONON_SOURCE_WIDTH_X               = 0
-PHONON_SOURCE_WIDTH_Y               = WIDTH
-PHONON_SOURCE_ANGLE_DISTRIBUTION    = 'random_up'
 
-# Hole array parameters [m]:
-INCLUDE_HOLES                  = True
-CIRCULAR_HOLE_DIAMETER         = 0
-RECTANGULAR_HOLE_SIDE_X        = 200e-9
-RECTANGULAR_HOLE_SIDE_Y        = 100e-9
-PERIOD_X                       = 300e-9
-PERIOD_Y                       = 300e-9
+# Phonon source:
+PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
+HOLES = []
 
 # Staggered attice of holes:
-FIRST_HOLE_COORDINATE = 200e-9
-NUMBER_OF_PERIODS_X = 4
-NUMBER_OF_PERIODS_Y = 4
-HOLE_COORDINATES = np.zeros((NUMBER_OF_PERIODS_X * NUMBER_OF_PERIODS_Y, 3))
-HOLE_SHAPES = ['rectangle' for x in range(HOLE_COORDINATES.shape[0])]
-hole_number = 0
-for i in range(NUMBER_OF_PERIODS_Y):
-    for j in range(NUMBER_OF_PERIODS_X):
-        HOLE_COORDINATES[hole_number, 0] = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X
-        HOLE_COORDINATES[hole_number, 1] = FIRST_HOLE_COORDINATE + i * PERIOD_Y
-        HOLE_COORDINATES[hole_number, 2] = 0
-        hole_number += 1
-
+period_x = 300e-9
+period_y = 300e-9
+number_of_periods_x = 4
+number_of_periods_y = 4
+for i in range(number_of_periods_y):
+    for j in range(number_of_periods_x):
+        x = -(number_of_periods_x - 1) * period_x / 2 + j * period_x
+        y = 200e-9 + i * period_y
+        HOLES.append(RectangularHole(x, y, size_x=200e-9, size_y=100e-9))

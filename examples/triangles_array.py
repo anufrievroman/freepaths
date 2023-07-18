@@ -39,12 +39,11 @@ GRAY_APPROXIMATION_MFP         = None
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 1200e-9
-LENGTH                         = 2200e-9
+LENGTH                         = 2500e-9
 
-# Hot and cold sides [m]:
-FREQUENCY_DETECTOR_SIZE        = WIDTH
-PHONON_SOURCE_X                = 0
-PHONON_SOURCE_WIDTH_X          = WIDTH
+
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
 
 # Roughness [m]:
@@ -54,31 +53,24 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
 
-# Hole array parameters [m]:
-INCLUDE_HOLES                  = True
-CIRCULAR_HOLE_DIAMETER         = 0
-RECTANGULAR_HOLE_SIDE_X        = 100e-9
-RECTANGULAR_HOLE_SIDE_Y        = 200e-9
-PERIOD_X                       = 300e-9
-PERIOD_Y                       = 300e-9
+# Staggered attice of holes:
+HOLES = []
 
+period_x = 350e-9
+period_y = 350e-9
+first_hole_coordinate = 300e-9
+number_of_periods_x = 3
+number_of_periods_y = 3
 
-# Staggered attice of holes that increase in size:
-FIRST_HOLE_COORDINATE = 300e-9
-NUMBER_OF_PERIODS_X = 5
-NUMBER_OF_PERIODS_Y = 3
-HOLE_COORDINATES = np.zeros((NUMBER_OF_PERIODS_X * NUMBER_OF_PERIODS_Y * 2, 3))
-HOLE_SHAPES = ['triangle_down' for x in range(HOLE_COORDINATES.shape[0])]
-hole_number = 0
-for i in range(NUMBER_OF_PERIODS_Y):
-    for j in range(NUMBER_OF_PERIODS_X):
-        HOLE_COORDINATES[hole_number, 0] = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X
-        HOLE_COORDINATES[hole_number, 1] = FIRST_HOLE_COORDINATE + i * PERIOD_Y * 2
-        HOLE_COORDINATES[hole_number, 2] = i * 0.2
-        hole_number += 1
-for i in range(NUMBER_OF_PERIODS_Y):
-    for j in range(NUMBER_OF_PERIODS_X):
-        HOLE_COORDINATES[hole_number, 0] = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X - PERIOD_X / 2
-        HOLE_COORDINATES[hole_number, 1] = FIRST_HOLE_COORDINATE + PERIOD_Y + i * PERIOD_Y * 2
-        HOLE_COORDINATES[hole_number, 2] = i * 0.2
-        hole_number += 1
+size_x = 100e-9
+size_y = 200e-9
+for i in range(number_of_periods_y):
+    for j in range(number_of_periods_x):
+        x = -(number_of_periods_x - 1) * period_x / 2 + j * period_x
+        y = first_hole_coordinate + i * period_y * 2
+        HOLES.append(TriangularUpHole(x, y, size_x*(0.4*i + 1), size_y*(0.4*i + 1)))
+for i in range(number_of_periods_y):
+    for j in range(number_of_periods_x + 1):
+        x = - 2 * period_x / 2 + j * period_x - period_x / 2
+        y = first_hole_coordinate + period_y + i * period_y * 2
+        HOLES.append(TriangularDownHole(x, y, size_x*(0.4*i + 1), size_y*(0.4*i + 1)))

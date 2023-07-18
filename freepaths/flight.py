@@ -35,7 +35,6 @@ class Flight:
         self.initial_theta = self.phonon.theta
         self.path = Path(self.phonon.x, self.phonon.y, self.phonon.z)
         self.exit_theta = 0.0
-        self.detected_frequency = 0.0
         self.free_path = 0.0
         self.free_path_along_y = 0.0
         self.travel_time = 0.0
@@ -67,12 +66,10 @@ class Flight:
         self.free_path = 0.0
         self.free_path_along_y = 0.0
 
-    def finish(self, step, timestep, detector_size):
+    def finish(self, step, timestep):
         """Finish the flight and record final state"""
         self.exit_theta = self.phonon.theta
         self.travel_time = step * timestep
-        if abs(self.phonon.x) < detector_size / 2.0:
-            self.detected_frequency = self.phonon.f
 
     def add_step(self, timestep):
         """Increase parameters of the flight by length of one step"""

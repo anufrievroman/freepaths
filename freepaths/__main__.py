@@ -5,12 +5,12 @@ import argparse
 import freepaths.main_tracing
 import freepaths.main_mfp_sampling
 
-__version__ = "1.4"
+__version__ = "1.5"
 
 # Parse user arguments:
 parser = argparse.ArgumentParser(
                 prog = 'FreePATHS',
-                description = 'Monte Carlo simulator',
+                description = 'Phonon Monte Carlo simulator',
                 epilog = 'For more information, visit: https://anufrievroman.gitbook.io/freepaths'
                 )
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
