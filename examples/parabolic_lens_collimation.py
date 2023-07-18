@@ -38,16 +38,19 @@ THICKNESS                      = 150e-9
 WIDTH                          = 2000e-9
 LENGTH                         = 2000e-9
 
-# Hot and cold sides [m]:
-COLD_SIDE_POSITION_TOP              = True
-
-# Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=300e-9, z=0, size_x=100e-9,  size_y=100e-9, size_z=THICKNESS, angle_distribution="uniform")]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
+
+
+# Hot and cold sides:
+COLD_SIDE_POSITION_TOP         = True
+
+
+# Phonon source:
+PHONON_SOURCES = [Source(x=0, y=300e-9, z=0, size_x=100e-9,  size_y=100e-9, size_z=THICKNESS, angle_distribution="uniform")]
 
 
 # Parabolic mirror:

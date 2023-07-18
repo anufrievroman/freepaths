@@ -38,14 +38,14 @@ WIDTH                          = 1000e-9
 LENGTH                         = 1100e-9
 
 
-# Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="directional")]
-
-
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
+
+
+# Phonon source:
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="directional")]
 
 
 # Parabolic boundary:
