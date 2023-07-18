@@ -5,7 +5,7 @@ import argparse
 import freepaths.main_tracing
 import freepaths.main_mfp_sampling
 
-__version__ = "1.5"
+__version__ = "1.6"
 
 # Parse user arguments:
 parser = argparse.ArgumentParser(
