@@ -41,6 +41,7 @@ class Flight:
         self.time_since_previous_scattering = 0.0
         self.free_paths = []
         self.free_paths_along_y = []
+        self.thermal_conductivity = 0.0
 
     @property
     def mean_free_path(self):

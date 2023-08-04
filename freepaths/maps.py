@@ -121,7 +121,7 @@ class ThermalMaps:
                 self.heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / vol_cell_y
                 self.temperature_profile_x[index_x, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / vol_cell_x
                 self.temperature_profile_y[index_y, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / vol_cell_y
-    
+
     def calculate_normalized_flux(self):
 
         for j in range(cf.number_of_pixels_x):
@@ -130,7 +130,7 @@ class ThermalMaps:
                     self.nor_heat_flux_y_map[i,j] = self.heat_flux_map_y[i,j] / self.nor[i,j]
                     self.nor_heat_flux_x_map[i,j] = self.heat_flux_map_x[i,j] / self.nor[i,j]
 
-    
+
     def calculate_thermal_conductivity(self):
         """Calculate the thermal conductivity for each time interval from heat flux
         and temperature profiles accumulated in that interval"""
@@ -189,4 +189,3 @@ class ThermalMaps:
         np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
         np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
         np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK)", encoding='utf-8')
-        

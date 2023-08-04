@@ -61,6 +61,32 @@ def wavelength_distribution_calculation(number_of_nodes):
     return distribution
 
 
+def cumulative_conductivity_calculation():
+    """Calculate cumulative function of thermal conductivity vs mean freee path"""
+    mfp = np.loadtxt("Data/All mean free paths.csv", encoding='utf-8')
+    kappa = np.loadtxt("Data/All thermal conductivities.csv", encoding='utf-8')
+    sorted_indices = np.argsort(mfp)
+    sorted_mfp = mfp[sorted_indices]
+    sorted_kappa = kappa[sorted_indices]
+    cumulative_thermal_conductivity = running_sum_array = np.cumsum(sorted_kappa)
+    return sorted_mfp, cumulative_thermal_conductivity
+
+
+def plot_cumulative_thermal_conductivity():
+    """Plot distribution cumulative thermal conductivity vs mean free path"""
+    mfp, kappa = cumulative_conductivity_calculation()
+    fig, ax = plt.subplots()
+    ax.plot(mfp * 1e6, kappa, 'royalblue')
+    ax.set_xlabel('Mean free path (μm)', fontsize=12)
+    ax.set_ylabel('Cumulative thermal conductivity', fontsize=12)
+    ax.set_xscale('log')
+    ax.set_xlim(left=0.01)
+    # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
+    fig.savefig("Distribution of thermal conductivity.pdf", dpi=300, format='pdf', bbox_inches="tight")
+    if cf.plots_in_terminal: plt.show()
+    np.savetxt('Data/Distribution of thermal conductivity.csv', np.vstack((mfp, kappa)), fmt='%1.3e', delimiter=",")
+
+
 def plot_angle_distribution():
     """Plot distribution of angles"""
     angle_distributions = angle_distribution_calculation()
@@ -178,7 +204,7 @@ def plot_temperature_profile():
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     for timeframe in range(len(data) - 1):
-        ax.plot(data[0], data[timeframe + 1], linewidth=1)
+        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
     ax.set_xlabel('Y (μm)', fontsize=12)
     ax.set_ylabel('Temperature (K)', fontsize=12)
     fig.savefig("Temperature profile.pdf", dpi=300, format='pdf', bbox_inches="tight")
@@ -425,5 +451,6 @@ def plot_data():
     plot_heat_flux_profile()
     plot_thermal_map()
     plot_scattering_statistics()
+    plot_cumulative_thermal_conductivity()
     if cf.output_scattering_map:
         plot_scattering_map()
