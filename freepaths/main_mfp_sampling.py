@@ -6,6 +6,7 @@ import time
 import shutil
 import scipy
 import math
+from colorama import Fore, Style
 
 # Modules:
 from freepaths.animation import create_animation
@@ -25,7 +26,7 @@ from freepaths.options import Polarizations
 def main(input_file):
     """This is the main function, which integrates phonon dispersion to get thermal conductivity"""
 
-    print(f'Mean free path sampling of {cf.output_folder_name}')
+    print(f'Mean free path sampling of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
     start_time = time.time()
     progress = Progress()
 
@@ -107,6 +108,6 @@ def main(input_file):
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
 
-    sys.stdout.write(f'\rSee the results in "Results/{cf.output_folder_name}" folder.\n')
-    sys.stdout.write(f"\rThermal conductivity = {total_thermal_conductivity}\n W/m·K")
-    sys.stdout.write("\rThank you for using FreePATHS.\n")
+    sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
+    sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity}{Style.RESET_ALL}\n W/m·K")
+    sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n")

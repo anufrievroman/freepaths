@@ -68,7 +68,7 @@ def cumulative_conductivity_calculation():
     sorted_indices = np.argsort(mfp)
     sorted_mfp = mfp[sorted_indices]
     sorted_kappa = kappa[sorted_indices]
-    cumulative_thermal_conductivity = running_sum_array = np.cumsum(sorted_kappa)
+    cumulative_thermal_conductivity = np.cumsum(sorted_kappa)
     return sorted_mfp, cumulative_thermal_conductivity
 
 
@@ -78,13 +78,11 @@ def plot_cumulative_thermal_conductivity():
     fig, ax = plt.subplots()
     ax.plot(mfp * 1e6, kappa, 'royalblue')
     ax.set_xlabel('Mean free path (μm)', fontsize=12)
-    ax.set_ylabel('Cumulative thermal conductivity', fontsize=12)
+    ax.set_ylabel('Cumulative thermal conductivity (W/m·K)', fontsize=12)
     ax.set_xscale('log')
-    ax.set_xlim(left=0.01)
-    # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
     fig.savefig("Distribution of thermal conductivity.pdf", dpi=300, format='pdf', bbox_inches="tight")
     if cf.plots_in_terminal: plt.show()
-    np.savetxt('Data/Distribution of thermal conductivity.csv', np.vstack((mfp, kappa)), fmt='%1.3e', delimiter=",")
+    np.savetxt('Data/Distribution of thermal conductivity.csv', np.vstack((mfp, kappa)).T, fmt='%1.3e', delimiter=",")
 
 
 def plot_angle_distribution():

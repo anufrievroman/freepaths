@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+from colorama import Fore, Style
 
 from freepaths.options import Materials, Distributions
 from freepaths.scatterers import *
@@ -23,7 +24,7 @@ args = parser.parse_args()
 if args.input_file:
     exec(open(args.input_file, encoding='utf-8').read(), globals())
 else:
-    print("You didn't provide any input file, so let's run a demo simulation!\n")
+    print(f"{Fore.RED}You provided no input file, so we will run a demo simulation:{Style.RESET_ALL}")
 
 
 class Config:

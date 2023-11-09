@@ -4,6 +4,8 @@ import os
 import sys
 import time
 import shutil
+import colorama
+from colorama import Fore, Style
 
 # Modules:
 from freepaths.config import cf
@@ -23,7 +25,7 @@ def main(input_file):
     """This is the main function, which works under Debye approximation.
     It should be used to simulate phonon paths at low temperatures"""
 
-    print(f'Simulation of {cf.output_folder_name}')
+    print(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
     start_time = time.time()
     progress = Progress()
 
@@ -88,5 +90,5 @@ def main(input_file):
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
 
-    sys.stdout.write(f'\rSee the results in "Results/{cf.output_folder_name}" folder.\n')
-    sys.stdout.write("\rThank you for using FreePATHS.\n")
+    sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
+    sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n")
