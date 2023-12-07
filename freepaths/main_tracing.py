@@ -23,10 +23,10 @@ from freepaths.output_plots import plot_data
 
 
 class PhononSimulator:
-    def __init__(self, worker_id, total_phonons, result_queue, output_trajectories_of):
+    def __init__(self, worker_id, total_phonons, shared_list, output_trajectories_of):
         self.worker_id = worker_id
         self.total_phonons = total_phonons
-        self.result_queue = result_queue
+        self.result_queue = shared_list
         self.creation_time = time.time()
         self.output_trajectories_of = output_trajectories_of
         
@@ -77,12 +77,17 @@ class PhononSimulator:
         }
         
         # put data into queue
-        self.result_queue.put(collected_data)
+        self.result_queue.append(collected_data)
 
 
-def worker_process(worker_id, total_phonons, result_queue, output_trajectories_of):
-    simulator = PhononSimulator(worker_id, worker_id, total_phonons, result_queue, output_trajectories_of)
-    simulator.simulate_phonons(render_progress=1 if worker_id == 0 else 0)
+def worker_process(worker_id, total_phonons, shared_list, output_trajectories_of, finished_workers):
+    try:
+        simulator = PhononSimulator(worker_id, total_phonons, shared_list, output_trajectories_of)
+        simulator.simulate_phonons(render_progress=1 if worker_id == 0 else 0)
+    except Exception as e:
+        print(f'worker {worker_id} had error {e}')
+    
+    finished_workers.value += 1
 
 
 def main(input_file):
@@ -93,7 +98,11 @@ def main(input_file):
     start_time = time.time()
     
     # create queue for collection of data
-    result_queue = multiprocessing.Queue()
+    manager = multiprocessing.Manager()
+    shared_list = manager.list()
+    
+    # Create a shared variable to keep track of workers that are finished
+    finished_workers = manager.Value('i', 0)
     
     # Divide workload among workers
     workload_per_worker = cf.number_of_phonons // cf.num_workers
@@ -103,23 +112,26 @@ def main(input_file):
     remaining_output_trajectories = cf.output_trajectories_of_first % cf.num_workers
 
     # Create and start worker processes
+    print('Starting the workers')
     processes = []
     for i in range(cf.num_workers):
         worker_phonons = workload_per_worker + (1 if i < remaining_phonons else 0)
         output_trajectory_of = output_trajectories_per_worker + (1 if i < remaining_output_trajectories else 0)
-        process = multiprocessing.Process(target=worker_process, args=(i, worker_phonons, result_queue, output_trajectory_of))
+        process = multiprocessing.Process(target=worker_process, args=(i, worker_phonons, shared_list, output_trajectory_of, finished_workers))
         processes.append(process)
         process.start()
+    
+    # display number of active workers
+    while finished_workers.value != cf.num_workers:
+        text_to_display = f'    Workers finished: {finished_workers.value}/{cf.num_workers}'
+        sys.stdout.write(text_to_display)
+        sys.stdout.write(f'\033[{len(text_to_display)}D') # move cursor back
+        sys.stdout.flush()
+        time.sleep(0.3)
     
     # Wait for all processes to finish
     for process in processes:
         process.join()
-    
-    # Collect results from the queue
-    all_results = []
-    while not result_queue.empty():
-        result_data = result_queue.get()
-        all_results.append(result_data)
     
     # Initiate data structures:
     # material = Material(cf.media, num_points=cf.number_of_phonons+1)
@@ -131,8 +143,10 @@ def main(input_file):
     thermal_maps = ThermalMaps()
     
     # collect the results
-    while not result_queue.empty():
-        collected_data = result_queue.get()
+    print(f'Collecting data from workers:')
+    result_list = list(shared_list)
+    while result_list:
+        collected_data = result_list.pop()
         scatter_stats.read_data(collected_data['scatter_stats'])
         general_stats.read_data(collected_data['general_stats'])
         segment_stats.read_data(collected_data['segment_stats'])
