@@ -61,6 +61,20 @@ class ScatteringMap:
         # Save into file:
         header = "Specular X, Specular Y, Diffuse X, Diffuse Y, Internal X, Internal Y"
         np.savetxt("Data/Scattering map.csv", data, fmt='%1.2e', delimiter=",", header=header, encoding='utf-8')
+    
+    def dump_data(self):
+        return {
+            'diffuse_scattering_map_x': self.diffuse_scattering_map_x,
+            'diffuse_scattering_map_y': self.diffuse_scattering_map_y,
+            'specular_scattering_map_x': self.specular_scattering_map_x,
+            'specular_scattering_map_y': self.specular_scattering_map_y,
+            'internal_scattering_map_x': self.internal_scattering_map_x,
+            'internal_scattering_map_y': self.internal_scattering_map_y,
+        }
+        
+    def read_data(self, data_dict):
+        for key, value in data_dict.items():
+            setattr(self, key, getattr(self, key) + value)
 
 
 class ThermalMaps:
@@ -189,3 +203,24 @@ class ThermalMaps:
         np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
         np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
         np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK)", encoding='utf-8')
+    
+    def dump_data(self):
+        return {
+            'thermal_map': self.thermal_map,
+            'heat_flux_map_norm': self.heat_flux_map_norm,
+            'heat_flux_map_x': self.heat_flux_map_x,
+            'heat_flux_map_y': self.heat_flux_map_y,
+            'nor': self.nor,
+            'heat_flux_profile_x': self.heat_flux_profile_x,
+            'heat_flux_profile_y': self.heat_flux_profile_y,
+            'temperature_profile_x': self.temperature_profile_x,
+            'temperature_profile_y': self.temperature_profile_y,
+            'nor_heat_flux_y_map': self.nor_heat_flux_y_map,
+            'nor_heat_flux_x_map': self.nor_heat_flux_x_map,
+            # 'thermal_conductivity': self.thermal_conductivity is calculated after the data is transferred
+        }
+    
+    def read_data(self, data_dict):
+        for key, value in data_dict.items():
+            # Perform element-wise addition
+            setattr(self, key, getattr(self,key) + value)

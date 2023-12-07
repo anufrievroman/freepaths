@@ -32,6 +32,15 @@ class PathData:
                 data[point_n, 2 + index*3] = z*1e6
         np.savetxt(filename, data, fmt='%2.4f', delimiter=",", header="X (μm), Y (μm), Z (μm)", encoding='utf-8')
 
+    def dump_data(self):
+        return {
+            'phonon_paths': self.phonon_paths,
+        }
+    
+    def read_data(self, data_dict):
+        for key, value in data_dict.items():
+            # Perform element-wise addition
+            setattr(self, key, getattr(self,key) + value)
 
 class GeneralData:
     """General statistics of various phonon properties"""
@@ -75,6 +84,23 @@ class GeneralData:
         np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', delimiter=",", header="MFPs [m]", encoding='utf-8')
         np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', delimiter=",", header="K [W/mK]", encoding='utf-8')
 
+    def dump_data(self):
+        return {
+            'initial_angles': self.initial_angles,
+            'exit_angles': self.exit_angles,
+            'free_paths': self.free_paths,
+            'free_paths_along_y': self.free_paths_along_y,
+            'frequencies': self.frequencies,
+            'group_velocities': self.group_velocities,
+            'travel_times': self.travel_times,
+            'mean_free_paths': self.mean_free_paths,
+            'thermal_conductivity': self.thermal_conductivity,
+        }
+    
+    def read_data(self, data_dict):
+        for key, value in data_dict.items():
+            # Perform element-wise addition
+            setattr(self, key, getattr(self,key) + value)
 
 class ScatteringData:
     """Statistics of phonon scattering events"""
@@ -132,6 +158,26 @@ class ScatteringData:
         header2 = "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular"
         header = header1 + header2
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
+    
+    def dump_data(self):
+        return {
+            'wall_diffuse': self.wall_diffuse,
+            'wall_specular': self.wall_specular,
+            'top_diffuse': self.top_diffuse,
+            'top_specular': self.top_specular,
+            'hole_diffuse': self.hole_diffuse,
+            'hole_specular': self.hole_specular,
+            'pillar_diffuse': self.pillar_diffuse,
+            'pillar_specular': self.pillar_specular,
+            'hot_side': self.hot_side,
+            'internal': self.internal,
+            'total': self.total
+        }
+    
+    def read_data(self, data_dict):
+        for key, value in data_dict.items():
+            # Perform element-wise addition
+            setattr(self, key, getattr(self,key) + value)
 
 
 class SegmentData:
@@ -161,3 +207,11 @@ class SegmentData:
         filename = "Data/Time spent in segments.csv"
         data = np.vstack((self.segment_coordinates, self.time_spent)).T
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header="Y [um], Time [ns]", encoding='utf-8')
+    
+    def dump_data(self):
+        return {'time_spent': self.time_spent}
+    
+    def read_data(self, data_dict):
+        for key, value in data_dict.items():
+            # Perform element-wise addition
+            setattr(self, key, getattr(self,key) + value)
