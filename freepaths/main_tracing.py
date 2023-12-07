@@ -31,13 +31,13 @@ class PhononSimulator:
         self.output_trajectories_of = output_trajectories_of
         
         # Initiate data structures:
-        self.material = Material(cf.media, num_points=cf.number_of_phonons+1)   # ok
-        self.scatter_stats = ScatteringData()                                   # ok
-        self.general_stats = GeneralData()                                      # ok
-        self.segment_stats = SegmentData()                                      # ok
-        self.path_stats = PathData()                                            # ok
-        self.scatter_maps = ScatteringMap()                                     # ok
-        self.thermal_maps = ThermalMaps()                                       # ok
+        self.material = Material(cf.media, num_points=cf.number_of_phonons+1)
+        self.scatter_stats = ScatteringData()
+        self.general_stats = GeneralData()
+        self.segment_stats = SegmentData()
+        self.path_stats = PathData()
+        self.scatter_maps = ScatteringMap()
+        self.thermal_maps = ThermalMaps()
         
         self.total_thermal_conductivity = 0.0
     
