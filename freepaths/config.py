@@ -107,6 +107,9 @@ class Config:
         # Hole array parameters:
         self.holes = HOLES
         self.pillars = PILLARS
+        
+        # Multiprocessing
+        self.num_workers = 10
 
     def convert_to_enums(self):
         """Convert some user generated parameters into enums"""
