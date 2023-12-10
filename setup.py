@@ -23,7 +23,7 @@ setuptools.setup(
             "freepaths = freepaths.__main__:run"
         ]
     },
-    install_requires=['numpy', 'matplotlib', 'scipy', 'imageio'],
+    install_requires=['numpy', 'matplotlib', 'scipy', 'imageio', 'colorama'],
     version=version,
     python_requires='~=3.8',
     classifiers=[
