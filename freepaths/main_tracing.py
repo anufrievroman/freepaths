@@ -143,7 +143,7 @@ def main(input_file):
     thermal_maps = ThermalMaps()
     
     # collect the results
-    print(f'Collecting data from workers:')
+    print('\nCollecting data from workers')
     result_list = list(shared_list)
     
     if len(result_list) != cf.num_workers:
@@ -180,6 +180,7 @@ def main(input_file):
     os.chdir("Results/" + cf.output_folder_name)
 
     # Save data into files:
+    sys.stdout.write("\rSaving raw data...")
     general_stats.write_into_files()
     scatter_stats.write_into_files()
     segment_stats.write_into_files()
