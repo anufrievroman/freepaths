@@ -99,7 +99,7 @@ def worker_process(worker_id, total_phonons, shared_list, output_trajectories_of
         # declare that the calculation is finished
         finished_workers.value += 1
     except Exception as e:
-        print(f'worker {worker_id} had error {e}')
+        sys.stdout.write(f'worker {worker_id} had error {e}')
 
 
 def display_workers_finished(finished_workers):
@@ -116,7 +116,7 @@ def main(input_file):
     """This is the main function, which works under Debye approximation.
     It should be used to simulate phonon paths at low temperatures"""
 
-    print(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
+    sys.stdout.write(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
     start_time = time.time()
     
     # create manager for managing variable acces for multiple workers
@@ -135,7 +135,7 @@ def main(input_file):
     remaining_output_trajectories = cf.output_trajectories_of_first % cf.num_workers
 
     # Create and start worker processes
-    print('Starting the workers')
+    sys.stdout.write('Starting the workers')
     processes = []
     for i in range(cf.num_workers):
         worker_phonons = workload_per_worker + (1 if i < remaining_phonons else 0)
@@ -166,14 +166,14 @@ def main(input_file):
     thermal_maps = ThermalMaps()
     
     # collect the results
-    print('\nCollecting data from workers')
+    sys.stdout.write('\nCollecting data from workers')
     
     # convert the shared list to a normal list so it's easyer to use
     result_list = list(shared_list)
     
     # check that all workers actually returned some data
     if len(result_list) != cf.num_workers:
-        print(f'WARNING: of {cf.num_workers} workers only the results of {len(result_list)} were collected')
+        sys.stdout.write(f'WARNING: of {cf.num_workers} workers only the results of {len(result_list)} were collected')
     
     # put the data from every worker into it's respective place
     execution_time_list = []
@@ -188,11 +188,11 @@ def main(input_file):
     
     # give some info about the variability in the worker calculation time
     if cf.num_workers > 1:
-        print(f'Shortest worker execution time: {round(min(execution_time_list))}s; Longest worker execution time: {round(max(execution_time_list))}s')
+        sys.stdout.write(f'Shortest worker execution time: {round(min(execution_time_list))}s; Longest worker execution time: {round(max(execution_time_list))}s')
 
     # check if the total amount of returned phonons from the workers correspoinds with the number of phonons to be simulated
     if len(general_stats.initial_angles) != cf.number_of_phonons:
-        print(f'WARNING: {cf.number_of_phonons} were meant to be simulated but only {len(general_stats.initial_angles)} phonons were collected from the workers')
+        sys.stdout.write(f'WARNING: {cf.number_of_phonons} were meant to be simulated but only {len(general_stats.initial_angles)} phonons were collected from the workers')
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()
