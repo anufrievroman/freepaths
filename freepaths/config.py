@@ -69,6 +69,7 @@ class Config:
         self.thickness = THICKNESS
         self.width = WIDTH
         self.length = LENGTH
+        self.is_two_dimensional_material = IS_TWO_DIMENSIONAL_MATERIAL
         self.include_right_sidewall = INCLUDE_RIGHT_SIDEWALL
         self.include_left_sidewall = INCLUDE_LEFT_SIDEWALL
         self.include_top_sidewall = INCLUDE_TOP_SIDEWALL

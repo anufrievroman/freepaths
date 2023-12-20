@@ -364,7 +364,8 @@ def plot_trajectories():
     fig, ax = plt.subplots()
     for index in range(cf.output_trajectories_of_first):
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
-        z_coordinates = np.trim_zeros(data[:, 3 * index + 2], trim='b')
+        num_of_points = len(y_coordinates)
+        z_coordinates = data[:num_of_points, 3 * index + 2]
         max_steps = min([y_coordinates.shape[0], z_coordinates.shape[0]])
         ax.plot(y_coordinates[:max_steps], z_coordinates[:max_steps], linewidth=0.2)
     ax.set_xlabel('Y (μm)', fontsize=12)

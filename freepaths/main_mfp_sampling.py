@@ -20,7 +20,6 @@ from freepaths.materials import Material
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information
 from freepaths.output_plots import plot_data
-from freepaths.options import Polarizations
 
 
 def main(input_file):
@@ -42,8 +41,8 @@ def main(input_file):
     total_thermal_conductivity = 0.0
 
     # For each polarization branch:
-    for polarization in [Polarizations.LA, Polarizations.TA, Polarizations.TA]:
-        sys.stdout.write(f"\rIntegrating {polarization.name} branch.\n")
+    for branch_number in range(3):
+        sys.stdout.write(f"\rIntegrating branch number {branch_number+1}.\n")
 
         # For each phonon:
         for index in range(cf.number_of_phonons):
@@ -53,7 +52,7 @@ def main(input_file):
             d_k_vector = (material.dispersion[index+1, 0] - material.dispersion[index, 0])
 
             # Initiate a phonon and its flight:
-            phonon = Phonon(material, polarization, index)
+            phonon = Phonon(material, branch_number, index)
             flight = Flight(phonon)
 
             # Run this phonon through the structure:

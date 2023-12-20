@@ -40,6 +40,7 @@ GRAY_APPROXIMATION_MFP           = None
 THICKNESS                        = 150e-9
 WIDTH                            = 500e-9
 LENGTH                           = 2000e-9
+IS_TWO_DIMENSIONAL_MATERIAL      = False
 INCLUDE_RIGHT_SIDEWALL           = True
 INCLUDE_LEFT_SIDEWALL            = True
 INCLUDE_TOP_SIDEWALL             = False

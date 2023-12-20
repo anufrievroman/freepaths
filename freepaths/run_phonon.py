@@ -41,6 +41,8 @@ def run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatt
                 flight.save_free_paths()
                 flight.restart()
                 phonon.assign_internal_scattering_time(material)
+                if cf.is_two_dimensional_material:
+                    phonon.phi = 0.0
             else:
                 flight.add_step(cf.timestep)
 

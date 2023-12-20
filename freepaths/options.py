@@ -9,6 +9,7 @@ class Materials(enum.Enum):
     SiC = 2
     Diamond = 3
     AlN = 4
+    Graphite = 5
 
 
 class Distributions(enum.Enum):
@@ -20,9 +21,3 @@ class Distributions(enum.Enum):
     LAMBERT = 5
     DIRECTIONAL = 6
     UNIFORM = 7
-
-
-class Polarizations(enum.Enum):
-    """Possible polarizations of a phonon"""
-    LA = 1
-    TA = 2

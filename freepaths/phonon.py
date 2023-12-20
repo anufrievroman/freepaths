@@ -8,16 +8,16 @@ import numpy as np
 import enum
 
 from freepaths.config import cf
-from freepaths.options import Distributions, Materials, Polarizations
+from freepaths.options import Distributions, Materials
 import freepaths.move
 
 
 class Phonon:
     """A phonon particle with various physical properties"""
 
-    def __init__(self, material, polarization=None, phonon_number=None):
+    def __init__(self, material, branch_number=None, phonon_number=None):
         """Initialize a phonon by assigning initial properties"""
-        self.polarization = polarization
+        self.branch_number = branch_number
         self.phonon_number = phonon_number
         self.x = None
         self.y = None
@@ -28,11 +28,17 @@ class Phonon:
         self.speed = None
 
         # Assigning initial properties of the phonon:
-        if polarization is None:
-            self.polarization = choice([Polarizations.TA, Polarizations.TA, Polarizations.LA])
+        if self.branch_number is None:
+            self.branch_number = choice(range(3))
+        self.f_max = max(material.dispersion[:, self.branch_number + 1])
+
+        # Assigning initial coordinates and angles:
         source = choice(cf.phonon_sources)
         self.x, self.y, self.z = source.generate_coordinates()
         self.theta, self.phi = source.generate_angles()
+        if cf.is_two_dimensional_material:
+            self.phi = 0.0
+            self.z = 0.0
 
         # Frequency is assigned based on Planckian distribution in case MFP sampling mode:
         if phonon_number is None:
@@ -40,10 +46,10 @@ class Phonon:
 
         # Otherwise, frequency is just asigned depending on the phonon number:
         else:
-            branch = polarization.value
-            self.f = abs((material.dispersion[phonon_number+1, branch] + material.dispersion[phonon_number, branch]) / 2)
+            f_upper = abs(material.dispersion[phonon_number + 1, self.branch_number])
+            f_lower = abs(material.dispersion[phonon_number, self.branch_number])
+            self.f = (f_apper + f_lower) / 2
 
-        # self.f = 6e12 # FIX THIS
         self.assign_speed(material)
         self.assign_internal_scattering_time(material)
 
@@ -69,38 +75,35 @@ class Phonon:
         """Assigning frequency with probability according to Planckian distribution"""
 
         # Frequency of the peak of the Plank distribution:
-        f_max = material.default_speed/(2*pi*hbar*material.default_speed/(2.82*k*cf.temp))
+        f_peak = material.default_speed/(2*pi*hbar*material.default_speed/(2.82*k*cf.temp))
 
         # Density of states for f_max in Debye apparoximation:
-        dos_max = 3*((2*pi*f_max)**2)/(2*(pi**2)*(material.default_speed**3))
+        dos_max = 3*((2*pi*f_peak)**2)/(2*(pi**2)*(material.default_speed**3))
 
         # Bose-Einstein distribution for f_max:
-        bose_einstein_max = 1/(exp((hbar*2*pi*f_max)/(k*cf.temp)) - 1)
+        bose_einstein_max = 1/(exp((hbar*2*pi*f_peak)/(k*cf.temp)) - 1)
 
         # Peak of the distribution (needed for normalization)
-        plank_distribution_max = dos_max*hbar*2*pi*f_max*bose_einstein_max
+        plank_distribution_max = dos_max*hbar*2*pi*f_peak*bose_einstein_max
 
-        while True:                                                             # Until we obtain the frequency
-            self.f = f_max*5*random()                                           # Let's draw a random frequency in the 0 - 5*f_max range
+        while True:                                                 # Until we obtain the frequency
+            self.f = f_peak*5*random()                              # Let's draw a random frequency in the 0 - 5*f_peak range
             dos = 3*((2*pi*self.f)**2)/(2*(pi**2)*(material.default_speed**3))  # Calculate the DOS in Debye apparoximation
             bose_einstein = 1/(exp((hbar*2*pi*self.f)/(k*cf.temp))-1)           # And the Bose-Einstein distribution
             plank_distribution = dos*hbar*2*pi*self.f*bose_einstein             # Plank distribution
 
             # We take the normalized distribution at this frequency and draw a random number,
             # If the random number is lower than the distribution, we accept this frequency
-            if random() < plank_distribution/plank_distribution_max and self.f < max(material.dispersion[:, 1]):
+            if random() < plank_distribution/plank_distribution_max and self.f < self.f_max:
                 break
 
     def assign_speed(self, material):
         """Calculate group velocity dw/dk according to the frequency and polarization"""
-        if self.polarization == Polarizations.TA and self.f < max(material.dispersion[:,2]):
-            point_num = abs((np.abs(material.dispersion[:, 2] - self.f)).argmin() - 1)
-            d_w = 2*pi*abs(material.dispersion[point_num+1, 2] - material.dispersion[point_num, 2])
-        else:
-            point_num = abs((np.abs(material.dispersion[:, 1] - self.f)).argmin() - 1)
-            d_w = 2*pi*abs(material.dispersion[point_num+1, 1] - material.dispersion[point_num, 1])
-        d_k = abs(material.dispersion[point_num+1, 0] - material.dispersion[point_num, 0])
-        self.speed = d_w/d_k
+        point_num = abs((np.abs(material.dispersion[:, self.branch_number + 1] - self.f)).argmin() - 1)
+        d_w = 2*pi*abs(material.dispersion[point_num + 1, self.branch_number + 1]
+                       - material.dispersion[point_num, self.branch_number + 1])
+        d_k = abs(material.dispersion[point_num + 1, 0] - material.dispersion[point_num, 0])
+        self.speed = d_w / d_k
 
     def assign_internal_scattering_time(self, material):
         """Determine relaxation time after which this phonon will undergo internal scattering"""
@@ -118,11 +121,18 @@ class Phonon:
                 tau_internal = 1/((1/tau_impurity) + (1/tau_umklapp))
 
             elif material.name == Materials.SiC:    # Ref. Joshi et al, JAP 88, 265 (2000)
+                # In SiC we also take into account 4 phonon scattering.
                 deb_temp = 1200
                 tau_impurity = 1/(8.46e-45 * (omega ** 4))
                 tau_umklapp = 1/(6.16e-20 * (omega ** 2) * cf.temp * exp(-deb_temp / cf.temp))
                 tau_4p = 1/(6.9e-23 * (cf.temp ** 2) * (omega ** 2))
                 tau_internal = 1/((1/tau_impurity) + (1/tau_umklapp) + (1/tau_4p))
+
+            elif material.name == Materials.Graphite:    # Ref. PRB 87, 115421 (2013)
+                # In graphene we assume that material is perfect and no impurity scattering is present.
+                deb_temp = 1000.0
+                tau_umklapp = 1/(3.18e-25 * (omega ** 2) * (cf.temp ** 3) * exp(-deb_temp / (3*cf.temp)))
+                tau_internal = 1/(1/tau_umklapp)
 
             else:
                 raise ValueError('Specified material does not exist in the database.')

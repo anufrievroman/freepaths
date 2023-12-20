@@ -39,28 +39,28 @@ def draw_structure(cf, color_holes="white", color_back="gray"):
             patches.append(patch)
 
         # Triangular half hole up (right):
-        elif isinstance(hole, TriangularUpHalfHole) and hole.right_half:
+        elif isinstance(hole, TriangularUpHalfHole) and hole.is_right_half:
             patch = Polygon([[1e6 * (hole.x), 1e6 * (hole.y - hole.size_y/2)],
                              [1e6 * (hole.x + hole.size_x/2), 1e6 * (hole.y - hole.size_y/2)],
                              [1e6 * hole.x, 1e6 * (hole.y + hole.size_y/2)]], closed=True, facecolor=color_holes)
             patches.append(patch)
 
         # Triangular half hole up (left):
-        elif isinstance(hole, TriangularUpHalfHole) and not hole.right_half:
+        elif isinstance(hole, TriangularUpHalfHole) and not hole.is_right_half:
             patch = Polygon([[1e6 * (hole.x - hole.size_x/2), 1e6 * (hole.y - hole.size_y/2)],
                              [1e6 * (hole.x), 1e6 * (hole.y - hole.size_y/2)],
                              [1e6 * hole.x, 1e6 * (hole.y + hole.size_y/2)]], closed=True, facecolor=color_holes)
             patches.append(patch)
 
         # Triangular half hole down (right):
-        elif isinstance(hole, TriangularDownHalfHole) and hole.right_half:
+        elif isinstance(hole, TriangularDownHalfHole) and hole.is_right_half:
             patch = Polygon([[1e6 * (hole.x), 1e6 * (hole.y + hole.size_y/2)],
                              [1e6 * (hole.x + hole.size_x/2), 1e6 * (hole.y + hole.size_y/2)],
                              [1e6 * hole.x, 1e6 * (hole.y - hole.size_y/2)]], closed=True, facecolor=color_holes)
             patches.append(patch)
 
         # Triangular half hole down (left):
-        elif isinstance(hole, TriangularDownHalfHole) and not hole.right_half:
+        elif isinstance(hole, TriangularDownHalfHole) and not hole.is_right_half:
             patch = Polygon([[1e6 * (hole.x - hole.size_x/2), 1e6 * (hole.y + hole.size_y/2)],
                              [1e6 * (hole.x), 1e6 * (hole.y + hole.size_y/2)],
                              [1e6 * hole.x, 1e6 * (hole.y - hole.size_y/2)]], closed=True, facecolor=color_holes)

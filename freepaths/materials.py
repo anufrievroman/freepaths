@@ -4,6 +4,7 @@ Si - Ref. APL 95 161901 (2009)
 SiC - Ref. PRB 50 17054 (1994)
 Diamond - Carbon 91 266-274 (2015)
 AlN - Ref. PRB 58 12899 (1998)
+Graphite/Graphene - Ref. Yanagisawa et al, Surface and Interface Analysis 37 133-136 (2005)
 """
 
 import numpy as np
@@ -76,6 +77,25 @@ class Material:
             self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]    # LA branch
             self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]    # TA branch
             self.dispersion[:, 3] = self.dispersion[:, 2]
+
+
+        elif self.name == Materials.Graphite:
+            A1 = 3640.918652525539
+            B1 = -4.113040385347707e-08
+            C1 = -1.2498941480986494e-18
+            A2 = 2304.3679889997725
+            B2 = -4.725351497510156e-08
+            C2 = -1.522988691492939e-18
+            A3 = 106.82509744986406
+            B3 = 1.1143719974291039e-07
+            C3 = -3.502550128712751e-18
+            self.default_speed = 12900     # [m/s]
+            self.density = 2230            # [kg/m^3]
+            self.dispersion = np.zeros((num_points, 4))
+            self.dispersion[:, 0] = [k * 14500000000 / (num_points - 1) for k in range(num_points)]         # Wavevectors
+            self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]    # LA branch
+            self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]    # TA branch
+            self.dispersion[:, 3] = [abs(C3 * k**3 + B3 * k**2 + A3 * k) for k in self.dispersion[:, 0]]    # ZA branch
 
         else:
             raise ValueError('Specified material does not exist in the database')
