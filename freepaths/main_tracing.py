@@ -47,20 +47,8 @@ class PhononSimulator:
         
         self.total_thermal_conductivity = 0.0
     
-    def simulate_phonons(self, render_progress=False):
-        """Simulate a number of phonons and save data to shared datastructure"""
-        
-        # only one of the workers will display it's progress as it is similar over all workers
-        if render_progress:
-            progress = Progress()
-        
-        # for each phonon
-        for index in range(self.total_phonons):
-            # render progress
-            if render_progress:
-                progress.render(index, self.total_phonons)
-            
-            # Initiate a phonon and its flight:
+    def simulate_phonon(self, index):
+        # Initiate a phonon and its flight:
             phonon = Phonon(self.material)
             flight = Flight(phonon)
             
@@ -74,6 +62,24 @@ class PhononSimulator:
             # Record trajectories of the first N phonons:
             if index < self.output_trajectories_of:
                 self.path_stats.save_phonon_path(flight)
+    
+    def simulate_phonons(self, render_progress=False):
+        """Simulate a number of phonons and save data to shared datastructure"""
+        
+        # only one of the workers will display it's progress as it is similar over all workers
+        if render_progress:
+            progress = Progress()
+        
+        # for each phonon
+        for index in range(self.total_phonons):
+            # render progress
+            if render_progress:
+                progress.render(index, self.total_phonons)
+            
+            self.simulate_phonon(index)
+        
+        if render_progress:
+            progress.render(index, self.total_phonons)
         
         # collect relevant data
         collected_data = {
