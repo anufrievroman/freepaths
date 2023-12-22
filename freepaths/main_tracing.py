@@ -79,7 +79,7 @@ class PhononSimulator:
             self.simulate_phonon(index)
         
         if render_progress:
-            progress.render(index, self.total_phonons)
+            progress.render(index+1, self.total_phonons)
         
         # collect relevant data
         collected_data = {
@@ -105,16 +105,17 @@ def worker_process(worker_id, total_phonons, shared_list, output_trajectories_of
         # declare that the calculation is finished
         finished_workers.value += 1
     except Exception as e:
-        sys.stdout.write(f'worker {worker_id} had error {e}\n')
+        sys.stdout.write(f'\rworker {worker_id} had error {e}\n')
 
 
 def display_workers_finished(finished_workers):
     # display number of active workers
-    while finished_workers.value != cf.num_workers:
-        text_to_display = f'    Workers finished: {finished_workers.value}/{cf.num_workers}'
+    while True:
+        text_to_display = f'  Workers finished: {finished_workers.value}/{cf.num_workers}'
         sys.stdout.write(text_to_display)
         sys.stdout.write(f'\033[{len(text_to_display)}D') # move cursor back
         sys.stdout.flush()
+        if finished_workers.value == cf.num_workers: break
         time.sleep(0.3)
 
 
@@ -154,14 +155,14 @@ def main(input_file):
     # start a seperate worker to display the number of workers that finished
     worker_count_process = multiprocessing.Process(target=display_workers_finished, args=(finished_workers,))
     worker_count_process.start()
-    
+
     # Wait for all processes to finish
     # note that join is not called on worker_count_process because we do not want to wait for it to finish
     for process in processes:
         process.join()
     
-    # stop the worker count process if it didn't finish automatically
-    worker_count_process.terminate()
+    # wait for worker count to finish but continue after 3 seconds
+    worker_count_process.join(timeout=3)
     
     # Initiate data structures to collect the data from the workers
     # material = Material(cf.media, num_points=cf.number_of_phonons+1)
