@@ -167,7 +167,7 @@ def main(input_file):
     thermal_maps = ThermalMaps()
     
     # collect the results
-    sys.stdout.write('\nCollecting data from workers...')
+    sys.stdout.write('\nCollecting data from workers...\r')
     
     # convert the shared list to a normal list so it's easyer to use
     result_list = list(shared_list)
