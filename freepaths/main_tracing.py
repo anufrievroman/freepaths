@@ -163,6 +163,7 @@ def main(input_file):
     
     # wait for worker count to finish but continue after 3 seconds
     worker_count_process.join(timeout=3)
+    worker_count_process.terminate() # should not be necessary but sometimes process does not terminate
     
     # Initiate data structures to collect the data from the workers
     # material = Material(cf.media, num_points=cf.number_of_phonons+1)
