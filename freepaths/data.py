@@ -1,11 +1,20 @@
-"""Module that controles recording of various data"""
+"""Module that controls recording various data"""
 
 import numpy as np
 
 from freepaths.config import cf
 from freepaths.scattering_types import Scattering
 
-class PathData:
+class Data:
+    """Parent data class with functions common to all classes below"""
+
+    def read_data(self, data_dict):
+        """Read the data from the finished worker and add new data to already existing"""
+        for key, value in data_dict.items():
+            setattr(self, key, getattr(self, key) + value)
+
+
+class PathData(Data):
     """Paths of phonons in space"""
 
     def __init__(self):
@@ -33,17 +42,11 @@ class PathData:
         np.savetxt(filename, data, fmt='%2.4f', delimiter=",", header="X (μm), Y (μm), Z (μm)", encoding='utf-8')
 
     def dump_data(self):
-        return {
-            'phonon_paths': self.phonon_paths,
-        }
+        """Return data of a process in the form of a dictionary to be attached to the global data"""
+        return {'phonon_paths': self.phonon_paths}
 
-    def read_data(self, data_dict):
-        """Read the data from the finished worker"""
-        for key, value in data_dict.items():
-            # Perform element-wise addition
-            setattr(self, key, getattr(self,key) + value)
 
-class GeneralData:
+class GeneralData(Data):
     """General statistics of various phonon properties"""
 
     def __init__(self):
@@ -75,17 +78,18 @@ class GeneralData:
 
     def write_into_files(self):
         """Write all the data into files"""
-        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', delimiter=",", header="L [m]", encoding='utf-8')
-        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', delimiter=",", header="Ly [m]", encoding='utf-8')
-        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', delimiter=",", header="f [Hz]", encoding='utf-8')
-        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%2.4e', delimiter=",", header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%2.4e', delimiter=",", header="Vg [rad]", encoding='utf-8')
-        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', delimiter=",", header="Travel time [s]", encoding='utf-8')
-        np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', delimiter=",", header="MFPs [m]", encoding='utf-8')
-        np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', delimiter=",", header="K [W/mK]", encoding='utf-8')
+        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', header="L [m]", encoding='utf-8')
+        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', header="Ly [m]", encoding='utf-8')
+        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
+        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
+        np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', header="Travel time [s]", encoding='utf-8')
+        np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', header="MFPs [m]", encoding='utf-8')
+        np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
 
     def dump_data(self):
+        """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
             'initial_angles': self.initial_angles,
             'exit_angles': self.exit_angles,
@@ -98,13 +102,8 @@ class GeneralData:
             'thermal_conductivity': self.thermal_conductivity,
         }
 
-    def read_data(self, data_dict):
-        """Read the data from the finished worker"""
-        for key, value in data_dict.items():
-            # Perform element-wise addition
-            setattr(self, key, getattr(self,key) + value)
 
-class ScatteringData:
+class ScatteringData(Data):
     """Statistics of phonon scattering events"""
 
     def __init__(self):
@@ -162,6 +161,7 @@ class ScatteringData:
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
 
     def dump_data(self):
+        """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
             'wall_diffuse': self.wall_diffuse,
             'wall_specular': self.wall_specular,
@@ -176,13 +176,8 @@ class ScatteringData:
             'total': self.total
         }
 
-    def read_data(self, data_dict):
-        for key, value in data_dict.items():
-            # Perform element-wise addition
-            setattr(self, key, getattr(self,key) + value)
 
-
-class SegmentData:
+class SegmentData(Data):
     """Statistics of events happening in different segments"""
 
     def __init__(self):
@@ -211,10 +206,6 @@ class SegmentData:
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header="Y [um], Time [ns]", encoding='utf-8')
 
     def dump_data(self):
+        """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {'time_spent': self.time_spent}
 
-    def read_data(self, data_dict):
-        """Read the data from the finished worker"""
-        for key, value in data_dict.items():
-            # Perform element-wise addition
-            setattr(self, key, getattr(self,key) + value)

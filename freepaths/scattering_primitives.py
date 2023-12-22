@@ -17,7 +17,7 @@ def specularity(angle, roughness, wavelength):
 def no_new_scattering(ph):
     """
     Check if new angles do not immediately lead to a new top/bottom or sidewall scattering event.
-    Such additional scatering event may cause troubles because at this stage we already check of domain boundaries.
+    Such additional scatering event may cause troubles because at this stage we already checked the domain boundaries.
     Thus, this check is necessary to prevent phonons leaving the structure boundaries.
     """
     x, y, z = move(ph, cf.timestep)

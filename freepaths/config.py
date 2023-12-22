@@ -1,4 +1,7 @@
-"""Module that reads the user input file, provides default values, and converts the variables into enums"""
+"""
+Module that reads the user input file, provides default values,
+checks the validity of the parameters and converts the variables into enums
+"""
 
 import sys
 import argparse
