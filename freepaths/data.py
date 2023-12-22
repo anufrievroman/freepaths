@@ -36,8 +36,9 @@ class PathData:
         return {
             'phonon_paths': self.phonon_paths,
         }
-    
+
     def read_data(self, data_dict):
+        """Read the data from the finished worker"""
         for key, value in data_dict.items():
             # Perform element-wise addition
             setattr(self, key, getattr(self,key) + value)
@@ -96,8 +97,9 @@ class GeneralData:
             'mean_free_paths': self.mean_free_paths,
             'thermal_conductivity': self.thermal_conductivity,
         }
-    
+
     def read_data(self, data_dict):
+        """Read the data from the finished worker"""
         for key, value in data_dict.items():
             # Perform element-wise addition
             setattr(self, key, getattr(self,key) + value)
@@ -158,7 +160,7 @@ class ScatteringData:
         header2 = "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular"
         header = header1 + header2
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
-    
+
     def dump_data(self):
         return {
             'wall_diffuse': self.wall_diffuse,
@@ -173,7 +175,7 @@ class ScatteringData:
             'internal': self.internal,
             'total': self.total
         }
-    
+
     def read_data(self, data_dict):
         for key, value in data_dict.items():
             # Perform element-wise addition
@@ -207,11 +209,12 @@ class SegmentData:
         filename = "Data/Time spent in segments.csv"
         data = np.vstack((self.segment_coordinates, self.time_spent)).T
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header="Y [um], Time [ns]", encoding='utf-8')
-    
+
     def dump_data(self):
         return {'time_spent': self.time_spent}
-    
+
     def read_data(self, data_dict):
+        """Read the data from the finished worker"""
         for key, value in data_dict.items():
             # Perform element-wise addition
             setattr(self, key, getattr(self,key) + value)

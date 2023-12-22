@@ -79,5 +79,5 @@ BOTTOM_PARABOLA_FOCUS            = 100e-9
 HOLES                            = []
 PILLARS                          = []
 
-# Multiprocessing
-NUM_WORKERS                      = 1
+# Multiprocessing:
+NUMBER_OF_PROCESSES              = 1

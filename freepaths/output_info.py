@@ -10,8 +10,8 @@ def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     exit_angles = np.loadtxt("Data/All exit angles.csv")
     percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
-    print(f'\r{percentage}% of phonons reached the cold side.')
-    print(f'The simulation took about {int((time.time() - start_time)//60)} min. to run.')
+    print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
+    print(f'{percentage}% of phonons reached the cold side.')
 
     with open("Information.txt", "w+", encoding="utf-8") as file:
         info = (

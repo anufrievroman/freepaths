@@ -27,7 +27,7 @@ class PhononSimulator:
     This class can simulate a number of phonons and save all their data and then return it all
     It is meant to be used as a worker for multiprocessing
     """
-    
+
     def __init__(self, worker_id, total_phonons, shared_list, output_trajectories_of):
         # save some general information about the process
         self.worker_id = worker_id
@@ -35,7 +35,7 @@ class PhononSimulator:
         self.result_queue = shared_list
         self.creation_time = time.time()
         self.output_trajectories_of = output_trajectories_of
-        
+
         # Initiate data structures:
         self.material = Material(cf.media, num_points=cf.number_of_phonons+1)
         self.scatter_stats = ScatteringData()
@@ -44,44 +44,44 @@ class PhononSimulator:
         self.path_stats = PathData()
         self.scatter_maps = ScatteringMap()
         self.thermal_maps = ThermalMaps()
-        
+
         self.total_thermal_conductivity = 0.0
-    
+
     def simulate_phonon(self, index):
         # Initiate a phonon and its flight:
-            phonon = Phonon(self.material)
-            flight = Flight(phonon)
-            
-            # Run this phonon through the structure:
-            run_phonon(phonon, flight, self.scatter_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+        phonon = Phonon(self.material)
+        flight = Flight(phonon)
 
-            # Record the properties returned for this phonon:
-            self.general_stats.save_phonon_data(phonon)
-            self.general_stats.save_flight_data(flight)
-            
-            # Record trajectories of the first N phonons:
-            if index < self.output_trajectories_of:
-                self.path_stats.save_phonon_path(flight)
-    
+        # Run this phonon through the structure:
+        run_phonon(phonon, flight, self.scatter_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+
+        # Record the properties returned for this phonon:
+        self.general_stats.save_phonon_data(phonon)
+        self.general_stats.save_flight_data(flight)
+
+        # Record trajectories of the first N phonons:
+        if index < self.output_trajectories_of:
+            self.path_stats.save_phonon_path(flight)
+
     def simulate_phonons(self, render_progress=False):
         """Simulate a number of phonons and save data to shared datastructure"""
-        
-        # only one of the workers will display it's progress as it is similar over all workers
+
+        # Only one of the workers will display its progress as it is similar over all workers:
         if render_progress:
             progress = Progress()
-        
-        # for each phonon
+
+        # Run simulation for each phonon:
         for index in range(self.total_phonons):
             # render progress
             if render_progress:
                 progress.render(index, self.total_phonons)
-            
+
             self.simulate_phonon(index)
-        
+
         if render_progress:
             progress.render(index+1, self.total_phonons)
-        
-        # collect relevant data
+
+        # Collect relevant data:
         collected_data = {
             'scatter_stats': self.scatter_stats.dump_data(),
             'general_stats': self.general_stats.dump_data(),
@@ -91,25 +91,25 @@ class PhononSimulator:
             'thermal_maps': self.thermal_maps.dump_data(),
             'execution_time': time.time() - self.creation_time,
         }
-        
-        # put data into shared list
+
+        # Put the data into shared list:
         self.result_queue.append(collected_data)
 
 
 def worker_process(worker_id, total_phonons, shared_list, output_trajectories_of, finished_workers):
     try:
-        # create a phononsimulator and run the simulation
+        # Create a phononsimulator and run the simulation:
         simulator = PhononSimulator(worker_id, total_phonons, shared_list, output_trajectories_of)
         simulator.simulate_phonons(render_progress=1 if worker_id == 0 else 0)
-        
-        # declare that the calculation is finished
+
+        # Declare that the calculation is finished:
         finished_workers.value += 1
     except Exception as e:
         sys.stdout.write(f'\rworker {worker_id} had error {e}\n')
 
 
 def display_workers_finished(finished_workers):
-    # display number of active workers
+    """ Print out the number of active workers"""
     while True:
         text_to_display = f'  Workers finished: {finished_workers.value}/{cf.num_workers}'
         sys.stdout.write(text_to_display)
@@ -125,23 +125,23 @@ def main(input_file):
 
     sys.stdout.write(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}\n')
     start_time = time.time()
-    
-    # create manager for managing variable acces for multiple workers
+
+    # Create manager for managing variable acces for multiple workers:
     manager = multiprocessing.Manager()
-    
-    # these variables created with the manager can safely be accessed by multiple workers. Using normal values might create wrong data
+
+    # These variables created with the manager can safely be accessed by multiple workers:
     shared_list = manager.list()
     finished_workers = manager.Value('i', 0)
-    
-    # Divide workload among workers
+
+    # Divide all the phonons among the workers:
     workload_per_worker = cf.number_of_phonons // cf.num_workers
     remaining_phonons = cf.number_of_phonons % cf.num_workers
 
-    # divide number of output trajectories to save among workers
+    # Divide number of output trajectories to save among workers:
     output_trajectories_per_worker = cf.output_trajectories_of_first // cf.num_workers
     remaining_output_trajectories = cf.output_trajectories_of_first % cf.num_workers
 
-    # Create and start worker processes
+    # Create and start worker processes:
     sys.stdout.write('Starting the workers...\r')
     sys.stdout.flush()
     processes = []
@@ -151,21 +151,21 @@ def main(input_file):
         process = multiprocessing.Process(target=worker_process, args=(i, worker_phonons, shared_list, output_trajectory_of, finished_workers))
         processes.append(process)
         process.start()
-    
-    # start a seperate worker to display the number of workers that finished
+
+    # Start a seperate worker to display the number of workers that finished:
     worker_count_process = multiprocessing.Process(target=display_workers_finished, args=(finished_workers,))
     worker_count_process.start()
 
-    # Wait for all processes to finish
-    # note that join is not called on worker_count_process because we do not want to wait for it to finish
+    # Wait for all processes to finish:
+    # Note that join is not called on worker_count_process because we do not want to wait for it to finish
     for process in processes:
         process.join()
-    
-    # wait for worker count to finish but continue after 3 seconds
+
+    # Wait for the worker count to finish but continue after 3 seconds:
     worker_count_process.join(timeout=3)
     worker_count_process.terminate() # should not be necessary but sometimes process does not terminate
-    
-    # Initiate data structures to collect the data from the workers
+
+    # Initiate data structures to collect the data from the workers:
     # material = Material(cf.media, num_points=cf.number_of_phonons+1)
     scatter_stats = ScatteringData()
     general_stats = GeneralData()
@@ -173,18 +173,18 @@ def main(input_file):
     path_stats = PathData()
     scatter_maps = ScatteringMap()
     thermal_maps = ThermalMaps()
-    
-    # collect the results
+
+    # Collect the results:
     sys.stdout.write('\nCollecting data from workers...\r')
-    
-    # convert the shared list to a normal list so it's easyer to use
+
+    # Convert the shared list to a normal list so it's easier to use
     result_list = list(shared_list)
-    
-    # check that all workers actually returned some data
+
+    # Check that all workers actually returned some data
     if len(result_list) != cf.num_workers:
         sys.stdout.write(f'WARNING: of {cf.num_workers} workers only the results of {len(result_list)} were collected\n')
-    
-    # put the data from every worker into it's respective place
+
+    # Put the data from every worker into it's respective place:
     execution_time_list = []
     for collected_data in result_list:
         scatter_stats.read_data(collected_data['scatter_stats'])
@@ -194,18 +194,20 @@ def main(input_file):
         scatter_maps.read_data(collected_data['scatter_maps'])
         thermal_maps.read_data(collected_data['thermal_maps'])
         execution_time_list.append(collected_data['execution_time'])
-    
-    # give some info about the variability in the worker calculation time
-    if cf.num_workers > 1:
-        sys.stdout.write(f'Shortest worker execution time: {round(min(execution_time_list))}s; Longest worker execution time: {round(max(execution_time_list))}s\n')
 
-    # check if the total amount of returned phonons from the workers correspoinds with the number of phonons to be simulated
+    # Give some info about the variability in the worker calculation time:
+    if cf.num_workers > 1:
+        sys.stdout.write(f'Shortest process execution time: {round(min(execution_time_list))}s\n')
+        sys.stdout.write(f'Longest process execution time: {round(max(execution_time_list))}s\n')
+
+    # Check if the total number of returned phonons from the workers corresponds with the number of phonons to be simulated:
     if len(general_stats.initial_angles) != cf.number_of_phonons:
         sys.stdout.write(f'WARNING: {cf.number_of_phonons} were meant to be simulated but only {len(general_stats.initial_angles)} phonons were collected from the workers\n')
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()
     thermal_maps.calculate_normalized_flux()
+
     # Create the folder if it does not exist and copy input file there:
     if not os.path.exists(f"Results/{cf.output_folder_name}"):
         os.makedirs(f"Results/{cf.output_folder_name}")
@@ -238,4 +240,4 @@ def main(input_file):
     output_scattering_information(scatter_stats)
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
-    sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n")
+    sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")
