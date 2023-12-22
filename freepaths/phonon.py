@@ -46,9 +46,9 @@ class Phonon:
 
         # Otherwise, frequency is just asigned depending on the phonon number:
         else:
-            f_upper = abs(material.dispersion[phonon_number + 1, self.branch_number])
-            f_lower = abs(material.dispersion[phonon_number, self.branch_number])
-            self.f = (f_apper + f_lower) / 2
+            f_upper = abs(material.dispersion[phonon_number + 1, self.branch_number + 1])
+            f_lower = abs(material.dispersion[phonon_number, self.branch_number +1])
+            self.f = (f_upper + f_lower) / 2
 
         self.assign_speed(material)
         self.assign_internal_scattering_time(material)

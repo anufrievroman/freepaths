@@ -54,12 +54,12 @@ The calculated thermal conductivity will be output in the terminal. However, oth
 
 ## Disclaimer
 
-The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that all the equations and the code are correct. See [documentation](https://anufrievroman.gitbook.io/freepaths/algorithm) and the references below for more details on the code.
+The code is still in development and provided as is. It likely contains bugs or might be inappropriate for your research. It is your responsibility to understand the underlying physics, test the code, and verify that the equations and the code are correct. See [documentation](https://anufrievroman.gitbook.io/freepaths) and the references below for more details on the code. Please use only [officially published releases](https://anufrievroman.gitbook.io/freepaths/installation) of the code and not current main branch, which can be unstable.
 
 
 ## References and acknowledgments
 
-The code has been developed by [Roman Anufriev](https://anufrievroman.com) in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo in 2018-2022.
+The code is developed by [Roman Anufriev](https://anufrievroman.com) and other contributors in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo since 2018.
 If you would like to use this code for your research, please see the disclaimer above and consider citing the papers below, if it is appropriate.
 Details of the code and examples of the output can be found in the following papers:
 
