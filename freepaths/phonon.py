@@ -1,7 +1,7 @@
 """This module provides phonon class which generates and moves a phonon"""
 
 from math import pi, asin, exp, log
-from random import random, choice
+from random import random, choice, randint
 from numpy import sign
 from scipy.constants import k, hbar
 import numpy as np
@@ -26,6 +26,7 @@ class Phonon:
         self.phi = None
         self.theta = None
         self.speed = None
+        self.first_timestep = randint(0, cf.number_of_timesteps)
 
         # Assigning initial properties of the phonon:
         if self.branch_number is None:

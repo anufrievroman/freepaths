@@ -50,8 +50,13 @@ def output_scattering_information(scatter_stats):
 
     scat_on_topbot = 100*(np.sum(scatter_stats.top_diffuse) +
                           np.sum(scatter_stats.top_specular)) / total
-    scat_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
-    scat_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
+
+    if total_topbot != 0:
+        scat_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
+        scat_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
+    else:
+        scat_on_topbot_diff = 0
+        scat_on_topbot_spec = 0
 
     retherm = 100*np.sum(scatter_stats.hot_side) / total
     internal = 100*np.sum(scatter_stats.internal) / total
