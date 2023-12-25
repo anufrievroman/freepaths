@@ -13,7 +13,6 @@ TIMESTEP                         = 2e-12
 T                                = 300
 PLOTS_IN_TERMINAL                = False
 OUTPUT_SCATTERING_MAP            = False
-OUTPUT_RAW_THERMAL_MAP           = True
 OUTPUT_TRAJECTORIES_OF_FIRST     = 10
 OUTPUT_STRUCTURE_COLOR           = "#F0F0F0"
 NUMBER_OF_LENGTH_SEGMENTS        = 10
