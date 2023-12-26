@@ -94,9 +94,9 @@ class ThermalMaps(Maps):
         self.thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
         self.heat_flux_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.heat_flux_map_x_norm = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.heat_flux_map_y_norm = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.heat_flux_map_norm = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.heat_flux_map_xy = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.heat_flux_map_x_weighted = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+        self.heat_flux_map_y_weighted = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.number_phonons_in_pixel = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
 
         # Calculate the volumes [m^3] and other parameters (need to be corrected with volume of the holes):
@@ -133,7 +133,7 @@ class ThermalMaps(Maps):
             self.thermal_map[index_y, index_x] += energy
             self.heat_flux_map_x[index_y, index_x] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
-            self.heat_flux_map_norm[index_y, index_x] += np.sqrt(self.heat_flux_map_x[index_y, index_x]**2 +
+            self.heat_flux_map_xy[index_y, index_x] += np.sqrt(self.heat_flux_map_x[index_y, index_x]**2 +
                                                                  self.heat_flux_map_x[index_y, index_x]**2)
 
             # Calculate to which timeframe this timestep belongs:
@@ -147,12 +147,12 @@ class ThermalMaps(Maps):
                 self.temperature_profile_y[index_y, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / self.vol_cell_y
 
 
-    def calculate_normalized_flux(self):
+    def calculate_weighted_flux(self):
         """Calculate heat flux normalized by the number of phonons in each pixel, except where the number is zero"""
         zero_mask = self.number_phonons_in_pixel == 0
-        self.heat_flux_map_x_norm = np.divide(self.heat_flux_map_x, self.number_phonons_in_pixel,
+        self.heat_flux_map_x_weighted = np.divide(self.heat_flux_map_x, self.number_phonons_in_pixel,
                                               out=np.zeros_like(self.heat_flux_map_x), where=~zero_mask)
-        self.heat_flux_map_y_norm = np.divide(self.heat_flux_map_y, self.number_phonons_in_pixel,
+        self.heat_flux_map_y_weighted = np.divide(self.heat_flux_map_y, self.number_phonons_in_pixel,
                                               out=np.zeros_like(self.heat_flux_map_y), where=~zero_mask)
 
 
@@ -213,25 +213,25 @@ class ThermalMaps(Maps):
 
         # Saving thermal maps:
         np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
-        np.savetxt("Data/Heat_flux_map_normalized.csv", self.heat_flux_map_norm, fmt='%1.2e', delimiter=",", encoding='utf-8')
-        np.savetxt("Data/Heat_flux_map_x map.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
-        np.savetxt("Data/Heat_flux_map_y map.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
-        np.savetxt("Data/Heat_flux_map_y_normalized.csv", self.heat_flux_map_y_norm, fmt='%1.2e', delimiter=",", encoding='utf-8')
-        np.savetxt("Data/Heat_flux_map_y_normalized.csv", self.heat_flux_map_x_norm, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map xy.csv", self.heat_flux_map_xy, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map x.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map y.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map x weighted.csv", self.heat_flux_map_x_weighted, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map y weighted.csv", self.heat_flux_map_y_weighted, fmt='%1.2e', delimiter=",", encoding='utf-8')
 
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
             'thermal_map': self.thermal_map,
-            'heat_flux_map_norm': self.heat_flux_map_norm,
             'heat_flux_map_x': self.heat_flux_map_x,
             'heat_flux_map_y': self.heat_flux_map_y,
+            'heat_flux_map_xy': self.heat_flux_map_xy,
+            'heat_flux_map_y_weighted': self.heat_flux_map_y_weighted,
+            'heat_flux_map_x_weighted': self.heat_flux_map_x_weighted,
             'number_phonons_in_pixel': self.number_phonons_in_pixel,
             'heat_flux_profile_x': self.heat_flux_profile_x,
             'heat_flux_profile_y': self.heat_flux_profile_y,
             'temperature_profile_x': self.temperature_profile_x,
             'temperature_profile_y': self.temperature_profile_y,
-            'heat_flux_map_y_norm': self.heat_flux_map_y_norm,
-            'heat_flux_map_x_norm': self.heat_flux_map_x_norm,
         }
 

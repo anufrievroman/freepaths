@@ -2,7 +2,7 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Phononic crystal square'
-NUMBER_OF_PHONONS              = 500
+NUMBER_OF_PHONONS              = 2000
 NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1e-12
@@ -56,3 +56,6 @@ for row in range(5):
         x = - 4 * period / 2 + column * period
         y = (row + 1) * period
         HOLES.append(CircularHole(x=x, y=y, diameter=200e-9))
+
+# Multiprocessing:
+NUMBER_OF_PROCESSES = 8

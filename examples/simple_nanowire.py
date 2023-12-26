@@ -5,7 +5,7 @@ import numpy as np
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Nanowire'
-NUMBER_OF_PHONONS              = 1000
+NUMBER_OF_PHONONS              = 10000
 NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12
@@ -49,4 +49,4 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
 # Multiprocessing
-NUM_WORKERS                    = 5
+NUMBER_OF_PROCESSES = 8
