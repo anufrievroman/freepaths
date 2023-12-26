@@ -10,9 +10,6 @@ NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 0.5e-12
 T                              = 4.0
-PLOTS_IN_TERMINAL              = False
-OUTPUT_SCATTERING_MAP          = False
-OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 30
 NUMBER_OF_LENGTH_SEGMENTS      = 10
 
@@ -53,7 +50,7 @@ BOTTOM_ROUGHNESS               = 0.2e-9
 
 HOLES = []
 
-# Staggered attice of holes:
+# Staggered lattice of holes:
 size_x                         = 200e-9
 size_y                         = 100e-9
 period_x                       = 300e-9

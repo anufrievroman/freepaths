@@ -74,8 +74,10 @@ def cumulative_conductivity_calculation():
     return sorted_mfp, cumulative_thermal_conductivity
 
 
-def plot_cumulative_thermal_conductivity():
+def plot_cumulative_thermal_conductivity(mfp_sampling):
     """Plot distribution cumulative thermal conductivity vs mean free path"""
+    if not mfp_sampling:
+        return
     mfp, kappa = cumulative_conductivity_calculation()
     fig, ax = plt.subplots()
     ax.plot(mfp * 1e6, kappa, 'royalblue')
@@ -83,7 +85,6 @@ def plot_cumulative_thermal_conductivity():
     ax.set_ylabel('Cumulative thermal conductivity (W/m·K)')
     ax.set_xscale('log')
     fig.savefig("Distribution of thermal conductivity.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of thermal conductivity.csv', np.vstack((mfp, kappa)).T, fmt='%1.3e', delimiter=",")
 
 
@@ -98,7 +99,6 @@ def plot_angle_distribution():
     ax.set_ylim(bottom=0)
     ax.legend(["At cold side", "At hot side"])
     fig.savefig("Distribution of angles.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
 
 
@@ -112,7 +112,6 @@ def plot_free_path_distribution():
     ax.set_ylabel('Number of flights')
     # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
     fig.savefig("Distribution of free paths.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of free paths.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -125,7 +124,6 @@ def plot_frequency_distribution():
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of initial frequencies.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of initial frequencies.csv', frequency_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -137,7 +135,6 @@ def plot_wavelength_distribution():
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of wavelengths.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of wavelengths.csv', wavelength_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -149,7 +146,6 @@ def plot_travel_time_distribution():
     ax.set_xlabel('Travel time (ns)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of travel times.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -161,7 +157,6 @@ def plot_mean_free_path_distribution():
     ax.set_xlabel('Mean free path (nm)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of MFPs.pdf", format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
     np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -174,7 +169,6 @@ def plot_velocity_distribution():
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Group velocity (m/s)')
     fig.savefig('Group velocities.pdf', format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
 
 
 def plot_time_in_segments():
@@ -229,7 +223,7 @@ def plot_thermal_map():
     plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(thermal_map)))
     plt.xlabel('x (μm)')
-    plt.ylabel('x (μm)')
+    plt.ylabel('y (μm)')
     cbar = plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
@@ -240,7 +234,7 @@ def plot_heat_flux_map(file, label, units="a.u."):
     fig = plt.figure()
     heat_flux_map = np.genfromtxt(file, unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e8
+    minimum_of_colorbar = 1e6
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(heat_flux_map, cmap='jet', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
@@ -293,7 +287,6 @@ def plot_trajectories():
     ax.set_ylabel('Y (μm)')
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Phonon paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
-    if cf.plots_in_terminal: plt.show()
 
     # Create YZ plot:
     fig, ax = plt.subplots()
@@ -365,7 +358,7 @@ def plot_structure():
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
 
 
-def plot_data():
+def plot_data(mfp_sampling=False):
     """Create plots of various distributions"""
     plot_structure()
     plot_trajectories()
@@ -382,7 +375,7 @@ def plot_data():
     plot_heat_flux_profile()
     plot_thermal_map()
     plot_scattering_statistics()
-    plot_cumulative_thermal_conductivity()
+    plot_cumulative_thermal_conductivity(mfp_sampling)
     plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
     plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
     plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")

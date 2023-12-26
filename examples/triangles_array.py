@@ -10,9 +10,6 @@ NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 0.5e-12
 T                              = 4.0
-PLOTS_IN_TERMINAL              = False
-OUTPUT_SCATTERING_MAP          = False
-OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 30
 NUMBER_OF_LENGTH_SEGMENTS      = 10
 
@@ -26,8 +23,6 @@ NUMBER_OF_TIMEFRAMES           = 6
 # Material parameters:
 MEDIA                          = 'Si'
 SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-#SPECIFIC_HEAT_CAPACITY        = 714  # [J/kg/K] for Si at 300 K
-# SPECIFIC_HEAT_CAPACITY       = 606  # [J/kg/K] for SiC at 300 K
 
 
 # Internal scattering:
@@ -53,7 +48,7 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
 
-# Staggered attice of holes:
+# Staggered lattice of holes:
 HOLES = []
 
 period_x = 350e-9

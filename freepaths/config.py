@@ -43,7 +43,6 @@ class Config:
         self.number_of_nodes = NUMBER_OF_NODES
         self.timestep = TIMESTEP
         self.temp = T
-        self.plots_in_terminal = PLOTS_IN_TERMINAL
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.output_structure_color = OUTPUT_STRUCTURE_COLOR

@@ -10,9 +10,6 @@ NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12
 T                              = 4.0
-PLOTS_IN_TERMINAL              = False
-OUTPUT_SCATTERING_MAP          = False
-OUTPUT_RAW_THERMAL_MAP         = True
 OUTPUT_TRAJECTORIES_OF_FIRST   = 30
 NUMBER_OF_LENGTH_SEGMENTS      = 10
 
