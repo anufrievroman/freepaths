@@ -7,11 +7,11 @@ The functions from the scattering_parabolic, scattering_primitives, etc... are n
 
 
 from math import atan
+from numpy import pi
 
 
 from freepaths.config import cf
 from freepaths.scattering_primitives import *
-from freepaths.scattering_parabolic import *
 
 
 class CircularHole:
@@ -370,3 +370,37 @@ class ParabolaBottom:
                     # Accept the angles only if they do not immediately cause new scattering:
                     if no_new_scattering(ph):
                         break
+
+
+class CircularPillar:
+    """Shape of a circular pillar with inclined wall"""
+
+    def __init__(self, x=0, y=0, diameter=200e-9, height=300e-9, wall_angle=pi / 2):
+        self.x0 = x
+        self.y0 = y
+        self.diameter = diameter
+        self.height = height
+        self.wall_angle = wall_angle
+
+    def check_if_scattering(self, ph, scattering_types, x, y, z):
+        """Check if a phonon strikes a circular pillar and calculate new direction"""
+
+        # Cone radius at a given z coordinate:
+        radius = self.diameter / 2  # - (z - cf.thickness / 2) / tan(pillar.wall_angle)
+        distance_from_pillar_center = sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
+        # distance_from_pillar_center_original = sqrt(
+        #     (ph.x - self.x) ** 2 + (ph.y - self.y) ** 2
+        # )
+        step = 2 * ph.speed * cf.timestep
+
+        # If phonon crosses the pillar boundary. Third condition is to exclude all other pillars:
+        if (
+            distance_from_pillar_center >= radius
+            and z > cf.thickness / 2
+            and distance_from_pillar_center < radius + step
+        ):
+            # Calculate angle to the surface and specular scattering probability:
+            tangent_theta = atan((x - self.x) / (y - self.y))
+            scattering_types.pillars = circle_inner_scattering(
+                ph, tangent_theta, y, self.y, cf.pillar_roughness
+            )

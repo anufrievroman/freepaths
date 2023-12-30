@@ -4,13 +4,11 @@ Each function determines whether the scattering should happen and
 call corresponding function for scattering on corresponding primitive.
 """
 
-from math import pi, cos, sin, tan, sqrt, atan
+from math import sqrt, atan
 
 from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_primitives import *
-from freepaths.scattering_parabolic import *
-from freepaths.scatterers import *
 
 
 def internal_scattering(ph, flight, scattering_types):
@@ -44,28 +42,6 @@ def reinitialization(ph, scattering_types):
             ph, cf.side_wall_roughness, is_diffuse=True
         )
 
-def scattering_on_circular_pillars(ph, pillar, scattering_types, x, y, z):
-    """Check if a phonon strikes a circular pillar and calculate new direction"""
-
-    # Cone radius at a given z coordinate:
-    radius = pillar.diameter / 2  # - (z - cf.thickness / 2) / tan(pillar.wall_angle)
-    distance_from_pillar_center = sqrt((x - pillar.x) ** 2 + (y - pillar.y) ** 2)
-    distance_from_pillar_center_original = sqrt(
-        (ph.x - pillar.x) ** 2 + (ph.y - pillar.y) ** 2
-    )
-    step = 2 * ph.speed * cf.timestep
-
-    # If phonon crosses the pillar boundary. Third condition is to exclude all other pillars:
-    if (
-        distance_from_pillar_center >= radius
-        and z > cf.thickness / 2
-        and distance_from_pillar_center < radius + step
-    ):
-        # Calculate angle to the surface and specular scattering probability:
-        tangent_theta = atan((x - pillar.x) / (y - pillar.y))
-        scattering_types.pillars = circle_inner_scattering(
-            ph, tangent_theta, y, pillar.y, cf.pillar_roughness
-        )
 
 def scattering_on_right_sidewall(ph, scattering_types, x, y, z):
     """Scatter phonon if it reached right side wall"""
@@ -166,8 +142,7 @@ def surface_scattering(ph, scattering_types):
     # Check for each pillar:
     if cf.pillars:
         for pillar in cf.pillars:
-            if isinstance(pillar, CircularPillar):
-                scattering_on_circular_pillars(ph, pillar, scattering_types, x, y, z)
+            pillar.check_if_scattering(ph, scattering_types, x, y, z)
 
             # If there was any scattering, then no need to check other pillars:
             if scattering_types.pillars is not None:
