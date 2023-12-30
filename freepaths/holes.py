@@ -8,6 +8,7 @@ The functions from the scattering_parabolic, scattering_primitives, etc... are n
 
 from math import atan
 from numpy import pi
+from matplotlib.patches import Rectangle, Circle, Polygon
 
 
 from freepaths.config import cf
@@ -34,6 +35,13 @@ class CircularHole:
             scattering_types.holes = circle_outer_scattering(
                 ph, tangent_theta, y, self.y0, cf.hole_roughness
             )
+
+    def get_patch(self, color_holes):
+        return Circle(
+            (1e6 * self.x0, 1e6 * self.y0),
+            1e6 * self.diameter / 2,
+            facecolor=color_holes,
+        )
 
 
 class RectangularHole:
@@ -81,6 +89,14 @@ class RectangularHole:
                     ph, cf.side_wall_roughness
                 )
 
+    def get_patch(self, color_holes):
+        return Rectangle(
+            (1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)),
+            1e6 * self.size_x,
+            1e6 * self.size_y,
+            facecolor=color_holes,
+        )
+
 
 class TriangularUpHole:
     """Shape of a triangular hole facing up"""
@@ -114,6 +130,17 @@ class TriangularUpHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
+    def get_patch(self, color_holes):
+        return Polygon(
+            [
+                [1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)],
+                [1e6 * (self.x0 + self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)],
+                [1e6 * self.x0, 1e6 * (self.y0 + self.size_y / 2)],
+            ],
+            closed=True,
+            facecolor=color_holes,
+        )
+
 
 class TriangularDownHole:
     """Shape of a triangular hole facing down"""
@@ -146,6 +173,17 @@ class TriangularDownHole:
                 scattering_types.holes = inclined_surfaces_down_scattering(
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
+
+    def get_patch(self, color_holes):
+        return Polygon(
+            [
+                [1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 + self.size_y / 2)],
+                [1e6 * (self.x0 + self.size_x / 2), 1e6 * (self.y0 + self.size_y / 2)],
+                [1e6 * self.x0, 1e6 * (self.y0 - self.size_y / 2)],
+            ],
+            closed=True,
+            facecolor=color_holes,
+        )
 
 
 class TriangularDownHalfHole:
@@ -220,6 +258,34 @@ class TriangularDownHalfHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
+    def get_patch(self, color_holes):
+        if self.is_right_half:
+            return Polygon(
+                [
+                    [1e6 * (self.x0), 1e6 * (self.y0 + self.size_y / 2)],
+                    [
+                        1e6 * (self.x0 + self.size_x / 2),
+                        1e6 * (self.y0 + self.size_y / 2),
+                    ],
+                    [1e6 * self.x0, 1e6 * (self.y0 - self.size_y / 2)],
+                ],
+                closed=True,
+                facecolor=color_holes,
+            )
+        else:
+            return Polygon(
+                [
+                    [
+                        1e6 * (self.x0 - self.size_x / 2),
+                        1e6 * (self.y0 + self.size_y / 2),
+                    ],
+                    [1e6 * (self.x0), 1e6 * (self.y0 + self.size_y / 2)],
+                    [1e6 * self.x0, 1e6 * (self.y0 - self.size_y / 2)],
+                ],
+                closed=True,
+                facecolor=color_holes,
+            )
+
 
 class TriangularUpHalfHole:
     """Shape of a half triangular hole facing up"""
@@ -292,6 +358,34 @@ class TriangularUpHalfHole:
                 scattering_types.holes = inclined_surfaces_up_scattering(
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
+
+    def get_patch(self, color_holes):
+        if self.is_right_half:
+            return Polygon(
+                [
+                    [1e6 * (self.x0), 1e6 * (self.y0 - self.size_y / 2)],
+                    [
+                        1e6 * (self.x0 + self.size_x / 2),
+                        1e6 * (self.y0 - self.size_y / 2),
+                    ],
+                    [1e6 * self.x0, 1e6 * (self.y0 + self.size_y / 2)],
+                ],
+                closed=True,
+                facecolor=color_holes,
+            )
+        else:
+            return Polygon(
+                [
+                    [
+                        1e6 * (self.x0 - self.size_x / 2),
+                        1e6 * (self.y0 - self.size_y / 2),
+                    ],
+                    [1e6 * (self.x0), 1e6 * (self.y0 - self.size_y / 2)],
+                    [1e6 * self.x0, 1e6 * (self.y0 + self.size_y / 2)],
+                ],
+                closed=True,
+                facecolor=color_holes,
+            )
 
 
 class ParabolaTop:
@@ -404,3 +498,10 @@ class CircularPillar:
             scattering_types.pillars = circle_inner_scattering(
                 ph, tangent_theta, y, self.y, cf.pillar_roughness
             )
+
+    def get_patch(self, color_holes):
+        return Circle(
+            (1e6 * self.x0, 1e6 * self.y0),
+            1e6 * self.diameter / 2,
+            facecolor=color_holes,
+        )
