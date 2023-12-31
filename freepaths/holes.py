@@ -34,6 +34,8 @@ class CircularHole:
             scattering_types.holes = circle_outer_scattering(
                 ph, tangent_theta, y, self.y0, cf.hole_roughness, cf
             )
+            return True
+        return False
 
     def get_patch(self, color_holes, cf):
         return Circle(
@@ -88,6 +90,9 @@ class RectangularHole:
                     ph, cf.side_wall_roughness
                 )
 
+            return True
+        return False
+
     def get_patch(self, color_holes, cf):
         return Rectangle(
             (1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)),
@@ -128,6 +133,9 @@ class TriangularUpHole:
                 scattering_types.holes = inclined_surfaces_up_scattering(
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
+
+            return True
+        return False
 
     def get_patch(self, color_holes, cf):
         return Polygon(
@@ -172,6 +180,9 @@ class TriangularDownHole:
                 scattering_types.holes = inclined_surfaces_down_scattering(
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
+
+            return True
+        return False
 
     def get_patch(self, color_holes, cf):
         return Polygon(
@@ -229,6 +240,8 @@ class TriangularDownHalfHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
+            return True
+
         # If phonon is inside the left side of the triangle:
         if (
             not self.is_right_half
@@ -256,6 +269,9 @@ class TriangularDownHalfHole:
                 scattering_types.holes = inclined_surfaces_down_scattering(
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
+
+            return True
+        return False
 
     def get_patch(self, color_holes, cf):
         if self.is_right_half:
@@ -330,6 +346,8 @@ class TriangularUpHalfHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
+            return True
+
         # If phonon is inside the left side of the triangle:
         if (
             not self.is_right_half
@@ -357,6 +375,9 @@ class TriangularUpHalfHole:
                 scattering_types.holes = inclined_surfaces_up_scattering(
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
+
+            return True
+        return False
 
     def get_patch(self, color_holes, cf):
         if self.is_right_half:
@@ -405,7 +426,6 @@ class ParabolaTop:
             dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
             angle = acos(dot_product)
             p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
-
             # Specular scattering:
             if random() < p:
                 if abs(ph.theta) > pi / 2:
@@ -425,15 +445,16 @@ class ParabolaTop:
                     if no_new_scattering(ph, cf):
                         break
 
+            return True
+        return False
+
     def get_patch(self, color_holes, cf):
-        eval_xs = linspace(-cf.width/2, cf.width/2, 50)
-        parabola_ys = -(eval_xs ** 2) / (4 * self.focus) + self.tip
+        eval_xs = linspace(-cf.width / 2, cf.width / 2, 50)
+        parabola_ys = -(eval_xs**2) / (4 * self.focus) + self.tip
         parabola_points = column_stack((eval_xs, parabola_ys))
-        polygon_point = vstack((
-            parabola_points,
-            [cf.width/2, cf.length],
-            [-cf.width/2, cf.length]
-        ))
+        polygon_point = vstack(
+            (parabola_points, [cf.width / 2, cf.length], [-cf.width / 2, cf.length])
+        )
         return Polygon(
             polygon_point * 1e6,
             closed=True,
@@ -479,20 +500,20 @@ class ParabolaBottom:
                     if no_new_scattering(ph, cf):
                         break
 
+            return True
+        return False
+
     def get_patch(self, color_holes, cf):
-        eval_xs = linspace(-cf.width/2, cf.width/2, 50)
-        parabola_ys = eval_xs ** 2 / (4 * self.focus) + self.tip
+        eval_xs = linspace(-cf.width / 2, cf.width / 2, 50)
+        parabola_ys = eval_xs**2 / (4 * self.focus) + self.tip
         parabola_points = column_stack((eval_xs, parabola_ys))
-        polygon_point = vstack((
-            parabola_points,
-            [cf.width/2, 0],
-            [-cf.width/2, 0]
-        ))
+        polygon_point = vstack((parabola_points, [cf.width / 2, 0], [-cf.width / 2, 0]))
         return Polygon(
             polygon_point * 1e6,
             closed=True,
             facecolor=color_holes,
         )
+
 
 class CircularPillar:
     """Shape of a circular pillar with inclined wall"""
@@ -526,6 +547,9 @@ class CircularPillar:
             scattering_types.pillars = circle_inner_scattering(
                 ph, tangent_theta, y, self.y, cf.pillar_roughness
             )
+
+            return True
+        return False
 
     def get_patch(self, color_holes, cf):
         return Circle(
