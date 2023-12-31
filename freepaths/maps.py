@@ -104,6 +104,16 @@ class ThermalMaps(Maps):
         self.vol_cell_y = cf.length * cf.thickness * cf.width / cf.number_of_pixels_y
         self.vol_pixel =  cf.length * cf.thickness * cf.width / (cf.number_of_pixels_x * cf.number_of_pixels_y)
         self.timepteps_per_timeframe = cf.number_of_timesteps // cf.number_of_timeframes
+        
+        # Calculate the pixel volumes with respect to holes
+        self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
+    
+    def calculate_pixel_volumes(self, number_of_pixels_x, number_of_pixels_y):
+        pixel_volume_ratios = np.zeros((number_of_pixels_y, number_of_pixels_x))
+        for x_index in range(number_of_pixels_x):
+            for y_index in range(number_of_pixels_y):
+                for hole in cf.holes:
+                    pass
 
     def add_energy_to_maps(self, ph, timestep_number, material):
         """

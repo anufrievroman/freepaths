@@ -32,6 +32,7 @@ class Hole:
                     counter += 1
         return counter / 20**2
 
+
 class CircularHole(Hole):
     """Shape of a circular hole"""
 
@@ -63,15 +64,13 @@ class CircularHole(Hole):
             facecolor=color_holes,
         )
 
-    def calculate_pixel_volume(self, x, y, x_size, y_size):
-        # calculate distance from center of pixel to circle
-        distance = sqrt(
-            ((x + x_size / 2) - self.x0) ** 2 + ((y + y_size / 2) - self.y0) ** 2
-        )
-        if distance > self.diameter / 2:
-            pass
-
-    def mc_pixel_volume
+    # def calculate_pixel_volume(self, x, y, x_size, y_size):
+    #     # calculate distance from center of pixel to circle
+    #     distance = sqrt(
+    #         ((x + x_size / 2) - self.x0) ** 2 + ((y + y_size / 2) - self.y0) ** 2
+    #     )
+    #     if distance > self.diameter / 2:
+    #         pass
 
 
 class RectangularHole(Hole):
@@ -97,27 +96,31 @@ class RectangularHole(Hole):
 
             # Scattering on the left wall:
             if abs(y1) <= self.size_y / 2 and x < self.x0:
-                if ph: scattering_types.holes = vertical_surface_left_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                if ph:
+                    scattering_types.holes = vertical_surface_left_scattering(
+                        ph, cf.hole_roughness, cf
+                    )
 
             # Scattering on the right wall:
             elif abs(y1) <= self.size_y / 2 and x > self.x0:
-                if ph: scattering_types.holes = vertical_surface_right_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                if ph:
+                    scattering_types.holes = vertical_surface_right_scattering(
+                        ph, cf.hole_roughness, cf
+                    )
 
             # Scattering on the top wall:
             elif y > self.y0:
-                if ph: scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.side_wall_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_up_scattering(
+                        ph, cf.side_wall_roughness
+                    )
 
             # Scattering on the bottom wall:
             else:
-                if ph: scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.side_wall_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_down_scattering(
+                        ph, cf.side_wall_roughness
+                    )
 
             return True
         return False
@@ -153,15 +156,17 @@ class TriangularUpHole(Hole):
         ) and (abs(y - self.y0) < self.size_y / 2):
             # Scattering on the bottom wall of the triangle:
             if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
-                if ph: scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_down_scattering(
+                        ph, cf.hole_roughness
+                    )
 
             # Scattering on the sidewalls of the triangle:
             else:
-                if ph: scattering_types.holes = inclined_surfaces_up_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = inclined_surfaces_up_scattering(
+                        ph, beta, x, self.x0, cf.hole_roughness
+                    )
 
             return True
         return False
@@ -200,15 +205,17 @@ class TriangularDownHole(Hole):
         ) and (abs(y - self.y0) < self.size_y / 2):
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
-                if ph: scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_up_scattering(
+                        ph, cf.hole_roughness
+                    )
 
             # Scattering on the sidewalls of the triangle:
             else:
-                if ph: scattering_types.holes = inclined_surfaces_down_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = inclined_surfaces_down_scattering(
+                        ph, beta, x, self.x0, cf.hole_roughness
+                    )
 
             return True
         return False
@@ -253,21 +260,24 @@ class TriangularDownHalfHole(Hole):
         ):
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
-                if ph: scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_up_scattering(
+                        ph, cf.hole_roughness
+                    )
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x < self.x0:
-                if ph: scattering_types.holes = vertical_surface_left_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                if ph:
+                    scattering_types.holes = vertical_surface_left_scattering(
+                        ph, cf.hole_roughness, cf
+                    )
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                if ph: scattering_types.holes = inclined_surfaces_down_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = inclined_surfaces_down_scattering(
+                        ph, beta, x, self.x0, cf.hole_roughness
+                    )
 
             return True
 
@@ -283,21 +293,24 @@ class TriangularDownHalfHole(Hole):
         ):
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
-                if ph: scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_up_scattering(
+                        ph, cf.hole_roughness
+                    )
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x > self.x0:
-                if ph: scattering_types.holes = vertical_surface_right_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                if ph:
+                    scattering_types.holes = vertical_surface_right_scattering(
+                        ph, cf.hole_roughness, cf
+                    )
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                if ph: scattering_types.holes = inclined_surfaces_down_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = inclined_surfaces_down_scattering(
+                        ph, beta, x, self.x0, cf.hole_roughness
+                    )
 
             return True
         return False
@@ -359,21 +372,24 @@ class TriangularUpHalfHole(Hole):
         ):
             # Scattering on the bottom wall of the triangle:
             if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
-                if ph: scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_down_scattering(
+                        ph, cf.hole_roughness
+                    )
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x < self.x0:
-                if ph: scattering_types.holes = vertical_surface_left_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                if ph:
+                    scattering_types.holes = vertical_surface_left_scattering(
+                        ph, cf.hole_roughness, cf
+                    )
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                if ph: scattering_types.holes = inclined_surfaces_up_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = inclined_surfaces_up_scattering(
+                        ph, beta, x, self.x0, cf.hole_roughness
+                    )
 
             return True
 
@@ -389,21 +405,24 @@ class TriangularUpHalfHole(Hole):
         ):
             # Scattering on the bottom wall of the triangle:
             if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
-                if ph: scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = horizontal_surface_down_scattering(
+                        ph, cf.hole_roughness
+                    )
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x > self.x0:
-                if ph: scattering_types.holes = vertical_surface_right_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                if ph:
+                    scattering_types.holes = vertical_surface_right_scattering(
+                        ph, cf.hole_roughness, cf
+                    )
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                if ph: scattering_types.holes = inclined_surfaces_up_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                if ph:
+                    scattering_types.holes = inclined_surfaces_up_scattering(
+                        ph, beta, x, self.x0, cf.hole_roughness
+                    )
 
             return True
         return False
@@ -461,10 +480,12 @@ class ParabolaTop(Hole):
                     ph.theta = ph.theta - 2 * normal_theta
                 else:
                     ph.theta = 2 * normal_theta - ph.theta
-                if ph: scattering_types.walls = Scattering.SPECULAR
+                if ph:
+                    scattering_types.walls = Scattering.SPECULAR
 
             else:
-                if ph: scattering_types.walls = Scattering.DIFFUSE
+                if ph:
+                    scattering_types.walls = Scattering.DIFFUSE
                 for _ in range(10):
                     # Lambert distribution
                     ph.theta = normal_theta + asin(2 * random() - 1) - pi / 2
@@ -516,10 +537,12 @@ class ParabolaBottom(Hole):
                     ph.theta = ph.theta - 2 * normal_theta
                 else:
                     ph.theta = 2 * normal_theta - ph.theta
-                if ph: scattering_types.walls = Scattering.SPECULAR
+                if ph:
+                    scattering_types.walls = Scattering.SPECULAR
 
             else:
-                if ph: scattering_types.walls = Scattering.DIFFUSE
+                if ph:
+                    scattering_types.walls = Scattering.DIFFUSE
                 for _ in range(10):
                     # Lambertian distribution
                     ph.theta = normal_theta + asin(2 * random() - 1) - pi / 2
@@ -573,9 +596,10 @@ class CircularPillar(Hole):
         ):
             # Calculate angle to the surface and specular scattering probability:
             tangent_theta = atan((x - self.x) / (y - self.y))
-            if ph: scattering_types.pillars = circle_inner_scattering(
-                ph, tangent_theta, y, self.y, cf.pillar_roughness
-            )
+            if ph:
+                scattering_types.pillars = circle_inner_scattering(
+                    ph, tangent_theta, y, self.y, cf.pillar_roughness
+                )
 
             return True
         return False
