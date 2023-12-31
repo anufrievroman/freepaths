@@ -4,7 +4,6 @@ from math import pi, cos, sin, tan, exp, sqrt, atan, asin, acos
 from random import random
 from numpy import sign
 
-from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_types import Scattering
 
@@ -14,7 +13,7 @@ def specularity(angle, roughness, wavelength):
     return exp(-16 * pi**2 * roughness**2 * ((cos(angle))**2) / wavelength**2)
 
 
-def no_new_scattering(ph):
+def no_new_scattering(ph, cf):
     """
     Check if new angles do not immediately lead to a new top/bottom or sidewall scattering event.
     Such additional scatering event may cause troubles because at this stage we already checked the domain boundaries.
@@ -31,7 +30,7 @@ def random_scattering(ph):
     return Scattering.DIFFUSE
 
 
-def vertical_surface_left_scattering(ph, roughness, is_diffuse=False):
+def vertical_surface_left_scattering(ph, roughness, cf, is_diffuse=False):
     """Scattering from a vertical surface to the left"""
 
     # Calculate angle to the surface and specular scattering probability:
@@ -52,11 +51,11 @@ def vertical_surface_left_scattering(ph, roughness, is_diffuse=False):
             ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
             # Accept the angles if they do not cause new scattering:
-            if no_new_scattering(ph):
+            if no_new_scattering(ph, cf):
                 return Scattering.DIFFUSE
 
 
-def vertical_surface_right_scattering(ph, roughness, is_diffuse=False):
+def vertical_surface_right_scattering(ph, roughness, cf, is_diffuse=False):
     """Scattering from a vertical surface to the left"""
 
     # Calculate angle to the surface and specular scattering probability:
@@ -77,7 +76,7 @@ def vertical_surface_right_scattering(ph, roughness, is_diffuse=False):
             ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
             # Accept the angles if they do not cause new scattering:
-            if no_new_scattering(ph):
+            if no_new_scattering(ph, cf):
                 return Scattering.DIFFUSE
 
 
@@ -186,7 +185,7 @@ def in_plane_surface_scattering(ph, roughness):
         return Scattering.DIFFUSE
 
 
-def circle_outer_scattering(ph, tangent_theta, y, y0, roughness):
+def circle_outer_scattering(ph, tangent_theta, y, y0, roughness, cf):
     """Scattering from the outer surface of the circle"""
 
     # Calculate angle to the surface and specular scattering probability:
@@ -211,7 +210,7 @@ def circle_outer_scattering(ph, tangent_theta, y, y0, roughness):
             ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
             # Accept the angles only if they do not immediately cause new scattering:
-            if no_new_scattering(ph):
+            if no_new_scattering(ph, cf):
                 return Scattering.DIFFUSE
 
 

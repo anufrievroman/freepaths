@@ -8,7 +8,7 @@ import argparse
 from colorama import Fore, Style
 
 from freepaths.options import Materials, Distributions
-from freepaths.scatterers import *
+from freepaths.holes import *
 
 # Import a default input file:
 from freepaths.default_config import *

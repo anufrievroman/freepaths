@@ -4,7 +4,7 @@ Each function determines whether the scattering should happen and
 call corresponding function for scattering on corresponding primitive.
 """
 
-from math import sqrt, atan
+from math import sqrt
 
 from freepaths.config import cf
 from freepaths.move import move
@@ -34,12 +34,12 @@ def reinitialization(ph, scattering_types):
 
     if cf.hot_side_position_right and x > cf.width / 2:
         scattering_types.hot_side = vertical_surface_left_scattering(
-            ph, cf.side_wall_roughness, is_diffuse=True
+            ph, cf.side_wall_roughness, cf, is_diffuse=True
         )
 
     if cf.hot_side_position_left and x < -cf.width / 2:
         scattering_types.hot_side = vertical_surface_right_scattering(
-            ph, cf.side_wall_roughness, is_diffuse=True
+            ph, cf.side_wall_roughness, cf, is_diffuse=True
         )
 
 
@@ -47,7 +47,7 @@ def scattering_on_right_sidewall(ph, scattering_types, x, y, z):
     """Scatter phonon if it reached right side wall"""
     if x > cf.width / 2:
         scattering_types.walls = vertical_surface_left_scattering(
-            ph, cf.side_wall_roughness
+            ph, cf.side_wall_roughness, cf
         )
 
 
@@ -55,7 +55,7 @@ def scattering_on_left_sidewall(ph, scattering_types, x, y, z):
     """Scatter phonon if it reached left side wall"""
     if x < -cf.width / 2:
         scattering_types.walls = vertical_surface_right_scattering(
-            ph, cf.side_wall_roughness
+            ph, cf.side_wall_roughness, cf
         )
 
 
@@ -104,9 +104,7 @@ def ceiling_scattering(ph, scattering_types, x, y, z):
             )
 
     else:
-        scattering_types.top_bottom = in_plane_surface_scattering(
-            ph, cf.top_roughness
-        )
+        scattering_types.top_bottom = in_plane_surface_scattering(ph, cf.top_roughness)
 
 
 def surface_scattering(ph, scattering_types):
@@ -133,7 +131,7 @@ def surface_scattering(ph, scattering_types):
     if cf.holes:
         # Check for each hole and each hole type:
         for hole in cf.holes:
-            hole.check_if_scattering(ph, scattering_types, x, y, z)
+            hole.check_if_scattering(ph, scattering_types, x, y, z, cf)
 
             # If there was any scattering, then no need to check rest of the holes:
             if scattering_types.holes is not None:
@@ -142,7 +140,7 @@ def surface_scattering(ph, scattering_types):
     # Check for each pillar:
     if cf.pillars:
         for pillar in cf.pillars:
-            pillar.check_if_scattering(ph, scattering_types, x, y, z)
+            pillar.check_if_scattering(ph, scattering_types, x, y, z, cf)
 
             # If there was any scattering, then no need to check other pillars:
             if scattering_types.pillars is not None:

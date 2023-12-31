@@ -3,18 +3,15 @@ Module that provides scattering functions on parabolic semicircular holes.
 The code in this module is contributed by Felix Barbier in 2023.
 """
 
-from math import pi, cos, sin, tan, exp, sqrt, atan, asin, acos
+from math import pi, cos, sin, tan, sqrt, atan, asin, acos
 from random import random
 from numpy import sign
 
-from freepaths.config import cf
-from freepaths.move import move
 from freepaths.scattering_types import Scattering
 from freepaths.scattering_primitives import *
-from freepaths.scatterers import *
 
 
-def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z):
+def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z, cf):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
 
     # If phonon is inside the circle with radius R:
@@ -41,7 +38,7 @@ def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z):
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
                     # Accept the angles only if they do not lead to new scattering:
-                    if no_new_scattering(ph):
+                    if no_new_scattering(ph, cf):
                         break
         else:
             # Calculate angle to the surface and specular scattering probability:
@@ -71,11 +68,11 @@ def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z):
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph):
+                    if no_new_scattering(ph, cf):
                         break
 
 
-def scattering_on_arccircular_v_holes(ph, x0, y0, R ,Rinner,alphap, scattering_types, x, y, z):
+def scattering_on_arccircular_v_holes(ph, x0, y0, R ,Rinner,alphap, scattering_types, x, y, z, cf):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
     if x == x0:# to prevent division by 0 
         x = x + 1e-12
@@ -137,7 +134,7 @@ def scattering_on_arccircular_v_holes(ph, x0, y0, R ,Rinner,alphap, scattering_t
             
         
         if R**2 <= xp**2 + yp**2 and continu == 0: 
-           
+            
             
             continu=1
             if y == y0: 
@@ -145,7 +142,7 @@ def scattering_on_arccircular_v_holes(ph, x0, y0, R ,Rinner,alphap, scattering_t
             tangent_theta = atan((x - x0)/(y - y0))
             a = acos(cos(ph.phi)*cos(ph.theta + sign(y - y0)*tangent_theta))
             p = specularity(a, cf.hole_roughness, ph.wavelength)
- 
+
             # Specular scattering:
             if random() <p:
                 ph.theta = - ph.theta - pi + 2*tangent_theta
@@ -156,17 +153,17 @@ def scattering_on_arccircular_v_holes(ph, x0, y0, R ,Rinner,alphap, scattering_t
                 while attempt < 10:
                     attempt += 1
         
-                     #Random distribution:
+                    #Random distribution:
                     #theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
                     #phi = asin(2*random() - 1)
                     # #Lambert cosine distribution:
                     ph.theta = tangent_theta - (asin(2*random() - 1)) - pi*(y < y0)
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
                         
-                     #Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph):
-                         break
-      
+                    #Accept the angles only if they do not immediately cause new scattering:
+                    if no_new_scattering(ph, cf):
+                        break
+    
         if continu ==0:
             tangent_theta = atan((x - x0)/(y - y0))
             a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi - (pi / 2 - pillar_wall_angle)))
@@ -202,10 +199,10 @@ def scattering_on_arccircular_v_holes(ph, x0, y0, R ,Rinner,alphap, scattering_t
                 ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - cf.pillar_wall_angle)
                 scattering_types.pillars = Scattering.DIFFUSE
-                    #if no_new_scattering(ph):
+                    #if no_new_scattering(ph, cf):
                          #break
 
-def scattering_on_arccircular_v_demi_down_holes(ph, x0, y0, R ,Rinner,alphap,alphap2, scattering_types, x, y, z):
+def scattering_on_arccircular_v_demi_down_holes(ph, x0, y0, R ,Rinner,alphap,alphap2, scattering_types, x, y, z, cf):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
     if x == x0:# to prevent division by 0 
         x = x + 1e-12
@@ -298,7 +295,7 @@ def scattering_on_arccircular_v_demi_down_holes(ph, x0, y0, R ,Rinner,alphap,alp
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
                         
                      #Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph):
+                    if no_new_scattering(ph, cf):
                          break
       
         if continu ==0:
@@ -336,9 +333,9 @@ def scattering_on_arccircular_v_demi_down_holes(ph, x0, y0, R ,Rinner,alphap,alp
                 ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - cf.pillar_wall_angle)
                 scattering_types.pillars = Scattering.DIFFUSE
-                    #if no_new_scattering(ph):
+                    #if no_new_scattering(ph, cf):
                         
-def scattering_on_arccircular_v_demi_up_holes(ph, x0, y0, R ,Rinner,alphap,alphap2, scattering_types, x, y, z):
+def scattering_on_arccircular_v_demi_up_holes(ph, x0, y0, R ,Rinner,alphap,alphap2, scattering_types, x, y, z, cf):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
     if x == x0:# to prevent division by 0 
         x = x + 1e-12
@@ -431,7 +428,7 @@ def scattering_on_arccircular_v_demi_up_holes(ph, x0, y0, R ,Rinner,alphap,alpha
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
                         
                      #Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph):
+                    if no_new_scattering(ph, cf):
                          break
       
         if continu ==0:
@@ -469,9 +466,9 @@ def scattering_on_arccircular_v_demi_up_holes(ph, x0, y0, R ,Rinner,alphap,alpha
                 ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - cf.pillar_wall_angle)
                 scattering_types.pillars = Scattering.DIFFUSE
-                    #if no_new_scattering(ph):
+                    #if no_new_scattering(ph, cf):
                          #break                                 #break        
-def scattering_on_arccircular_h_holes(ph, x0, y0, R ,Rinner,alphap, scattering_types, x, y, z):
+def scattering_on_arccircular_h_holes(ph, x0, y0, R ,Rinner,alphap, scattering_types, x, y, z, cf):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
     if x == x0:# to prevent division by 0 
         x = x + 1e-12
@@ -563,7 +560,7 @@ def scattering_on_arccircular_h_holes(ph, x0, y0, R ,Rinner,alphap, scattering_t
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
                         
                      #Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph):
+                    if no_new_scattering(ph, cf):
                          break
       
         if continu ==0:
@@ -601,9 +598,9 @@ def scattering_on_arccircular_h_holes(ph, x0, y0, R ,Rinner,alphap, scattering_t
                 ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - cf.pillar_wall_angle)
                 scattering_types.pillars = Scattering.DIFFUSE
-                    #if no_new_scattering(ph):
+                    #if no_new_scattering(ph, cf):
                         
-def scattering_on_arccircular_h_reverse_holes(ph, x0, y0, R ,Rinner,alphap, scattering_types, x, y, z):
+def scattering_on_arccircular_h_reverse_holes(ph, x0, y0, R ,Rinner,alphap, scattering_types, x, y, z, cf):
     """Check if a phonon strikes a circular hole and calculate the new direction"""
     if x == x0:# to prevent division by 0 
         x = x + 1e-12
@@ -696,7 +693,7 @@ def scattering_on_arccircular_h_reverse_holes(ph, x0, y0, R ,Rinner,alphap, scat
                     ph.phi = asin((asin(2*random() - 1))/(pi/2))
                         
                      #Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph):
+                    if no_new_scattering(ph, cf):
                          break
       
         if continu ==0:
@@ -734,7 +731,7 @@ def scattering_on_arccircular_h_reverse_holes(ph, x0, y0, R ,Rinner,alphap, scat
                 ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
                 ph.phi = asin((asin(2*random() - 1))/(pi/2)) - (pi / 2 - cf.pillar_wall_angle)
                 scattering_types.pillars = Scattering.DIFFUSE
-                    #if no_new_scattering(ph):
+                    #if no_new_scattering(ph, cf):
                          #break 
                          
 
