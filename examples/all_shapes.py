@@ -3,7 +3,7 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'All shapes'
-NUMBER_OF_PHONONS              = 1000
+NUMBER_OF_PHONONS              = 100
 NUMBER_OF_TIMESTEPS            = 30000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12
@@ -33,22 +33,41 @@ GRAY_APPROXIMATION_MFP         = None
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 700e-9
-LENGTH                         = 2000e-9
+LENGTH                         = 1500e-9
 
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
+PHONON_SOURCES                 = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random_up")]
+
+# Walls:
+INCLUDE_RIGHT_SIDEWALL           = False
+INCLUDE_LEFT_SIDEWALL            = False
+INCLUDE_TOP_SIDEWALL             = False
+INCLUDE_BOTTOM_SIDEWALL          = False
+
+# Cold sides:
+COLD_SIDE_POSITION_TOP           = False
+COLD_SIDE_POSITION_BOTTOM        = False
+COLD_SIDE_POSITION_RIGHT         = True
+COLD_SIDE_POSITION_LEFT          = False
+
+# Hot sides:
+HOT_SIDE_POSITION_TOP            = False
+HOT_SIDE_POSITION_BOTTOM         = False
+HOT_SIDE_POSITION_RIGHT          = False
+HOT_SIDE_POSITION_LEFT           = True
 
 # Holes
 HOLES                          = [
-    CircularHole(x=-200e-9, y=200e-9, diameter=100e-9),
-    RectangularHole(x=0, y=200e-9, size_x=100e-9, size_y=150e-9),
-    TriangularUpHole(x=200e-9, y=200e-9, size_x=100e-9, size_y=150e-9),
-    TriangularDownHole(x=-200e-9, y=400e-9, size_x=100e-9, size_y=150e-9),
-    TriangularDownHalfHole(x=0, y=400e-9, size_x=100e-9, size_y=150e-9, is_right_half=False),
-    TriangularDownHalfHole(x=200e-9, y=400e-9, size_x=100e-9, size_y=150e-9, is_right_half=True),
-    TriangularUpHalfHole(x=-200e-9, y=600e-9, size_x=100e-9, size_y=150e-9, is_right_half=False),
-    TriangularUpHalfHole(x=0, y=600e-9, size_x=100e-9, size_y=150e-9, is_right_half=True),
-    ParabolaTop(tip=1000e-9, focus=100e-9),
+    CircularHole(x=-200e-9, y=400e-9, diameter=100e-9),
+    RectangularHole(x=0, y=400e-9, size_x=100e-9, size_y=150e-9),
+    TriangularUpHole(x=200e-9, y=400e-9, size_x=100e-9, size_y=150e-9),
+    TriangularDownHole(x=-200e-9, y=600e-9, size_x=100e-9, size_y=150e-9),
+    TriangularDownHalfHole(x=0, y=600e-9, size_x=100e-9, size_y=150e-9, is_right_half=False),
+    TriangularDownHalfHole(x=200e-9, y=600e-9, size_x=100e-9, size_y=150e-9, is_right_half=True),
+    TriangularUpHalfHole(x=-200e-9, y=800e-9, size_x=100e-9, size_y=150e-9, is_right_half=False),
+    TriangularUpHalfHole(x=0, y=800e-9, size_x=100e-9, size_y=150e-9, is_right_half=True),
+    ParabolaTop(tip=LENGTH-100e-9, focus=100e-9),
+    ParabolaBottom(tip=100e-9, focus=100e-9),
 ]
 
 # Roughness [m]:

@@ -1,7 +1,7 @@
 """Module that draws shape of the structure"""
 
 from matplotlib.patches import Rectangle
-
+from freepaths.config import cf
 
 def draw_structure(cf, color_holes="white", color_back="gray"):
     """Draw shape of the structure using patches from matplotlib"""
@@ -17,10 +17,10 @@ def draw_structure(cf, color_holes="white", color_back="gray"):
     ]
 
     # Holes as white patches:
-    patches.extend(hole.get_patch(color_holes) for hole in cf.holes)
+    patches.extend(hole.get_patch(color_holes, cf) for hole in cf.holes)
 
     # Pillars as white patches:
-    patches.extend(pillar.get_patch(color_holes) for pillar in cf.pillars)
+    patches.extend(pillar.get_patch(color_holes, cf) for pillar in cf.pillars)
 
     # Phonon source areas as red patches:
     for source in cf.phonon_sources:

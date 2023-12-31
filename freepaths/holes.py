@@ -7,7 +7,7 @@ The functions from the scattering_parabolic, scattering_primitives, etc... are n
 
 
 from math import atan
-from numpy import pi
+from numpy import pi, array, linspace, column_stack, vstack
 from matplotlib.patches import Rectangle, Circle, Polygon
 
 
@@ -35,7 +35,7 @@ class CircularHole:
                 ph, tangent_theta, y, self.y0, cf.hole_roughness, cf
             )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         return Circle(
             (1e6 * self.x0, 1e6 * self.y0),
             1e6 * self.diameter / 2,
@@ -88,7 +88,7 @@ class RectangularHole:
                     ph, cf.side_wall_roughness
                 )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         return Rectangle(
             (1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)),
             1e6 * self.size_x,
@@ -129,7 +129,7 @@ class TriangularUpHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         return Polygon(
             [
                 [1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)],
@@ -173,7 +173,7 @@ class TriangularDownHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         return Polygon(
             [
                 [1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 + self.size_y / 2)],
@@ -257,7 +257,7 @@ class TriangularDownHalfHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         if self.is_right_half:
             return Polygon(
                 [
@@ -358,7 +358,7 @@ class TriangularUpHalfHole:
                     ph, beta, x, self.x0, cf.hole_roughness
                 )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         if self.is_right_half:
             return Polygon(
                 [
@@ -425,6 +425,21 @@ class ParabolaTop:
                     if no_new_scattering(ph, cf):
                         break
 
+    def get_patch(self, color_holes, cf):
+        eval_xs = linspace(-cf.width/2, cf.width/2, 50)
+        parabola_ys = -(eval_xs ** 2) / (4 * self.focus) + self.tip
+        parabola_points = column_stack((eval_xs, parabola_ys))
+        polygon_point = vstack((
+            parabola_points,
+            [cf.width/2, cf.length],
+            [-cf.width/2, cf.length]
+        ))
+        return Polygon(
+            polygon_point * 1e6,
+            closed=True,
+            facecolor=color_holes,
+        )
+
 
 class ParabolaBottom:
     """Shape of a parabolic wall"""
@@ -437,7 +452,7 @@ class ParabolaBottom:
         """Scattering on bottom parabolic boundary"""
 
         # If phonon is below the parabola:
-        y_cept = (cf.width / 2) ** 2 / (4 * self.focus + self.tip)
+        y_cept = (cf.width / 2) ** 2 / (4 * self.focus) + self.tip
         if y < y_cept and (x**2 - 4 * self.focus * (y - self.tip)) >= 0:
             # Calculate angle to the surface and specular scattering probability:
             normal_theta = pi * (x < 0) - atan(-2 * self.focus / x)
@@ -464,6 +479,20 @@ class ParabolaBottom:
                     if no_new_scattering(ph, cf):
                         break
 
+    def get_patch(self, color_holes, cf):
+        eval_xs = linspace(-cf.width/2, cf.width/2, 50)
+        parabola_ys = eval_xs ** 2 / (4 * self.focus) + self.tip
+        parabola_points = column_stack((eval_xs, parabola_ys))
+        polygon_point = vstack((
+            parabola_points,
+            [cf.width/2, 0],
+            [-cf.width/2, 0]
+        ))
+        return Polygon(
+            polygon_point * 1e6,
+            closed=True,
+            facecolor=color_holes,
+        )
 
 class CircularPillar:
     """Shape of a circular pillar with inclined wall"""
@@ -498,7 +527,7 @@ class CircularPillar:
                 ph, tangent_theta, y, self.y, cf.pillar_roughness
             )
 
-    def get_patch(self, color_holes):
+    def get_patch(self, color_holes, cf):
         return Circle(
             (1e6 * self.x0, 1e6 * self.y0),
             1e6 * self.diameter / 2,
