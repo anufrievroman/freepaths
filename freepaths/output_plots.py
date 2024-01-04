@@ -228,6 +228,18 @@ def plot_thermal_map():
     cbar.set_label('Energy density', rotation=90)
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
 
+def plot_pixel_volumes():
+    """Plot the pixel volumes as 2D map"""
+    fig = plt.figure()
+    pixel_volumes = np.genfromtxt("Data/Pixel volumes.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    pixel_volumes = np.flipud(pixel_volumes)
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(pixel_volumes, cmap='hot', interpolation='none', extent=boundaries)
+    plt.xlabel('x (μm)')
+    plt.ylabel('y (μm)')
+    cbar = plt.colorbar()
+    cbar.set_label('Pixel volume', rotation=90)
+    fig.savefig("Pixel volumes.pdf", bbox_inches="tight")
 
 def plot_heat_flux_map(file, label, units="a.u."):
     """Plot heat flux map as color map"""
@@ -374,6 +386,7 @@ def plot_data(mfp_sampling=False):
     plot_temperature_profile()
     plot_heat_flux_profile()
     plot_thermal_map()
+    plot_pixel_volumes()
     plot_scattering_statistics()
     plot_cumulative_thermal_conductivity(mfp_sampling)
     plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
