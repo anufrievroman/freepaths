@@ -196,9 +196,10 @@ def plot_temperature_profile():
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     for timeframe in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
+        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
+    ax.legend()
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
 
 
@@ -207,9 +208,10 @@ def plot_heat_flux_profile():
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     for timeframe in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
+        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
+    ax.legend()
     fig.savefig("Heat flux profile.pdf", format='pdf', bbox_inches="tight")
 
 
