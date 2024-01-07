@@ -184,10 +184,13 @@ def plot_time_in_segments():
 def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
-    time, thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
-    ax.plot(time, thermal_conductivity, linewidth=1, c='royalblue')
+    time, thermal_conductivity, thermal_conductivity_t_corrected, thermal_conductivity_t_and_j_corrected = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2, 3), skip_header=1)
+    ax.plot(time, thermal_conductivity, linewidth=1, c='royalblue', label='tc')
+    ax.plot(time, thermal_conductivity_t_corrected, linewidth=1, label='tc t corrected')
+    ax.plot(time, thermal_conductivity_t_and_j_corrected, linewidth=1, label='tc t and j corrected')
     ax.set_ylabel('Thermal conductivity (W/mK)')
     ax.set_xlabel('Time (ns)')
+    ax.legend()
     fig.savefig("Thermal conductivity.pdf", format='pdf', bbox_inches="tight")
 
 
@@ -195,7 +198,7 @@ def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(len(data) - 1):
+    for timeframe in range(cf.number_of_timeframes):
         ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
@@ -207,7 +210,7 @@ def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(len(data) - 1):
+    for timeframe in range(cf.number_of_timeframes):
         ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')

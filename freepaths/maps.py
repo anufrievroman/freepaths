@@ -1,6 +1,5 @@
 """Module that controls recording, calculation, and saving thermal and scattering maps"""
 
-import random
 from math import cos
 from scipy.constants import hbar, pi
 import numpy as np
@@ -99,6 +98,14 @@ class ThermalMaps(Maps):
         self.heat_flux_map_y_weighted = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.number_phonons_in_pixel = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
 
+        self.temperature_profile_x_corrected = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
+        self.temperature_profile_y_corrected = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
+        self.heat_flux_profile_x_corrected = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
+        self.heat_flux_profile_y_corrected = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
+
+        self.thermal_conductivity_t_corrected = np.zeros((cf.number_of_timeframes, 2))
+        self.thermal_conductivity_t_and_j_corrected = np.zeros((cf.number_of_timeframes, 2))
+
         # Calculate the volumes [m^3] and other parameters (need to be corrected with volume of the holes):
         self.vol_cell_x = cf.length * cf.thickness * cf.width / cf.number_of_pixels_x
         self.vol_cell_y = cf.length * cf.thickness * cf.width / cf.number_of_pixels_y
@@ -145,6 +152,11 @@ class ThermalMaps(Maps):
         # Prevent error if the phonon is outside the structure:
         if (0 <= index_x < cf.number_of_pixels_x) and (0 <= index_y < cf.number_of_pixels_y):
 
+            # Calculate pixel volume correction factors
+            vol_pixel_correction = self.vol_pixel_ratio[index_y, index_x]
+            vol_pixel_correction_x = np.mean(self.vol_pixel_ratio[:, index_x])
+            vol_pixel_correction_y = np.mean(self.vol_pixel_ratio[index_y, :])
+
             # Record energy h*w [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map:
             energy = hbar * 2 * pi * ph.f
             self.number_phonons_in_pixel[index_y, index_x] += 1
@@ -152,7 +164,7 @@ class ThermalMaps(Maps):
             self.heat_flux_map_x[index_y, index_x] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
             self.heat_flux_map_xy[index_y, index_x] += np.sqrt(self.heat_flux_map_x[index_y, index_x]**2 +
-                                                                 self.heat_flux_map_x[index_y, index_x]**2)
+                                                               self.heat_flux_map_x[index_y, index_x]**2)
 
             # Calculate to which timeframe this timestep belongs:
             timeframe_number = (ph.first_timestep + timestep_number) // self.timepteps_per_timeframe
@@ -163,6 +175,11 @@ class ThermalMaps(Maps):
                 self.heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y
                 self.temperature_profile_x[index_x, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / self.vol_cell_x
                 self.temperature_profile_y[index_y, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / self.vol_cell_y
+
+                self.heat_flux_profile_x_corrected[index_x, timeframe_number] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_x / vol_pixel_correction_x
+                self.heat_flux_profile_y_corrected[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y / vol_pixel_correction_y
+                self.temperature_profile_x_corrected[index_x, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / self.vol_cell_x / vol_pixel_correction_x
+                self.temperature_profile_y_corrected[index_y, timeframe_number] += energy / (cf.specific_heat_capacity * material.density) / self.vol_cell_y / vol_pixel_correction_y
 
 
     def calculate_weighted_flux(self):
@@ -179,9 +196,16 @@ class ThermalMaps(Maps):
         and temperature profiles accumulated in that interval"""
 
         # Initialize array for thermal conductivity in each time interval
-        self.thermal_conductivity[:, 0] = range(cf.number_of_timeframes)
         total_time = cf.number_of_timesteps * cf.timestep * 1e9
+
+        self.thermal_conductivity[:, 0] = range(cf.number_of_timeframes)
         self.thermal_conductivity[:, 0] *= total_time / cf.number_of_timeframes
+
+        self.thermal_conductivity_t_corrected[:, 0] = range(cf.number_of_timeframes)
+        self.thermal_conductivity_t_corrected[:, 0] *= total_time / cf.number_of_timeframes
+
+        self.thermal_conductivity_t_and_j_corrected[:, 0] = range(cf.number_of_timeframes)
+        self.thermal_conductivity_t_and_j_corrected[:, 0] *= total_time / cf.number_of_timeframes
 
         # For each time interval calculate the thermal conductivity:
         for timeframe_number in range(cf.number_of_timeframes):
@@ -195,18 +219,26 @@ class ThermalMaps(Maps):
             T_low = self.temperature_profile_y[(cf.number_of_pixels_y - 1), timeframe_number]
             d_T = T_high - T_low
 
+            T_high_corrected = self.temperature_profile_y_corrected[1, timeframe_number]
+            T_low_corrected = self.temperature_profile_y_corrected[(cf.number_of_pixels_y - 1), timeframe_number]
+            d_T_corrected = T_high_corrected - T_low_corrected
+
             # Here dL is shorter than actual length because we lose one value due to averaging
             # And also we exclude first pixel because there are always abnormalities
             d_L = (cf.number_of_pixels_y - 2) * cf.length / cf.number_of_pixels_y
 
             # Temeparature gradient:
             grad_T = d_T / d_L
+            grad_T_corrected = d_T_corrected / d_L
 
             # Average heat flux:
             J = np.mean(self.heat_flux_profile_y[1:cf.number_of_pixels_y, timeframe_number])
+            J_corrected = np.mean(self.heat_flux_profile_y_corrected[1:cf.number_of_pixels_y, timeframe_number])
 
             # By definition, J = -K * grad(T), so:
             self.thermal_conductivity[timeframe_number, 1] = J / grad_T
+            self.thermal_conductivity_t_corrected[timeframe_number, 1] = J / grad_T_corrected
+            self.thermal_conductivity_t_and_j_corrected[timeframe_number, 1] = J_corrected / grad_T_corrected
 
     def write_into_files(self):
         """Write thermal maps into files"""
@@ -218,16 +250,17 @@ class ThermalMaps(Maps):
         coordinates_y = np.arange(num_of_points_y) * 1e6 * cf.length / num_of_points_y
 
         # Saving all the profiles:
-        data_temp_x = np.vstack((coordinates_x, self.temperature_profile_x.T)).T
-        data_temp_y = np.vstack((coordinates_y, self.temperature_profile_y.T)).T
-        data_flux_x = np.vstack((coordinates_x, self.heat_flux_profile_x.T)).T
-        data_flux_y = np.vstack((coordinates_y, self.heat_flux_profile_y.T)).T
-        data_tc = self.thermal_conductivity
-        np.savetxt("Data/Temperature profiles x.csv", data_temp_x, fmt='%1.3e', delimiter=",", header="X (um), T (K)", encoding='utf-8')
-        np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), T (K)", encoding='utf-8')
-        np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
-        np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.)", encoding='utf-8')
-        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK)", encoding='utf-8')
+        data_temp_x = np.vstack((coordinates_x, self.temperature_profile_x.T, self.temperature_profile_x_corrected.T)).T
+        data_temp_y = np.vstack((coordinates_y, self.temperature_profile_y.T, self.temperature_profile_y_corrected.T)).T
+        data_flux_x = np.vstack((coordinates_x, self.heat_flux_profile_x.T, self.heat_flux_profile_x_corrected.T)).T
+        data_flux_y = np.vstack((coordinates_y, self.heat_flux_profile_y.T, self.heat_flux_profile_y_corrected.T)).T
+        data_tc = np.vstack((self.thermal_conductivity.T, self.thermal_conductivity_t_corrected[:, 1], self.thermal_conductivity_t_and_j_corrected[:, 1])).T
+
+        np.savetxt("Data/Temperature profiles x.csv", data_temp_x, fmt='%1.3e', delimiter=",", header="X (um), T (K), T (corrected)", encoding='utf-8')
+        np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), T (K), T (corrected)", encoding='utf-8')
+        np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.), J (corrected)", encoding='utf-8')
+        np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.), J (corrected)", encoding='utf-8')
+        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK), K (T corrected), K (T and J corrected)", encoding='utf-8')
 
         # Saving thermal maps:
         np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1.2e', delimiter=",", encoding='utf-8')
@@ -252,5 +285,9 @@ class ThermalMaps(Maps):
             'heat_flux_profile_y': self.heat_flux_profile_y,
             'temperature_profile_x': self.temperature_profile_x,
             'temperature_profile_y': self.temperature_profile_y,
+            'heat_flux_profile_x_corrected': self.heat_flux_profile_x_corrected,
+            'heat_flux_profile_y_corrected': self.heat_flux_profile_y_corrected,
+            'temperature_profile_x_corrected': self.temperature_profile_x_corrected,
+            'temperature_profile_y_corrected': self.temperature_profile_y_corrected,
         }
 
