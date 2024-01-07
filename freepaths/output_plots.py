@@ -3,7 +3,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from matplotlib.patches import Rectangle, Circle
 
 from freepaths.config import cf
 from freepaths.output_structure import draw_structure
@@ -204,7 +203,14 @@ def plot_temperature_profile():
     ax.set_ylabel('Temperature (K)')
     ax.legend()
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
-
+    
+    fig, ax = plt.subplots()
+    for timeframe in range(cf.number_of_timeframes):
+        ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_timeframes][1:], linewidth=1, label=f'Timestep {timeframe}')
+    ax.set_xlabel('Y (μm)')
+    ax.set_ylabel('Temperature (K)')
+    ax.legend()
+    fig.savefig("Temperature profile corrected.pdf", format='pdf', bbox_inches="tight")
 
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
@@ -216,7 +222,14 @@ def plot_heat_flux_profile():
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
     fig.savefig("Heat flux profile.pdf", format='pdf', bbox_inches="tight")
-
+    
+    fig, ax = plt.subplots()
+    for timeframe in range(cf.number_of_timeframes):
+        ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_timeframes][1:], linewidth=1, label=f'Timestep {timeframe}')
+    ax.set_xlabel('Y (μm)')
+    ax.set_ylabel('Heat flux (W/m²)')
+    ax.legend()
+    fig.savefig("Heat flux profile corrected.pdf", format='pdf', bbox_inches="tight")
 
 def plot_thermal_map():
     """Plot thermal map as color map"""

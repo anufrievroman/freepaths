@@ -29,6 +29,7 @@ class Hole:
         for x in linspace(pixel_x, pixel_x + x_size, sample_point_nr):
             for y in linspace(pixel_y, pixel_y + y_size, sample_point_nr):
                 if not self.check_if_scattering(None, None, x, y, 0):
+                    # the check_if_scattering function needs to be replaced with the is_inside function
                     counter += 1
         return counter / 20**2
 
