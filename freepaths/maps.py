@@ -110,7 +110,7 @@ class ThermalMaps(Maps):
         self.vol_cell_x = cf.length * cf.thickness * cf.width / cf.number_of_pixels_x
         self.vol_cell_y = cf.length * cf.thickness * cf.width / cf.number_of_pixels_y
         self.vol_pixel =  cf.length * cf.thickness * cf.width / (cf.number_of_pixels_x * cf.number_of_pixels_y)
-        self.timepteps_per_timeframe = cf.number_of_timesteps // cf.number_of_timeframes
+        self.timepteps_per_timeframe = cf.number_of_virtual_timesteps // cf.number_of_timeframes
 
         # Calculate the pixel volumes with respect to holes
         self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
@@ -196,7 +196,7 @@ class ThermalMaps(Maps):
         and temperature profiles accumulated in that interval"""
 
         # Initialize array for thermal conductivity in each time interval
-        total_time = cf.number_of_timesteps * cf.timestep * 1e9
+        total_time = cf.number_of_virtual_timesteps * cf.timestep * 1e9
 
         self.thermal_conductivity[:, 0] = range(cf.number_of_timeframes)
         self.thermal_conductivity[:, 0] *= total_time / cf.number_of_timeframes

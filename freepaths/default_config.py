@@ -24,6 +24,7 @@ OUTPUT_ANIMATION_FPS             = 24
 NUMBER_OF_PIXELS_X               = 25
 NUMBER_OF_PIXELS_Y               = 100
 NUMBER_OF_TIMEFRAMES             = 6
+NUMBER_OF_VIRTUAL_TIMESTEPS      = 300000
 
 # Material parameters:
 MEDIA                            = "Si"

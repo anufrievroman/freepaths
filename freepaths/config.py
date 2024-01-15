@@ -56,6 +56,7 @@ class Config:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
         self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
+        self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
 
         # Material parameters:
         self.media = MEDIA
