@@ -157,6 +157,10 @@ class ThermalMaps(Maps):
             vol_pixel_correction_x = np.mean(self.vol_pixel_ratio[:, index_x])
             vol_pixel_correction_y = np.mean(self.vol_pixel_ratio[index_y, :])
 
+            # do not record data if the pixel is an empty one
+            if vol_pixel_correction == 0:
+                return
+
             # Record energy h*w [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map:
             energy = hbar * 2 * pi * ph.f
             self.number_phonons_in_pixel[index_y, index_x] += 1
