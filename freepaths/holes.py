@@ -53,9 +53,14 @@ class CircularHole(Hole):
             if y == self.y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - self.x0) / (y - self.y0))
-            scattering_types.holes = circle_outer_scattering(
-                ph, tangent_theta, y, self.y0, cf.hole_roughness, cf
-            )
+            
+            # check if the phonon is travelling towards the hole
+            current_distance = sqrt((self.x0 - ph.x)**2 + (self.y0 - ph.y)**2)
+            next_distance = sqrt((self.x0 - x)**2 + (self.y0 - y)**2)
+            if next_distance <= current_distance:
+                scattering_types.holes = circle_outer_scattering(
+                    ph, tangent_theta, y, self.y0, cf.hole_roughness, cf
+                )
 
     def get_patch(self, color_holes, cf):
         return Circle(
