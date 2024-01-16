@@ -5,6 +5,7 @@ from scipy.constants import hbar, pi
 import numpy as np
 from math import cos , sin
 from freepaths.config import cf
+from scipy.signal import convolve2d
 
 class Maps:
     """Parent maps class with functions common to all classes below"""
@@ -128,6 +129,22 @@ class ThermalMaps(Maps):
                     hole.is_inside(x_coord, y_coord, None, cf) is None
                     for hole in cf.holes
                 )
+
+        # remove pixels next to holes
+        if cf.remove_hole_boundary_effects:
+
+            kernel = np.array(
+                        [[0, 1, 0], 
+                        [1, 0, 1], 
+                        [0, 1, 0]])
+
+            # Use convolution to find the sum of adjacent elements for each element in the array
+            convolution_result = convolve2d(pixel_volume_ratios, kernel, mode='same')
+            convolution_full = convolve2d(np.ones(pixel_volume_ratios.shape), kernel, mode='same')
+
+            # Set elements with value 1 and adjacent to a zero to 0
+            pixel_volume_ratios[convolution_result < convolution_full] = 0
+
         return pixel_volume_ratios
 
     def add_energy_to_maps(self, ph, timestep_number, material):

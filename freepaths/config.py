@@ -58,6 +58,7 @@ class Config:
         self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
         self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
+        self.remove_hole_boundary_effects = REMOVE_HOLE_BOUNDARY_EFFECTS
 
         # Material parameters:
         self.media = MEDIA

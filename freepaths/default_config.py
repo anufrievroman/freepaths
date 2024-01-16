@@ -26,6 +26,7 @@ NUMBER_OF_PIXELS_Y               = 100
 NUMBER_OF_TIMEFRAMES             = 6
 NUMBER_OF_VIRTUAL_TIMESTEPS      = 300000
 IGNORE_FAULTY_PHONONS            = False
+REMOVE_HOLE_BOUNDARY_EFFECTS     = False
 
 # Material parameters:
 MEDIA                            = "Si"
