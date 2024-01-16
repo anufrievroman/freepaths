@@ -273,7 +273,7 @@ class TriangularDownHalfHole(Hole):
         in_area = self.is_inside(x, y, z, cf)
 
         # If phonon is inside the right side of the triangle:
-        if in_area == 'left side':
+        if in_area == 'right side':
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
                 scattering_types.holes = horizontal_surface_up_scattering(
@@ -293,7 +293,7 @@ class TriangularDownHalfHole(Hole):
                 )
 
         # If phonon is inside the left side of the triangle:
-        if in_area == 'right side':
+        if in_area == 'left side':
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
                 scattering_types.holes = horizontal_surface_up_scattering(
