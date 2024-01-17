@@ -6,6 +6,7 @@ import numpy as np
 from math import cos , sin
 from freepaths.config import cf
 from scipy.signal import convolve2d
+from freepaths.move import move
 
 class Maps:
     """Parent maps class with functions common to all classes below"""
@@ -157,8 +158,17 @@ class ThermalMaps(Maps):
         """
 
         # Calculate the index of the pixel in which this phonon is now:
-        index_x = int(((ph.x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
-        index_y = int(ph.y // (cf.length / cf.number_of_pixels_y))
+
+        # move the recording point forwards half a timestep as to remove asymetric boundary fluxes (doesn't work)
+        ph_x = ph.x
+        ph_y = ph.y
+        if cf.record_thermal_data_at_half_step:
+            x_move, y_move, _ = move(ph, cf.timestep)
+            ph_x = (x_move + ph_x)/2
+            ph_y = (y_move + ph_y)/2
+
+        index_x = int(((ph_x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
+        index_y = int(ph_y // (cf.length / cf.number_of_pixels_y))
 
         # Instead of the code below, we need to correct the volume more carefully, taking into account holes
         # Here we arbitrarily correct the volume of the unit cells in pillars:

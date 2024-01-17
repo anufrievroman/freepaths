@@ -27,6 +27,7 @@ NUMBER_OF_TIMEFRAMES             = 6
 NUMBER_OF_VIRTUAL_TIMESTEPS      = 300000
 IGNORE_FAULTY_PHONONS            = False
 REMOVE_HOLE_BOUNDARY_EFFECTS     = False
+RECORD_THERMAL_DATA_AT_HALF_STEP = False
 
 # Material parameters:
 MEDIA                            = "Si"
