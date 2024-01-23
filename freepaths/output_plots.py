@@ -214,7 +214,7 @@ def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(cf.number_of_timeframes):
+    for timeframe in range(cf.number_of_initialization_timeframes+1):
         ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
@@ -227,7 +227,7 @@ def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(cf.number_of_timeframes):
+    for timeframe in range(cf.number_of_initialization_timeframes+1):
         ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
@@ -236,8 +236,8 @@ def plot_heat_flux_profile():
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    for timeframe in range(cf.number_of_timeframes):
-        ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_timeframes][1:], linewidth=1, label=f'Timestep {timeframe}')
+    for timeframe in range(cf.number_of_initialization_timeframes+1):
+        ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_initialization_timeframes+1][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
