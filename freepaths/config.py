@@ -58,8 +58,6 @@ class Config:
         self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
         self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
-        self.remove_hole_boundary_effects = REMOVE_HOLE_BOUNDARY_EFFECTS
-        self.record_thermal_data_at_half_step = RECORD_THERMAL_DATA_AT_HALF_STEP
 
         # Material parameters:
         self.media = MEDIA
@@ -203,9 +201,6 @@ class Config:
             self.cold_side_position_left and self.hot_side_position_left):
             print("ERROR: Left side is assigned multiple functions.\n")
             sys.exit()
-
-        if self.remove_hole_boundary_effects and not self.ignore_faulty_phonons:
-            print("WARNING: remove_hole_boundary_effects only works in combination with ignore_faulty_phonons")
 
 
     def check_depricated_parameters(self):

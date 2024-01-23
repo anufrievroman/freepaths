@@ -2,26 +2,28 @@
 
 
 # General parameters:
-OUTPUT_FOLDER_NAME             = 'All shapes'
-NUMBER_OF_PHONONS              = 100
+OUTPUT_FOLDER_NAME             = 'All shapes c'
+NUMBER_OF_PHONONS              = 1000
 NUMBER_OF_TIMESTEPS            = 30000
+NUMBER_OF_VIRTUAL_TIMESTEPS    = 100000
 NUMBER_OF_NODES                = 400
 TIMESTEP                       = 1.0e-12
 T                              = 4.0
-OUTPUT_TRAJECTORIES_OF_FIRST   = 30
+OUTPUT_TRAJECTORIES_OF_FIRST   = 100
 NUMBER_OF_LENGTH_SEGMENTS      = 10
+IGNORE_FAULTY_PHONONS          = False
 
 
 # Map & profiles parameters:
-NUMBER_OF_PIXELS_X             = 20
-NUMBER_OF_PIXELS_Y             = 100
+NUMBER_OF_PIXELS_X             = 200
+NUMBER_OF_PIXELS_Y             = 200
 NUMBER_OF_TIMEFRAMES           = 6
 
 
 # Material parameters:
 MEDIA                          = 'Si'
 SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-#SPECIFIC_HEAT_CAPACITY        = 714     # [J/kg/K] for Si at 300 K
+#SPECIFIC_HEAT_CAPACITY         = 714     # [J/kg/K] for Si at 300 K
 
 
 # Internal scattering:
@@ -76,4 +78,4 @@ TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
 
 # Multiprocessing
-NUMBER_OF_PROCESSES = 8
+NUMBER_OF_PROCESSES = 50

@@ -200,11 +200,9 @@ def plot_time_in_segments():
 def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
-    time, thermal_conductivity, thermal_conductivity_t_corrected, thermal_conductivity_t_slope, thermal_conductivity_t_and_j_corrected = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2, 3, 4), skip_header=1)
-    ax.plot(time, thermal_conductivity, linewidth=1, label='tc')
-    ax.plot(time, thermal_conductivity_t_corrected, linewidth=1, label='tc t corrected')
-    ax.plot(time, thermal_conductivity_t_slope, label='tc t slope')
-    ax.plot(time, thermal_conductivity_t_and_j_corrected, linewidth=1, label='tc t and j corrected')
+    time, effective_thermal_conductivity, material_thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
+    ax.plot(time, effective_thermal_conductivity, linewidth=1, label='k_eff')
+    ax.plot(time, material_thermal_conductivity, linewidth=1, label='k_mat')
     ax.set_ylabel('Thermal conductivity (W/mK)')
     ax.set_xlabel('Time (ns)')
     ax.legend()
@@ -223,15 +221,7 @@ def plot_temperature_profile():
     ax.legend()
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
-    
-    fig, ax = plt.subplots()
-    for timeframe in range(cf.number_of_timeframes):
-        ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_timeframes][1:], linewidth=1, label=f'Timestep {timeframe}')
-    ax.set_xlabel('Y (μm)')
-    ax.set_ylabel('Temperature (K)')
-    ax.legend()
-    fig.savefig("Temperature profile corrected.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
+
 
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
@@ -242,16 +232,16 @@ def plot_heat_flux_profile():
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
-    fig.savefig("Heat flux profile.pdf", format='pdf', bbox_inches="tight")
+    fig.savefig("Heat flux profile effective.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
-    
+
     fig, ax = plt.subplots()
     for timeframe in range(cf.number_of_timeframes):
         ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_timeframes][1:], linewidth=1, label=f'Timestep {timeframe}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
-    fig.savefig("Heat flux profile corrected.pdf", format='pdf', bbox_inches="tight")
+    fig.savefig("Heat flux profile material.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
 def plot_thermal_map():

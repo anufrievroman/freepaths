@@ -15,24 +15,7 @@ from freepaths.scattering_primitives import *
 
 
 class Hole:
-    # def __init__(self, bounding_x, bounding_y, bounding_size_x, bounding_size_y):
-    #     # define a bounding box around the shape for fast checks
-    #     self.center_x = center_x
-    #     self.center_y = center_y
-    #     self.bounding_diameter = bounding_diameter
-
-    def calculate_pixel_volume(self, pixel_x, pixel_y, x_size, y_size):
-        # mc function to calculate the pixel volume
-        # overwrite with in the class if there is a better way
-        sample_point_nr = 20
-        counter = 0
-        for x in linspace(pixel_x, pixel_x + x_size, sample_point_nr):
-            for y in linspace(pixel_y, pixel_y + y_size, sample_point_nr):
-                if not self.check_if_scattering(None, None, x, y, 0):
-                    # the check_if_scattering function needs to be replaced with the is_inside function
-                    counter += 1
-        return counter / 20**2
-
+    pass
 
 class CircularHole(Hole):
     """Shape of a circular hole"""
@@ -68,14 +51,6 @@ class CircularHole(Hole):
             1e6 * self.diameter / 2,
             facecolor=color_holes,
         )
-
-    # def calculate_pixel_volume(self, x, y, x_size, y_size):
-    #     # calculate distance from center of pixel to circle
-    #     distance = sqrt(
-    #         ((x + x_size / 2) - self.x0) ** 2 + ((y + y_size / 2) - self.y0) ** 2
-    #     )
-    #     if distance > self.diameter / 2:
-    #         pass
 
 
 class RectangularHole(Hole):
