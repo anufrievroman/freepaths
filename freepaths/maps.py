@@ -106,6 +106,7 @@ class ThermalMaps(Maps):
         self.heat_flux_profile_y_corrected = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
 
         self.thermal_conductivity_t_corrected = np.zeros((cf.number_of_timeframes, 2))
+        self.thermal_conductivity_t_slope = np.zeros((cf.number_of_timeframes, 2))
         self.thermal_conductivity_t_and_j_corrected = np.zeros((cf.number_of_timeframes, 2))
 
         # Calculate the volumes [m^3] and other parameters (need to be corrected with volume of the holes):
@@ -261,6 +262,9 @@ class ThermalMaps(Maps):
             # Temeparature gradient:
             grad_T = d_T / d_L
             grad_T_corrected = d_T_corrected / d_L
+            coordinates_y = np.arange(cf.number_of_pixels_y) * cf.length / cf.number_of_pixels_y
+            slope, _ = np.polyfit(coordinates_y[1:], self.temperature_profile_y_corrected[1:, timeframe_number], 1)
+            grad_T_slope = -slope
 
             # Average heat flux:
             J = np.mean(self.heat_flux_profile_y[1:cf.number_of_pixels_y, timeframe_number])
@@ -268,6 +272,7 @@ class ThermalMaps(Maps):
 
             # By definition, J = -K * grad(T), so:
             self.thermal_conductivity[timeframe_number, 1] = J / grad_T
+            self.thermal_conductivity_t_slope[timeframe_number, 1] = J / grad_T_slope
             self.thermal_conductivity_t_corrected[timeframe_number, 1] = J / grad_T_corrected
             self.thermal_conductivity_t_and_j_corrected[timeframe_number, 1] = J_corrected / grad_T_corrected
 
@@ -285,13 +290,13 @@ class ThermalMaps(Maps):
         data_temp_y = np.vstack((coordinates_y, self.temperature_profile_y.T, self.temperature_profile_y_corrected.T)).T
         data_flux_x = np.vstack((coordinates_x, self.heat_flux_profile_x.T, self.heat_flux_profile_x_corrected.T)).T
         data_flux_y = np.vstack((coordinates_y, self.heat_flux_profile_y.T, self.heat_flux_profile_y_corrected.T)).T
-        data_tc = np.vstack((self.thermal_conductivity.T, self.thermal_conductivity_t_corrected[:, 1], self.thermal_conductivity_t_and_j_corrected[:, 1])).T
+        data_tc = np.vstack((self.thermal_conductivity.T, self.thermal_conductivity_t_corrected[:, 1], self.thermal_conductivity_t_slope[:, 1], self.thermal_conductivity_t_and_j_corrected[:, 1])).T
 
         np.savetxt("Data/Temperature profiles x.csv", data_temp_x, fmt='%1.3e', delimiter=",", header="X (um), T (K), T (corrected)", encoding='utf-8')
         np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), T (K), T (corrected)", encoding='utf-8')
         np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.), J (corrected)", encoding='utf-8')
         np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), J (a.u.), J (corrected)", encoding='utf-8')
-        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK), K (T corrected), K (T and J corrected)", encoding='utf-8')
+        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K (W/mK), K (T corrected), K (T slope), K (T and J corrected)", encoding='utf-8')
 
         # Saving thermal maps:
         np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1.2e', delimiter=",", encoding='utf-8')

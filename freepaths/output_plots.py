@@ -200,9 +200,10 @@ def plot_time_in_segments():
 def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
-    time, thermal_conductivity, thermal_conductivity_t_corrected, thermal_conductivity_t_and_j_corrected = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2, 3), skip_header=1)
-    ax.plot(time, thermal_conductivity, linewidth=1, c='royalblue', label='tc')
+    time, thermal_conductivity, thermal_conductivity_t_corrected, thermal_conductivity_t_slope, thermal_conductivity_t_and_j_corrected = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2, 3, 4), skip_header=1)
+    ax.plot(time, thermal_conductivity, linewidth=1, label='tc')
     ax.plot(time, thermal_conductivity_t_corrected, linewidth=1, label='tc t corrected')
+    ax.plot(time, thermal_conductivity_t_slope, label='tc t slope')
     ax.plot(time, thermal_conductivity_t_and_j_corrected, linewidth=1, label='tc t and j corrected')
     ax.set_ylabel('Thermal conductivity (W/mK)')
     ax.set_xlabel('Time (ns)')
