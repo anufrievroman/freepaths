@@ -214,8 +214,11 @@ def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(cf.number_of_timeframes):
-        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
+    # because the initialization timesteps are shorter the data needs to be scaled
+    adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
+    for timeframe in range(cf.number_of_initialization_timeframes):
+        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
     ax.legend()
@@ -227,8 +230,11 @@ def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(cf.number_of_timeframes):
-        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1, label=f'Timestep {timeframe}')
+    # because the initialization timesteps are shorter the data needs to be scaled
+    adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
+    for timeframe in range(cf.number_of_initialization_timeframes):
+        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
@@ -236,8 +242,9 @@ def plot_heat_flux_profile():
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    for timeframe in range(cf.number_of_timeframes):
-        ax.plot(data[0][1:], data[timeframe + 1 + cf.number_of_timeframes][1:], linewidth=1, label=f'Timestep {timeframe}')
+    for timeframe in range(cf.number_of_initialization_timeframes):
+        ax.plot(data[0], data[timeframe + 1 + cf.number_of_initialization_timeframes+1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1 + cf.number_of_initialization_timeframes+1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
