@@ -55,8 +55,9 @@ class Config:
         # Map & profiles parameters:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
-        self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
+        self.initialization_timesteps = INITIALIZATION_TIMESTEPS
+        self.number_of_initialization_timeframes = NUMBER_OF_INITIALIZATION_TIMEFRAMES
         self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
 
         # Material parameters:
@@ -206,8 +207,11 @@ class Config:
     def check_depricated_parameters(self):
         """Check for depricated parameters and warn about them"""
 
+        if 'NUMBER_OF_TIMEFRAMES' in globals():
+            print("WARNING: paramter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
+
         if 'COLD_SIDE_POSITION' in globals():
-            print("ERROR: parameter COLD_SIDE_POSITION is depricated. ")
+            print("ERROR: parameter COLD_SIDE_POSITION is depricated.")
             print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
             sys.exit()
 
