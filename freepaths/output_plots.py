@@ -252,9 +252,9 @@ def plot_scattering_map():
     fig, ax = plt.subplots()
     filename = "Data/Scattering map.csv"
     spec_x, spec_y, diff_x, diff_y, int_x, int_y = np.genfromtxt(filename, unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    ax.plot(diff_x[diff_x != 0], diff_y[diff_y != 0], 'o', color='b', markersize=0.1, alpha=0.3)
-    ax.plot(spec_x[spec_x != 0], spec_y[spec_y != 0], 'o', color='g', markersize=0.1, alpha=0.3)
-    ax.plot(int_x[int_x != 0], int_y[int_y != 0], 'o', color='r', markersize=0.1, alpha=0.3)
+    ax.plot(np.trim_zeros(diff_x, 'b'), np.trim_zeros(diff_y, 'b'), 'o', color='b', markersize=0.1, alpha=0.3)
+    ax.plot(np.trim_zeros(spec_x, 'b'), np.trim_zeros(spec_y, 'b'), 'o', color='g', markersize=0.1, alpha=0.3)
+    ax.plot(np.trim_zeros(int_x, 'b'), np.trim_zeros(int_y, 'b'), 'o', color='r', markersize=0.1, alpha=0.3)
     ax.set_xlabel('x (μm)')
     ax.set_ylabel('y (μm)')
     ax.legend(["Diffuse", "Specular", "Internal"])
