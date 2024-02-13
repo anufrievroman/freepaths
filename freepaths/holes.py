@@ -516,7 +516,7 @@ class ParabolaBottom(Hole):
 
             # Specular scattering:
             if random() < p:
-                if abs(ph.theta) < pi / 2:
+                if abs(ph.theta) > pi / 2:
                     ph.theta = ph.theta - 2 * normal_theta
                 else:
                     ph.theta = 2 * normal_theta - ph.theta
