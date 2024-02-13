@@ -562,7 +562,7 @@ class CircularPillar(Hole):
 
         # Cone radius at a given z coordinate:
         radius = self.diameter / 2  # - (z - cf.thickness / 2) / tan(pillar.wall_angle)
-        distance_from_pillar_center = sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
+        distance_from_pillar_center = sqrt((x - self.x0) ** 2 + (y - self.y0) ** 2)
         # distance_from_pillar_center_original = sqrt(
         #     (ph.x - self.x) ** 2 + (ph.y - self.y) ** 2
         # )
@@ -575,9 +575,9 @@ class CircularPillar(Hole):
             and distance_from_pillar_center < radius + step
         ):
             # Calculate angle to the surface and specular scattering probability:
-            tangent_theta = atan((x - self.x) / (y - self.y))
+            tangent_theta = atan((x - self.x0) / (y - self.y0))
             scattering_types.pillars = circle_inner_scattering(
-                ph, tangent_theta, y, self.y, cf.pillar_roughness
+                ph, tangent_theta, y, self.y0, cf.pillar_roughness
             )
 
     def get_patch(self, color_holes, cf):

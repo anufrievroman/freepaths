@@ -88,7 +88,7 @@ def ceiling_scattering(ph, scattering_types, x, y, z):
     if cf.pillars:
         for pillar in cf.pillars:
             distance_from_pillar_center = sqrt(
-                (x - pillar.x) ** 2 + (y - pillar.y) ** 2
+                (x - pillar.x0) ** 2 + (y - pillar.y0) ** 2
             )
             is_under_pillar = distance_from_pillar_center < pillar.diameter / 2
             if is_under_pillar:
