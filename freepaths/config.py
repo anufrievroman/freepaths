@@ -101,14 +101,6 @@ class Config:
         self.bottom_roughness = BOTTOM_ROUGHNESS
         self.pillar_top_roughness = PILLAR_TOP_ROUGHNESS
 
-        # Parabolic boundary:
-        self.include_top_parabola = INCLUDE_TOP_PARABOLA
-        self.top_parabola_tip = TOP_PARABOLA_TIP
-        self.top_parabola_focus = TOP_PARABOLA_FOCUS
-        self.include_bottom_parabola = INCLUDE_BOTTOM_PARABOLA
-        self.bottom_parabola_tip = BOTTOM_PARABOLA_TIP
-        self.bottom_parabola_focus = BOTTOM_PARABOLA_FOCUS
-
         # Hole array parameters:
         self.holes = HOLES
         self.pillars = PILLARS
@@ -208,7 +200,16 @@ class Config:
         """Check for depricated parameters and warn about them"""
 
         if 'NUMBER_OF_TIMEFRAMES' in globals():
-            print("WARNING: paramter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
+            print("ERROR: paramter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
+            sys.exit()
+
+        if 'INCLUDE_TOP_PARABOLA' in globals():
+            print("ERROR: parameter INCLUDE_TOP_PARABOLA is deprecated. Use ParabolaTop hole instead.")
+            sys.exit()
+
+        if 'INCLUDE_BOTTOM_PARABOLA' in globals():
+            print("ERROR: parameter INCLUDE_BOTTOM_PARABOLA is deprecated. Use ParabolaBottom hole instead.")
+            sys.exit()
 
         if 'COLD_SIDE_POSITION' in globals():
             print("ERROR: parameter COLD_SIDE_POSITION is depricated.")

@@ -12,7 +12,7 @@ NUMBER_OF_NODES                  = 400
 TIMESTEP                         = 2e-12
 T                                = 300
 OUTPUT_SCATTERING_MAP            = False
-OUTPUT_TRAJECTORIES_OF_FIRST     = 10
+OUTPUT_TRAJECTORIES_OF_FIRST     = 50
 OUTPUT_STRUCTURE_COLOR           = "#F0F0F0"
 NUMBER_OF_LENGTH_SEGMENTS        = 10
 
@@ -58,7 +58,7 @@ HOT_SIDE_POSITION_RIGHT          = False
 HOT_SIDE_POSITION_LEFT           = False
 
 # Phonon source:
-PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=0,  size_y=0, size_z=0, angle_distribution="random_up")]
+PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS              = 2e-9
@@ -67,14 +67,6 @@ PILLAR_ROUGHNESS                 = 2e-9
 TOP_ROUGHNESS                    = 0.2e-9
 BOTTOM_ROUGHNESS                 = 0.2e-9
 PILLAR_TOP_ROUGHNESS             = 0.2e-9
-
-# Parabolic boundaries:
-INCLUDE_TOP_PARABOLA             = False
-TOP_PARABOLA_TIP                 = 1000e-9
-TOP_PARABOLA_FOCUS               = 100e-9
-INCLUDE_BOTTOM_PARABOLA          = False
-BOTTOM_PARABOLA_TIP              = 1000e-9
-BOTTOM_PARABOLA_FOCUS            = 100e-9
 
 # Holes and pillars:
 HOLES                            = []
