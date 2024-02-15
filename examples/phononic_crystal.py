@@ -4,17 +4,11 @@
 OUTPUT_FOLDER_NAME             = 'Phononic crystal square'
 NUMBER_OF_PHONONS              = 2000
 NUMBER_OF_TIMESTEPS            = 30000
-NUMBER_OF_NODES                = 400
-TIMESTEP                       = 1e-12
 T                              = 4.0
-OUTPUT_TRAJECTORIES_OF_FIRST   = 30
-NUMBER_OF_LENGTH_SEGMENTS      = 10
 
 
-# Map & profiles parameters:
-NUMBER_OF_PIXELS_X             = 100
-NUMBER_OF_PIXELS_Y             = 100
-NUMBER_OF_TIMEFRAMES           = 6
+# Multiprocessing:
+NUMBER_OF_PROCESSES = 10
 
 
 # Material parameters:
@@ -36,11 +30,21 @@ WIDTH                          = 1200e-9
 LENGTH                         = 2200e-9
 
 
-# Roughness [m]:
-SIDE_WALL_ROUGHNESS            = 2e-9
-HOLE_ROUGHNESS                 = 2e-9
-TOP_ROUGHNESS                  = 0.2e-9
-BOTTOM_ROUGHNESS               = 0.2e-9
+# Map & profiles parameters:
+pixel_size = 15e-9
+NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
+NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
+IGNORE_FAULTY_PHONONS          = False
+
+
+# Simulation time parameters:
+TIMESTEP                       = 1.0e-12
+total_simulation_time = 300e-9 # This should be at least a couple times the initialization time
+NUMBER_OF_VIRTUAL_TIMESTEPS    = int(total_simulation_time / TIMESTEP)
+initialization_time = 20e-9 # This should be set so that it is bigger than most phonons travel times
+INITIALIZATION_TIMESTEPS       = int(initialization_time / TIMESTEP)
+NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
+
 
 # Phonon source:
 PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
@@ -52,7 +56,4 @@ for row in range(5):
     for column in range(5):
         x = - 4 * period / 2 + column * period
         y = (row + 1) * period
-        HOLES.append(CircularHole(x=x, y=y, diameter=200e-9))
-
-# Multiprocessing:
-NUMBER_OF_PROCESSES = 8
+        HOLES.append(RectangularHole(x=x, y=y, size_x=200e-9, size_y=200e-9))

@@ -2,22 +2,36 @@
 
 
 # General parameters:
-OUTPUT_FOLDER_NAME             = 'All shapes c'
+OUTPUT_FOLDER_NAME             = 'All shapes'
 NUMBER_OF_PHONONS              = 1000
 NUMBER_OF_TIMESTEPS            = 30000
-NUMBER_OF_VIRTUAL_TIMESTEPS    = 100000
-NUMBER_OF_NODES                = 400
-TIMESTEP                       = 1.0e-12
 T                              = 4.0
-OUTPUT_TRAJECTORIES_OF_FIRST   = 100
-NUMBER_OF_LENGTH_SEGMENTS      = 10
-IGNORE_FAULTY_PHONONS          = False
+
+
+# Multiprocessing
+NUMBER_OF_PROCESSES = 10
+
+
+# Simulation time parameters:
+TIMESTEP                       = 1.0e-12
+total_simulation_time = 300e-9 # This should be at least a couple times the initialization time
+NUMBER_OF_VIRTUAL_TIMESTEPS    = int(total_simulation_time / TIMESTEP)
+initialization_time = 50e-9 # This should be set so that it is bigger than most phonons travel times
+INITIALIZATION_TIMESTEPS       = int(initialization_time / TIMESTEP)
+NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
+
+
+# System dimensions [m]:
+THICKNESS                      = 150e-9
+WIDTH                          = 700e-9
+LENGTH                         = 1500e-9
 
 
 # Map & profiles parameters:
-NUMBER_OF_PIXELS_X             = 200
-NUMBER_OF_PIXELS_Y             = 200
-NUMBER_OF_TIMEFRAMES           = 6
+pixel_size = 30e-9
+NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
+NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
+IGNORE_FAULTY_PHONONS          = False
 
 
 # Material parameters:
@@ -32,13 +46,8 @@ USE_GRAY_APPROXIMATION_MFP     = False
 GRAY_APPROXIMATION_MFP         = None
 
 
-# System dimensions [m]:
-THICKNESS                      = 150e-9
-WIDTH                          = 700e-9
-LENGTH                         = 1500e-9
-
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random_up")]
+PHONON_SOURCES                 = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random_right")]
 
 # Walls:
 INCLUDE_RIGHT_SIDEWALL           = False
@@ -76,6 +85,3 @@ HOLES                          = [
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
 BOTTOM_ROUGHNESS               = 0.2e-9
-
-# Multiprocessing
-NUMBER_OF_PROCESSES = 50

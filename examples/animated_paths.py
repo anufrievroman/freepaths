@@ -1,5 +1,7 @@
 """This example show how FreePATHS can output animation of phonon paths in the structure"""
 
+# !! Animations are currently broken !!
+
 # Basic parameters:
 OUTPUT_FOLDER_NAME             = "Animated Paths"
 NUMBER_OF_PHONONS              = 50
@@ -9,6 +11,9 @@ T                              = 4
 THICKNESS                      = 150e-9
 WIDTH                          = 500e-9
 LENGTH                         = 4000e-9
+
+# Multiprocessing
+NUMBER_OF_PROCESSES = 10
 
 # Animation parameters:
 OUTPUT_PATH_ANIMATION          = True
