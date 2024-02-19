@@ -59,7 +59,7 @@ The code is still in development and provided as is. It likely contains bugs or 
 
 ## References and acknowledgments
 
-The code is developed by [Roman Anufriev](https://anufrievroman.com) and other contributors in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo since 2018.
+The code is developed by [Roman Anufriev](https://anufrievroman.com), Philipp Gassmann, and other contributors in [Nomura lab](https://www.nlab.iis.u-tokyo.ac.jp/index-e.html) at the University of Tokyo since 2018.
 If you would like to use this code for your research, please see the disclaimer above and consider citing the papers below, if it is appropriate.
 Details of the code and examples of the output can be found in the following papers:
 

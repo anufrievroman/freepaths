@@ -257,7 +257,7 @@ class ThermalMaps(Maps):
         np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K_eff (W/mK), K_mat (W/mK)", encoding='utf-8')
 
         # Saving thermal maps:
-        np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1i', delimiter=",", encoding='utf-8')
         np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
         np.savetxt("Data/Heat flux map xy.csv", self.heat_flux_map_xy, fmt='%1.2e', delimiter=",", encoding='utf-8')
         np.savetxt("Data/Heat flux map x.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')

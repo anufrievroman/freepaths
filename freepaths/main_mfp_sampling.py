@@ -18,7 +18,7 @@ from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData
 from freepaths.progress import Progress
 from freepaths.materials import Material
 from freepaths.maps import ScatteringMap, ThermalMaps
-from freepaths.output_info import output_general_information, output_scattering_information
+from freepaths.output_info import output_general_information, output_scattering_information, post_parameter_check
 from freepaths.output_plots import plot_data
 
 
@@ -107,6 +107,7 @@ def main(input_file):
     # Output general information:
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
+    post_parameter_check()
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity}{Style.RESET_ALL}\n W/m·K")

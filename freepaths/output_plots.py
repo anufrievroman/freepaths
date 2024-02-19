@@ -3,13 +3,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from matplotlib import font_manager
 
 from freepaths.config import cf
 from freepaths.output_structure import draw_structure
 import matplotlib.pyplot as plt
 
 # Style of the plots:
-if 'Arial' in plt.rcParams['font.family']:
+all_fonts = font_manager.get_font_names()
+if 'Arial' in all_fonts:
     plt.rcParams['font.family'] = 'Arial'
 else:
     # Use a generic font or specify multiple options

@@ -3,15 +3,16 @@
 import time
 import numpy as np
 
+from colorama import Fore, Style
+
 from freepaths.config import cf
 
 
 def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
+    print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
     exit_angles = np.loadtxt("Data/All exit angles.csv")
     percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
-    print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
-    print(f'{percentage}% of phonons reached the cold side.')
 
     with open("Information.txt", "w+", encoding="utf-8") as file:
         info = (
@@ -101,3 +102,28 @@ def output_scattering_information(scatter_stats):
             file.writelines(info2)
         if cf.pillars:
             file.writelines(info3)
+
+
+def post_parameter_check():
+    """Check if parameters used for this simulation made sense considering the results"""
+
+    # Check if some phonons had longer travel times than initialization period:
+    travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
+    long_travel_times = travel_times[travel_times > cf.initialization_timesteps * cf.timestep]
+    percentage = (len(long_travel_times) / len(travel_times)) * 100
+    if percentage > 10:
+        print(f'{Fore.RED}Warning: Travel time of {percentage}% of phonons was longer than the stabilization period.')
+        print(f'Increase stabilization period as the thermal conductivity might be incorrect.{Style.RESET_ALL}')
+
+    # Check if pixel size is too small:
+    speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
+    if max(speeds) * cf.timestep > cf.length / cf.number_of_pixels_y:
+        print(f'{Fore.RED}Warning: Pixels in y direction are smaller than one length of one step.{Style.RESET_ALL}')
+    if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
+        print(f'{Fore.RED}Warning: Pixels in x direction are smaller than one length of one step.{Style.RESET_ALL}')
+
+    # Check how many phonons reached the cold side during simulation:
+    exit_angles = np.loadtxt("Data/All exit angles.csv")
+    percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
+    if percentage < 95:
+        print(f'{Fore.RED}Warning: Only {percentage}% of phonons reached the cold side. Increase number of timesteps.{Style.RESET_ALL}')

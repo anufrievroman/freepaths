@@ -7,7 +7,7 @@ from colorama import Fore, Style
 import freepaths.main_tracing
 import freepaths.main_mfp_sampling
 
-__version__ = "1.8"
+__version__ = "1.9"
 
 colorama.init()
 
