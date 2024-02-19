@@ -9,7 +9,7 @@ The functions from the scattering_parabolic, scattering_primitives, etc... are n
 from math import atan
 from numpy import pi, array, linspace, column_stack, vstack
 from matplotlib.patches import Rectangle, Circle, Polygon
-
+from scipy.spatial import cKDTree
 
 from freepaths.scattering_primitives import *
 
@@ -434,6 +434,38 @@ class TriangularUpHalfHole(Hole):
                 facecolor=color_holes,
             )
 
+
+class PointLineHole(Hole):
+    """General shape that can be defined by a list of points"""
+
+    def __init__(self, x=0, y=0, points=None, thickness=50e-9):
+        # add option for rounded/angled corners?
+
+        if points is None:
+            points = [] # catch edge cases!!
+
+        # move points to x0, y0 position
+        self.points = array(points) + (x, y)
+        self.tree = cKDTree(self.points)
+        self.thickness = thickness
+
+        # calculate slope for scattering
+        self.slope = None
+
+    def is_inside(self, x, y, z, cf):
+        distance, idx = self.tree.query((x, y))
+        if distance < self.thickness:
+            return idx
+
+    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
+        pass
+
+    def get_patch(self, color_holes, cf):
+        return Circle(
+            (0,0),
+            1e9,
+            facecolor=color_holes,
+        )
 
 class ParabolaTop(Hole):
     """Shape of a parabolic wall"""
