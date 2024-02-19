@@ -3,14 +3,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from matplotlib.patches import Rectangle, Circle
 
 from freepaths.config import cf
 from freepaths.output_structure import draw_structure
 import matplotlib.pyplot as plt
 
 # Style of the plots:
-plt.rcParams['font.family'] = "Arial"
+if 'Arial' in plt.rcParams['font.family']:
+    plt.rcParams['font.family'] = 'Arial'
+else:
+    # Use a generic font or specify multiple options
+    print('Warning: Arial font not available. Falling back on other sans-serif font')
+    plt.rcParams['font.family'] = ['sans-serif']
 plt.rcParams['axes.titlesize'] = 10
 plt.rcParams['axes.labelsize'] = 10
 plt.rcParams['lines.linewidth'] = 1.0
@@ -85,6 +89,7 @@ def plot_cumulative_thermal_conductivity(mfp_sampling):
     ax.set_ylabel('Cumulative thermal conductivity (W/m·K)')
     ax.set_xscale('log')
     fig.savefig("Distribution of thermal conductivity.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of thermal conductivity.csv', np.vstack((mfp, kappa)).T, fmt='%1.3e', delimiter=",")
 
 
@@ -99,6 +104,7 @@ def plot_angle_distribution():
     ax.set_ylim(bottom=0)
     ax.legend(["At cold side", "At hot side"])
     fig.savefig("Distribution of angles.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
 
 
@@ -108,10 +114,12 @@ def plot_free_path_distribution():
     free_path_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1], 'royalblue')
+    ax.set_xscale('log')
     ax.set_xlabel('Free flights (μm)')
     ax.set_ylabel('Number of flights')
     # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
     fig.savefig("Distribution of free paths.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of free paths.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -124,6 +132,7 @@ def plot_frequency_distribution():
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of initial frequencies.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of initial frequencies.csv', frequency_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -135,6 +144,7 @@ def plot_wavelength_distribution():
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of wavelengths.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of wavelengths.csv', wavelength_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -143,9 +153,11 @@ def plot_travel_time_distribution():
     travel_time_distribution = distribution_calculation("Data/All travel times.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(travel_time_distribution[:, 0] * 1e9, travel_time_distribution[:, 1], 'royalblue')
+    ax.set_xscale('log')
     ax.set_xlabel('Travel time (ns)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of travel times.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -154,9 +166,11 @@ def plot_mean_free_path_distribution():
     mean_free_path_distribution = distribution_calculation("Data/All mean free paths.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(mean_free_path_distribution[:, 0] * 1e9, mean_free_path_distribution[:, 1], 'royalblue')
+    ax.set_xscale('log')
     ax.set_xlabel('Mean free path (nm)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of MFPs.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
     np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
@@ -169,6 +183,7 @@ def plot_velocity_distribution():
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Group velocity (m/s)')
     fig.savefig('Group velocities.pdf', format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_time_in_segments():
@@ -179,39 +194,62 @@ def plot_time_in_segments():
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Time spent (ns)')
     fig.savefig("Time spent in segments.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
-    time, thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
-    ax.plot(time, thermal_conductivity, linewidth=1, c='royalblue')
+    time, effective_thermal_conductivity, material_thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
+    ax.plot(time, effective_thermal_conductivity, linewidth=1, label='k_eff')
+    ax.plot(time, material_thermal_conductivity, linewidth=1, label='k_mat')
     ax.set_ylabel('Thermal conductivity (W/mK)')
     ax.set_xlabel('Time (ns)')
+    ax.legend()
     fig.savefig("Thermal conductivity.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
+    # because the initialization timesteps are shorter the data needs to be scaled
+    adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
+    for timeframe in range(cf.number_of_initialization_timeframes):
+        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
+    ax.legend()
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe + 1][1:], linewidth=1)
+    # because the initialization timesteps are shorter the data needs to be scaled
+    adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
+    for timeframe in range(cf.number_of_initialization_timeframes):
+        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
-    fig.savefig("Heat flux profile.pdf", format='pdf', bbox_inches="tight")
+    ax.legend()
+    fig.savefig("Heat flux profile effective.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
+    fig, ax = plt.subplots()
+    for timeframe in range(cf.number_of_initialization_timeframes):
+        ax.plot(data[0], data[timeframe + 1 + cf.number_of_initialization_timeframes+1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1 + cf.number_of_initialization_timeframes+1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
+    ax.set_xlabel('Y (μm)')
+    ax.set_ylabel('Heat flux (W/m²)')
+    ax.legend()
+    fig.savefig("Heat flux profile material.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 def plot_thermal_map():
     """Plot thermal map as color map"""
@@ -227,7 +265,21 @@ def plot_thermal_map():
     cbar = plt.colorbar()
     cbar.set_label('Energy density', rotation=90)
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
+    plt.close(fig)
 
+def plot_pixel_volumes():
+    """Plot the pixel volumes as 2D map"""
+    fig = plt.figure()
+    pixel_volumes = np.genfromtxt("Data/Pixel volumes.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    pixel_volumes = np.flipud(pixel_volumes)
+    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
+    plt.imshow(pixel_volumes, cmap='hot', interpolation='none', extent=boundaries)
+    plt.xlabel('x (μm)')
+    plt.ylabel('y (μm)')
+    cbar = plt.colorbar()
+    cbar.set_label('Pixel volume', rotation=90)
+    fig.savefig("Pixel volumes.pdf", bbox_inches="tight")
+    plt.close(fig)
 
 def plot_heat_flux_map(file, label, units="a.u."):
     """Plot heat flux map as color map"""
@@ -243,6 +295,7 @@ def plot_heat_flux_map(file, label, units="a.u."):
     cbar = plt.colorbar()
     cbar.set_label(f"{label} ({units})", rotation=90, fontsize=10)
     fig.savefig(f"{label}.pdf", bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_scattering_map():
@@ -260,6 +313,7 @@ def plot_scattering_map():
     ax.legend(["Diffuse", "Specular", "Internal"])
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Scattering map.pdf", bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_trajectories():
@@ -287,6 +341,7 @@ def plot_trajectories():
     ax.set_ylabel('Y (μm)')
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Phonon paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
     # Create YZ plot:
     fig, ax = plt.subplots()
@@ -300,6 +355,7 @@ def plot_trajectories():
     ax.set_ylabel('Z (μm)')
     ax.set_aspect('equal', 'datalim')
     fig.savefig("Phonon paths YZ.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_scattering_statistics():
@@ -327,6 +383,7 @@ def plot_scattering_statistics():
     plt.yscale('log')
     ax.set_ylim(bottom=1.0)
     fig.savefig("Scattering rates.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
     # Save the file:
     filename = "Data/Scattering rates.csv"
@@ -356,6 +413,7 @@ def plot_structure():
     ax.set_xlim(1.2*-cf.width*1e6, 1.2*cf.width*1e6)
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_data(mfp_sampling=False):
@@ -374,6 +432,7 @@ def plot_data(mfp_sampling=False):
     plot_temperature_profile()
     plot_heat_flux_profile()
     plot_thermal_map()
+    plot_pixel_volumes()
     plot_scattering_statistics()
     plot_cumulative_thermal_conductivity(mfp_sampling)
     plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")

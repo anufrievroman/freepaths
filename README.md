@@ -1,4 +1,4 @@
-# FreePATHS - Free Phonon And THermal Simulator
+# FreePATHS - Free Phonon And Thermal Simulator
 
 This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nanostructures, which consists of a box with holes or pillars of various shapes. The algorithm outputs phonon trajectories, heat fluxes, temperature maps and profiles, the thermal conductivity, scattering maps and statistics and other information. See [documentation](https://anufrievroman.gitbook.io/freepaths/) for the details of the simulation.
 

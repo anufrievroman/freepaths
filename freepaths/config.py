@@ -8,7 +8,7 @@ import argparse
 from colorama import Fore, Style
 
 from freepaths.options import Materials, Distributions
-from freepaths.scatterers import *
+from freepaths.holes import *
 
 # Import a default input file:
 from freepaths.default_config import *
@@ -55,7 +55,10 @@ class Config:
         # Map & profiles parameters:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
-        self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
+        self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
+        self.initialization_timesteps = INITIALIZATION_TIMESTEPS
+        self.number_of_initialization_timeframes = NUMBER_OF_INITIALIZATION_TIMEFRAMES
+        self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
 
         # Material parameters:
         self.media = MEDIA
@@ -97,14 +100,6 @@ class Config:
         self.top_roughness = TOP_ROUGHNESS
         self.bottom_roughness = BOTTOM_ROUGHNESS
         self.pillar_top_roughness = PILLAR_TOP_ROUGHNESS
-
-        # Parabolic boundary:
-        self.include_top_parabola = INCLUDE_TOP_PARABOLA
-        self.top_parabola_tip = TOP_PARABOLA_TIP
-        self.top_parabola_focus = TOP_PARABOLA_FOCUS
-        self.include_bottom_parabola = INCLUDE_BOTTOM_PARABOLA
-        self.bottom_parabola_tip = BOTTOM_PARABOLA_TIP
-        self.bottom_parabola_focus = BOTTOM_PARABOLA_FOCUS
 
         # Hole array parameters:
         self.holes = HOLES
@@ -204,8 +199,20 @@ class Config:
     def check_depricated_parameters(self):
         """Check for depricated parameters and warn about them"""
 
+        if 'NUMBER_OF_TIMEFRAMES' in globals():
+            print("ERROR: paramter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
+            sys.exit()
+
+        if 'INCLUDE_TOP_PARABOLA' in globals():
+            print("ERROR: parameter INCLUDE_TOP_PARABOLA is deprecated. Use ParabolaTop hole instead.")
+            sys.exit()
+
+        if 'INCLUDE_BOTTOM_PARABOLA' in globals():
+            print("ERROR: parameter INCLUDE_BOTTOM_PARABOLA is deprecated. Use ParabolaBottom hole instead.")
+            sys.exit()
+
         if 'COLD_SIDE_POSITION' in globals():
-            print("ERROR: parameter COLD_SIDE_POSITION is depricated. ")
+            print("ERROR: parameter COLD_SIDE_POSITION is depricated.")
             print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
             sys.exit()
 

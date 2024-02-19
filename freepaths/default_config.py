@@ -12,7 +12,7 @@ NUMBER_OF_NODES                  = 400
 TIMESTEP                         = 2e-12
 T                                = 300
 OUTPUT_SCATTERING_MAP            = False
-OUTPUT_TRAJECTORIES_OF_FIRST     = 10
+OUTPUT_TRAJECTORIES_OF_FIRST     = 50
 OUTPUT_STRUCTURE_COLOR           = "#F0F0F0"
 NUMBER_OF_LENGTH_SEGMENTS        = 10
 
@@ -23,7 +23,10 @@ OUTPUT_ANIMATION_FPS             = 24
 # Map & profiles parameters:
 NUMBER_OF_PIXELS_X               = 25
 NUMBER_OF_PIXELS_Y               = 100
-NUMBER_OF_TIMEFRAMES             = 6
+NUMBER_OF_VIRTUAL_TIMESTEPS      = 300000
+INITIALIZATION_TIMESTEPS         = 50000
+NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
+IGNORE_FAULTY_PHONONS            = False
 
 # Material parameters:
 MEDIA                            = "Si"
@@ -64,14 +67,6 @@ PILLAR_ROUGHNESS                 = 2e-9
 TOP_ROUGHNESS                    = 0.2e-9
 BOTTOM_ROUGHNESS                 = 0.2e-9
 PILLAR_TOP_ROUGHNESS             = 0.2e-9
-
-# Parabolic boundaries:
-INCLUDE_TOP_PARABOLA             = False
-TOP_PARABOLA_TIP                 = 1000e-9
-TOP_PARABOLA_FOCUS               = 100e-9
-INCLUDE_BOTTOM_PARABOLA          = False
-BOTTOM_PARABOLA_TIP              = 1000e-9
-BOTTOM_PARABOLA_FOCUS            = 100e-9
 
 # Holes and pillars:
 HOLES                            = []

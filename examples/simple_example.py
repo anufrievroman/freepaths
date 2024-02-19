@@ -8,3 +8,5 @@ T                              = 4
 THICKNESS                      = 150e-9
 WIDTH                          = 500e-9
 LENGTH                         = 2200e-9
+
+NUMBER_OF_PROCESSES = 10

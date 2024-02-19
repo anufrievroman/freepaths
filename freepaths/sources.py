@@ -49,7 +49,7 @@ class Source:
             return theta, phi
 
         if self.angle_distribution == Distributions.DIRECTIONAL:
-            theta = 0
+            theta = 1e-10
             phi = -pi/2 + pi*random()
             return theta, phi
 

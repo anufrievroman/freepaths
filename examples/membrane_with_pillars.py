@@ -4,36 +4,46 @@
 OUTPUT_FOLDER_NAME             = 'Membrane with pillars'
 NUMBER_OF_PHONONS              = 500
 NUMBER_OF_TIMESTEPS            = 30000
-NUMBER_OF_NODES                = 400
-TIMESTEP                       = 1e-12
 T                              = 4.0
-OUTPUT_TRAJECTORIES_OF_FIRST   = 30
-NUMBER_OF_LENGTH_SEGMENTS      = 10
 
 
-# Map & profiles parameters:
-NUMBER_OF_PIXELS_X             = 100
-NUMBER_OF_PIXELS_Y             = 100
-NUMBER_OF_TIMEFRAMES           = 6
-
-
-# Material parameters:
-MEDIA                          = 'Si'
-SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-#SPECIFIC_HEAT_CAPACITY        = 714  # [J/kg/K] for Si at 300 K
-# SPECIFIC_HEAT_CAPACITY       = 606  # [J/kg/K] for SiC at 300 K
-
-
-# Internal scattering:
-INCLUDE_INTERNAL_SCATTERING    = True
-USE_GRAY_APPROXIMATION_MFP     = False
-GRAY_APPROXIMATION_MFP         = None
+# Multiprocessing
+NUMBER_OF_PROCESSES = 10
 
 
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 900e-9
 LENGTH                         = 1200e-9
+
+
+# Map & profiles parameters:
+pixel_size = 30e-9
+NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
+NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
+IGNORE_FAULTY_PHONONS          = False
+
+
+# Simulation time parameters:
+TIMESTEP                       = 1.0e-12
+total_simulation_time = 200e-9 # This should be at least a couple times the initialization time
+NUMBER_OF_VIRTUAL_TIMESTEPS    = int(total_simulation_time / TIMESTEP)
+initialization_time = 20e-9 # This should be set so that it is bigger than most phonons travel times
+INITIALIZATION_TIMESTEPS       = int(initialization_time / TIMESTEP)
+NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
+
+
+# Material parameters:
+MEDIA                          = 'Si'
+SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
+# SPECIFIC_HEAT_CAPACITY         = 714  # [J/kg/K] for Si at 300 K
+# SPECIFIC_HEAT_CAPACITY         = 606  # [J/kg/K] for SiC at 300 K
+
+
+# Internal scattering:
+INCLUDE_INTERNAL_SCATTERING    = True
+USE_GRAY_APPROXIMATION_MFP     = False
+GRAY_APPROXIMATION_MFP         = None
 
 
 # Phonon source:

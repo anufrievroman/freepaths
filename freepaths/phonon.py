@@ -26,7 +26,7 @@ class Phonon:
         self.phi = None
         self.theta = None
         self.speed = None
-        self.first_timestep = randint(0, cf.number_of_timesteps)
+        self.first_timestep = randint(0, cf.number_of_virtual_timesteps)
 
         # Assigning initial properties of the phonon:
         if self.branch_number is None:
