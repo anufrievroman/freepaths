@@ -471,10 +471,8 @@ class PointLineHole(Hole):
         tangent_theta = atan((x - x0) / (y - y0))
 
         # check if the phonon is traveling towards the hole
-        distance, _ = self.tree.query((x, y))
-        current_distance = distance
-        distance, _ = self.tree.query((x0, y0))
-        next_distance = distance
+        current_distance, _ = self.tree.query((ph.x, ph.y))
+        next_distance, _ = self.tree.query((x, y))
         if next_distance <= current_distance:
             scattering_types.holes = circle_outer_scattering(
                 ph, tangent_theta, y, y0, cf.hole_roughness, cf
@@ -486,7 +484,7 @@ class FunctionLineHole(PointLineHole):
         points = self.points_from_function(function, function_range, size_x, size_y, resolution, thickness)
 
         super().__init__(x, y, points, thickness)
-    
+
     def points_from_function(self, function, function_range, size_x, size_y, resolution, thickness):
         # generate the points in the function space
         xs = linspace(function_range[0], function_range[1], round((size_x-thickness)/resolution))
