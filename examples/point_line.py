@@ -1,13 +1,15 @@
 """Example file to explain the point line hole shape"""
 
 import math
+import numpy as np
 
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Point line example'
 NUMBER_OF_PHONONS              = 1000
 NUMBER_OF_TIMESTEPS            = 30000
-T                              = 4.0
+T                              = 100
+TIMESTEP                       = 1e-12
 
 
 # Multiprocessing
@@ -61,7 +63,12 @@ def make_arc_hole(radius, start_angle, end_angle, resolution, x, y, thickness):
     points = points_on_arc(radius, start_angle, end_angle, resolution)
     return PointLineHole(x=x, y=y, thickness=thickness, points=points)
 
+sinxdivx = lambda x: 1 if x == 0 else np.sin(x)/x
+
 HOLES                          = [
-    make_arc_hole(100e-9, 0, 90, 1e-9, 0, 200e-9, 40e-9),
+    # make_arc_hole(100e-9, 0, 90, 1e-9, 0, 200e-9, 40e-9),
     make_arc_hole(250e-9, -45, 45, 1e-9, 0, 200e-9, 40e-9),
+    # FunctionLineHole(y=200e-9, function=sinxdivx, function_range=(-2*np.pi, 2*np.pi), size_x=500e-9, size_y=500e-9, resolution=11e-9)
+    # FunctionLineHole(x=0, y=200e-9, function_range=(-2*np.pi, np.pi), function=lambda x: np.sin(x)/x, size_x=500e-9, size_y=300e-9, resolution=1e-9)
+    FunctionLineHole(),
     ]

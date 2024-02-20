@@ -438,7 +438,7 @@ class TriangularUpHalfHole(Hole):
 class PointLineHole(Hole):
     """General shape that can be defined by a list of points"""
 
-    def __init__(self, x=0, y=0, points=None, thickness=50e-9):
+    def __init__(self, x=0, y=0, points=None, thickness=100e-9):
         # add option for rounded/angled corners?
 
         assert points is not None, "Please provide some points to the PointLineHole"
@@ -450,7 +450,7 @@ class PointLineHole(Hole):
 
     def is_inside(self, x, y, z, cf):
         distance, idx = self.tree.query((x, y))
-        if distance < self.thickness:
+        if distance < self.thickness / 2:
             return str(idx)
 
     def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
@@ -460,7 +460,7 @@ class PointLineHole(Hole):
     def get_patch(self, color_holes, cf):
         return [Circle(
             (x*1e6, y*1e6),
-            self.thickness*1e6,
+            self.thickness*1e6*2,
             facecolor=color_holes,
         ) for x,y in self.points]
 
@@ -480,25 +480,27 @@ class PointLineHole(Hole):
 
 
 class FunctionLineHole(PointLineHole):
-    def __init__(self, x=0, y=0, thickness=30e-9, function=lambda x: sin(x), function_range=(-pi, pi), size_x=300e-9, size_y=200e-9, resolution=1e-9):
+    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x/2/pi/300e-9)/2*200e-9, function_range=(-pi, pi), size_x=None, size_y=None, resolution=1e-9):
         points = self.points_from_function(function, function_range, size_x, size_y, resolution, thickness)
-
         super().__init__(x, y, points, thickness)
 
     def points_from_function(self, function, function_range, size_x, size_y, resolution, thickness):
         # generate the points in the function space
-        xs = linspace(function_range[0], function_range[1], round((size_x-thickness)/resolution))
+        number_of_circles = round(function_range[1] - function_range[0] if size_x is None else (size_x-thickness)/resolution)
+
+        xs = linspace(function_range[0], function_range[1], number_of_circles)
         ys = array([0.0]*len(xs))
         for i, x in enumerate(xs):
             ys[i] = function(x)
 
-        # normalize the point to a range of 1
-        xs /= function_range[1] - function_range[0]
-        ys /= min(ys) - max(ys)
+        # normalize the point to a range of 1 and then rescale to wanted dimensions and account for the thickness of the shape
+        if size_x is not None:
+            xs /= function_range[1] - function_range[0]
+            xs *= size_x - thickness
 
-        # rescale to wanted dimensions and account for the thickness of the shape
-        xs *= size_x - thickness
-        ys *= size_y - thickness
+        if size_y is not None:
+            ys /= max(ys) - min(ys)
+            ys *= size_y - thickness
 
         return vstack((xs, ys)).T
 
