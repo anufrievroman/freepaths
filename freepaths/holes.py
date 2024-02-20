@@ -458,11 +458,11 @@ class PointLineHole(Hole):
             self.circles_scattering_function(ph, scattering_types, x, y, z, cf, self.points[int(point_id)])
 
     def get_patch(self, color_holes, cf):
-        return Circle(
-            (1e-9,1e-9),
-            50e-9,
+        return [Circle(
+            (x*1e6, y*1e6),
+            self.thickness*1e6,
             facecolor=color_holes,
-        )
+        ) for x,y in self.points]
 
     def circles_scattering_function(self, ph, scattering_types, x, y, z, cf, center_point):
         x0, y0 = center_point
