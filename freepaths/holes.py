@@ -438,7 +438,7 @@ class TriangularUpHalfHole(Hole):
 class PointLineHole(Hole):
     """General shape that can be defined by a list of points"""
 
-    def __init__(self, x=0, y=0, points=None, thickness=50e-9, use_circles_for_scattering=True, flat_edges=False):
+    def __init__(self, x=0, y=0, points=None, thickness=50e-9):
         # add option for rounded/angled corners?
 
         assert points, "Please provide some points to the PointLineHole"
@@ -448,28 +448,14 @@ class PointLineHole(Hole):
         self.tree = cKDTree(self.points)
         self.thickness = thickness
 
-        self.use_circles_for_scattering = use_circles_for_scattering
-        self.flat_edges = flat_edges
-
     def is_inside(self, x, y, z, cf):
         distance, idx = self.tree.query((x, y))
         if distance < self.thickness:
-            return idx
+            return str(idx)
 
     def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
         if point_id := self.is_inside(x, y, z, cf):
-            # if point_id in [0, len(self.points)]:
-            #     # scattering on edges
-            #     if self.flat_edges:
-            #         a = 0
-            #     else:
-            #         self.circles_scattering_function(ph, scattering_types, x, y, z, cf, self.points[point_id])
-            # else:
-                # scattering on line
-                if self.use_circles_for_scattering:
-                    self.circles_scattering_function(ph, scattering_types, x, y, z, cf, self.points[point_id])
-                else:
-                    a = 0
+            self.circles_scattering_function(ph, scattering_types, x, y, z, cf, self.points[int(point_id)])
 
     def get_patch(self, color_holes, cf):
         return Circle(
@@ -478,16 +464,6 @@ class PointLineHole(Hole):
             facecolor=color_holes,
         )
 
-    def calculate_slope(self, points):
-        slopes = []
-        for i in range(len(points) - 2):
-            x1, y1 = points[i]
-            x2, y2 = points[i+2]
-            # inf for vertical wall
-            slope = float('inf') if x2 - x1 == 0 else (y2 - y1) / (x2 - x1)
-            slopes.append(slope)
-        return slopes
-
     def circles_scattering_function(self, ph, scattering_types, x, y, z, cf, center_point):
         x0, y0 = center_point
         if y == y0:
@@ -495,8 +471,10 @@ class PointLineHole(Hole):
         tangent_theta = atan((x - x0) / (y - y0))
 
         # check if the phonon is traveling towards the hole
-        current_distance = sqrt((x0 - ph.x)**2 + (y0 - ph.y)**2)
-        next_distance = sqrt((x0 - x)**2 + (y0 - y)**2)
+        distance, _ = self.tree.query((x, y))
+        current_distance = distance
+        distance, _ = self.tree.query((x0, y0))
+        next_distance = distance
         if next_distance <= current_distance:
             scattering_types.holes = circle_outer_scattering(
                 ph, tangent_theta, y, y0, cf.hole_roughness, cf

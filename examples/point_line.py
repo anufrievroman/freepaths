@@ -5,11 +5,13 @@ import math
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Point line example'
-NUMBER_OF_PHONONS              = 200
+NUMBER_OF_PHONONS              = 100
 NUMBER_OF_TIMESTEPS            = 30000
 T                              = 4.0
-OUTPUT_TRAJECTORIES_OF_FIRST   = 200
-
+OUTPUT_TRAJECTORIES_OF_FIRST   = NUMBER_OF_PHONONS
+TIMESTEP                       = 0.5e-12
+OUTPUT_SCATTERING_MAP            = True
+HOLE_ROUGHNESS                   = 0.2e-9
 
 # Multiprocessing
 NUMBER_OF_PROCESSES = 10
@@ -63,5 +65,6 @@ def make_arc_hole(radius, start_angle, end_angle, resolution, x, y, thickness):
 
 HOLES                          = [
     # PointLineHole(x=0e-9, y=0e-9, points=[(0e-9, 0e-9), (50e-9, 100e-9)]),
-    make_arc_hole(200e-9, -45, 45, 1e-9, 0, 200e-9, 40e-9),
+    make_arc_hole(100e-9, 0, 90, 1e-9, 0, 200e-9, 40e-9),
+    make_arc_hole(250e-9, -45, 45, 1e-9, 0, 200e-9, 40e-9),
     ]
