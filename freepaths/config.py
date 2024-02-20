@@ -197,10 +197,10 @@ class Config:
 
 
     def check_depricated_parameters(self):
-        """Check for depricated parameters and warn about them"""
+        """Check for deprecated parameters and warn about them"""
 
         if 'NUMBER_OF_TIMEFRAMES' in globals():
-            print("ERROR: paramter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
+            print("ERROR: parameter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
             sys.exit()
 
         if 'INCLUDE_TOP_PARABOLA' in globals():
@@ -212,7 +212,7 @@ class Config:
             sys.exit()
 
         if 'COLD_SIDE_POSITION' in globals():
-            print("ERROR: parameter COLD_SIDE_POSITION is depricated.")
+            print("ERROR: parameter COLD_SIDE_POSITION is deprecated.")
             print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
             sys.exit()
 
@@ -229,7 +229,7 @@ class Config:
             'PHONON_SOURCE_WIDTH_Y' in globals(),
             'PHONON_SOURCE_ANGLE_DISTRIBUTION' in globals(),
             ]):
-            print("ERROR: parameters related to HOT_SIDE_... or PHONON_SOURCE_.. are depricated. ")
+            print("ERROR: parameters related to HOT_SIDE_... or PHONON_SOURCE_.. are deprecated. ")
             print("Phonon source should be defined through the PHONON_SOURCES variable.\n")
             print("See updated documentation for more details.\n")
             sys.exit()
