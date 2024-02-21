@@ -438,13 +438,17 @@ class TriangularUpHalfHole(Hole):
 class PointLineHole(Hole):
     """General shape that can be defined by a list of points"""
 
-    def __init__(self, x=0, y=0, points=None, thickness=100e-9):
+    def __init__(self, x=0, y=0, points=None, thickness=100e-9, rotation=0):
         # add option for rounded/angled corners?
 
         assert points is not None, "Please provide some points to the PointLineHole"
 
+        # rotate points
+        if rotation != 0 and rotation is not None:
+            points = self.rotate_points(points, rotation)
         # move points to x0, y0 position
         self.points = array(points) + (x, y)
+        # build tree for fast search
         self.tree = cKDTree(self.points)
         self.thickness = thickness
 
@@ -478,11 +482,28 @@ class PointLineHole(Hole):
                 ph, tangent_theta, y, y0, cf.hole_roughness, cf
             )
 
+    def rotate_points(self, points, angle):
+        rotated_points = []
+        cos_theta = cos(angle)
+        sin_theta = sin(angle)
+
+        for point in points:
+            x = point[0]
+            y = point[1]
+
+            # Perform rotation using rotation matrix
+            new_x = x * cos_theta - y * sin_theta
+            new_y = x * sin_theta + y * cos_theta
+
+            rotated_points.append((new_x, new_y))
+
+        return rotated_points
+
 
 class FunctionLineHole(PointLineHole):
-    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x*2*pi/300e-9)/2*200e-9, function_range=(-150e-9, 150e-9), size_x=None, size_y=None, resolution=1e-9):
+    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x*2*pi/300e-9)/2*200e-9, function_range=(-150e-9, 150e-9), size_x=None, size_y=None, resolution=1e-9, rotation=0):
         points = self.points_from_function(function, function_range, size_x, size_y, resolution, thickness)
-        super().__init__(x, y, points, thickness)
+        super().__init__(x, y, points, thickness, rotation)
 
     def points_from_function(self, function, function_range, size_x, size_y, resolution, thickness):
         # generate the points in the function space
