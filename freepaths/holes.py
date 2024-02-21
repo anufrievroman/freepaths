@@ -460,7 +460,7 @@ class PointLineHole(Hole):
     def get_patch(self, color_holes, cf):
         return [Circle(
             (x*1e6, y*1e6),
-            self.thickness*1e6*2,
+            self.thickness*1e6/2,
             facecolor=color_holes,
         ) for x,y in self.points]
 
@@ -480,13 +480,13 @@ class PointLineHole(Hole):
 
 
 class FunctionLineHole(PointLineHole):
-    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x/2/pi/300e-9)/2*200e-9, function_range=(-pi, pi), size_x=None, size_y=None, resolution=1e-9):
+    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x*2*pi/300e-9)/2*200e-9, function_range=(-150e-9, 150e-9), size_x=None, size_y=None, resolution=1e-9):
         points = self.points_from_function(function, function_range, size_x, size_y, resolution, thickness)
         super().__init__(x, y, points, thickness)
 
     def points_from_function(self, function, function_range, size_x, size_y, resolution, thickness):
         # generate the points in the function space
-        number_of_circles = round(function_range[1] - function_range[0] if size_x is None else (size_x-thickness)/resolution)
+        number_of_circles = round((function_range[1] - function_range[0])/resolution if size_x is None else (size_x-thickness)/resolution)
 
         xs = linspace(function_range[0], function_range[1], number_of_circles)
         ys = array([0.0]*len(xs))
