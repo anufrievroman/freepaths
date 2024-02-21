@@ -484,8 +484,8 @@ class PointLineHole(Hole):
 
     def rotate_points(self, points, angle):
         rotated_points = []
-        cos_theta = cos(angle)
-        sin_theta = sin(angle)
+        cos_theta = cos(-angle/180*pi)
+        sin_theta = sin(-angle/180*pi)
 
         for point in points:
             x = point[0]
