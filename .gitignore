@@ -2,3 +2,4 @@
 /build
 /Results
 */__pycache__
+/.vscode

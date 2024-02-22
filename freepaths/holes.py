@@ -9,7 +9,7 @@ The functions from the scattering_parabolic, scattering_primitives, etc... are n
 from math import atan
 from numpy import pi, array, linspace, column_stack, vstack
 from matplotlib.patches import Rectangle, Circle, Polygon
-
+from scipy.spatial import cKDTree
 
 from freepaths.scattering_primitives import *
 
@@ -434,6 +434,96 @@ class TriangularUpHalfHole(Hole):
                 facecolor=color_holes,
             )
 
+
+class PointLineHole(Hole):
+    """General shape that can be defined by a list of points"""
+
+    def __init__(self, x=0, y=0, points=None, thickness=100e-9, rotation=0):
+        # add option for rounded/angled corners?
+
+        assert points is not None, "Please provide some points to the PointLineHole"
+
+        # rotate points
+        if rotation != 0 and rotation is not None:
+            points = self.rotate_points(points, rotation)
+        # move points to x0, y0 position
+        self.points = array(points) + (x, y)
+        # build tree for fast search
+        self.tree = cKDTree(self.points)
+        self.thickness = thickness
+
+    def is_inside(self, x, y, z, cf):
+        distance, idx = self.tree.query((x, y))
+        if distance < self.thickness / 2:
+            return str(idx)
+
+    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
+        if point_id := self.is_inside(x, y, z, cf):
+            self.circles_scattering_function(ph, scattering_types, x, y, z, cf, self.points[int(point_id)])
+
+    def get_patch(self, color_holes, cf):
+        return [Circle(
+            (x*1e6, y*1e6),
+            self.thickness*1e6/2,
+            facecolor=color_holes,
+        ) for x,y in self.points]
+
+    def circles_scattering_function(self, ph, scattering_types, x, y, z, cf, center_point):
+        x0, y0 = center_point
+        if y == y0:
+            y += 1e-9  # Prevent division by zero
+        tangent_theta = atan((x - x0) / (y - y0))
+
+        # check if the phonon is traveling towards the hole
+        current_distance, _ = self.tree.query((ph.x, ph.y))
+        next_distance, _ = self.tree.query((x, y))
+        if next_distance <= current_distance:
+            scattering_types.holes = circle_outer_scattering(
+                ph, tangent_theta, y, y0, cf.hole_roughness, cf
+            )
+
+    def rotate_points(self, points, angle):
+        rotated_points = []
+        cos_theta = cos(-angle/180*pi)
+        sin_theta = sin(-angle/180*pi)
+
+        for point in points:
+            x = point[0]
+            y = point[1]
+
+            # Perform rotation using rotation matrix
+            new_x = x * cos_theta - y * sin_theta
+            new_y = x * sin_theta + y * cos_theta
+
+            rotated_points.append((new_x, new_y))
+
+        return rotated_points
+
+
+class FunctionLineHole(PointLineHole):
+    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x*2*pi/300e-9)/2*200e-9, function_range=(-150e-9, 150e-9), size_x=None, size_y=None, resolution=1e-9, rotation=0):
+        points = self.points_from_function(function, function_range, size_x, size_y, resolution, thickness)
+        super().__init__(x, y, points, thickness, rotation)
+
+    def points_from_function(self, function, function_range, size_x, size_y, resolution, thickness):
+        # generate the points in the function space
+        number_of_circles = round((function_range[1] - function_range[0])/resolution if size_x is None else (size_x-thickness)/resolution)
+
+        xs = linspace(function_range[0], function_range[1], number_of_circles)
+        ys = array([0.0]*len(xs))
+        for i, x in enumerate(xs):
+            ys[i] = function(x)
+
+        # normalize the point to a range of 1 and then rescale to wanted dimensions and account for the thickness of the shape
+        if size_x is not None:
+            xs /= function_range[1] - function_range[0]
+            xs *= size_x - thickness
+
+        if size_y is not None:
+            ys /= max(ys) - min(ys)
+            ys *= size_y - thickness
+
+        return vstack((xs, ys)).T
 
 class ParabolaTop(Hole):
     """Shape of a parabolic wall"""
