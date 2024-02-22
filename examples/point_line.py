@@ -8,19 +8,18 @@ import numpy as np
 OUTPUT_FOLDER_NAME             = 'Point line example'
 NUMBER_OF_PHONONS              = 100
 NUMBER_OF_TIMESTEPS            = 30000
-T                              = 100
+T                              = 50
 TIMESTEP                       = 1e-12
 
 
 # Multiprocessing
 NUMBER_OF_PROCESSES            = 10
-HOLE_ROUGHNESS                 = 0.2e-9
 
 
 # System dimensions [m]:
 THICKNESS                      = 150e-9
-WIDTH                          = 700e-9
-LENGTH                         = 700e-9
+WIDTH                          = 300e-9
+LENGTH                         = 300e-9
 
 
 # Map & profiles parameters:
@@ -31,42 +30,26 @@ IGNORE_FAULTY_PHONONS          = False
 
 
 # Sources
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_right")]
 
 
 # Holes
 
-# Write a python function that takes radius, start_angle, end_angle, resolution and returns a list of points which are on an arc with center 0,0 respective radius and angles. the points have the distance specified in resolution
+# see the Creating new holes (the easy way) tutorial in the documentation for more examples
+def points_on_bezier(control_point1, handle1, control_point2, handle2, number_of_points):
+    # get coordinate points
+    x1, y1 = control_point1
+    x2 = x1 + handle1[0] 
+    y2 = y1 + handle1[1]
+    x4, y4 = control_point2
+    x3 = x4 + handle2[0] 
+    y3 = y4 + handle2[1]
+    # define function
+    bezier_function = lambda t, p1, p2, p3, p4: (1-t)**3*p1 + 3*t*(1-t)**2*p2 + 3*t**2*(1-t)*p3 + t**3*p4
+    bezier_point_function = lambda t: (bezier_function(t, x1, x2, x3, x4), bezier_function(t, y1, y2, y3, y4))
 
-def points_on_arc(radius, start_angle, end_angle, resolution):
-    # Convert angles to radians
-    start_angle_rad = math.radians(start_angle)
-    end_angle_rad = math.radians(end_angle)
+    # calculate points and return
+    return [bezier_point_function(t) for t in np.linspace(0, 1, number_of_points)]
 
-    # Calculate the number of points
-    num_points = int(radius* abs(end_angle_rad - start_angle_rad) / resolution) + 1
-
-    # Calculate angular increment
-    angle_increment = (end_angle_rad - start_angle_rad) / (num_points - 1)
-
-    # Generate points on the arc
-    arc_points = []
-    for i in range(num_points):
-        angle = start_angle_rad + i * angle_increment
-        x = radius * math.sin(angle)
-        y = radius * math.cos(angle)
-        arc_points.append((x, y))
-
-    return arc_points
-
-def make_arc_hole(radius, start_angle, end_angle, resolution, x, y, thickness):
-    points = points_on_arc(radius, start_angle, end_angle, resolution)
-    return PointLineHole(x=x, y=y, thickness=thickness, points=points)
-
-sinxdivx = lambda x: 1 if x == 0 else np.sin(x)/x
-
-HOLES = [
-    PointLineHole(x=0, y=200e-9, points=[(0,0), (0e-9, 50e-9)], thickness=30e-9, rotation=0),
-    PointLineHole(x=0, y=200e-9, points=[(0,0), (0e-9, 50e-9)], thickness=30e-9, rotation=45),
-    ]
-
+points = points_on_bezier((-100e-9, 0), (50e-9, 100e-9), (100e-9, 0), (-50e-9, -100e-9), 100)
+HOLES = [PointLineHole(0, 150e-9, points, thickness=30e-9)]
