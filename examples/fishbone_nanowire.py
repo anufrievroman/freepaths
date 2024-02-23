@@ -2,7 +2,7 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Fishbone nanowire'
-NUMBER_OF_PHONONS              = 300
+NUMBER_OF_PHONONS              = 3000
 NUMBER_OF_TIMESTEPS            = 30000
 T                              = 4.0
 
@@ -27,7 +27,7 @@ LENGTH                         = 1500e-9
 
 
 # Map & profiles parameters:
-pixel_size = 30e-9
+pixel_size = 10e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
 IGNORE_FAULTY_PHONONS          = False

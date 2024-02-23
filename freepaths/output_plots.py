@@ -33,6 +33,7 @@ plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['legend.fontsize'] = 8
 
+
 def distribution_calculation(filename, data_range, number_of_nodes):
     """Calculate distribution of numbers (histogram) in a given file"""
     data = np.loadtxt(filename, encoding='utf-8')
@@ -119,7 +120,6 @@ def plot_free_path_distribution():
     ax.set_xscale('log')
     ax.set_xlabel('Free flights (μm)')
     ax.set_ylabel('Number of flights')
-    # ax.set_xlim([0, max(free_path_distribution[:,0])*1e6])
     fig.savefig("Distribution of free paths.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of free paths.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
@@ -219,8 +219,8 @@ def plot_temperature_profile():
     # because the initialization timesteps are shorter the data needs to be scaled
     adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
     for timeframe in range(cf.number_of_initialization_timeframes):
-        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
-    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
+        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Time frame {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Time frame {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
     ax.legend()
@@ -235,8 +235,8 @@ def plot_heat_flux_profile():
     # because the initialization timesteps are shorter the data needs to be scaled
     adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
     for timeframe in range(cf.number_of_initialization_timeframes):
-        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
-    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
+        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Time frame {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Time frame {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
@@ -245,8 +245,8 @@ def plot_heat_flux_profile():
 
     fig, ax = plt.subplots()
     for timeframe in range(cf.number_of_initialization_timeframes):
-        ax.plot(data[0], data[timeframe + 1 + cf.number_of_initialization_timeframes+1] * adjustment_factor, linewidth=1, label=f'Timestep {timeframe}')
-    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1 + cf.number_of_initialization_timeframes+1], linewidth=1, label=f'Timestep {cf.number_of_initialization_timeframes+1}')
+        ax.plot(data[0], data[timeframe + 1 + cf.number_of_initialization_timeframes+1] * adjustment_factor, linewidth=1, label=f'Time frame {timeframe}')
+    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1 + cf.number_of_initialization_timeframes+1], linewidth=1, label=f'Time freame {cf.number_of_initialization_timeframes+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()

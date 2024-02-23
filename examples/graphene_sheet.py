@@ -11,7 +11,7 @@ NUMBER_OF_PROCESSES = 10
 
 
 # Simulation time parameters:
-TIMESTEP                       = 2e-12
+TIMESTEP                       = 1e-12
 total_simulation_time = 200e-9 # This should be at least a couple times the initialization time
 NUMBER_OF_VIRTUAL_TIMESTEPS    = int(total_simulation_time / TIMESTEP)
 initialization_time = 20e-9 # This should be set so that it is bigger than most phonons travel times

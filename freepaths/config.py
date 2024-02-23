@@ -7,7 +7,6 @@ import sys
 import argparse
 from colorama import Fore, Style
 
-from freepaths.materials import Materials
 from freepaths.sources import Distributions
 from freepaths.holes import *
 
@@ -122,16 +121,6 @@ class Config:
                 print("The angle_distribution should be one of the following:")
                 print(*valid_distributions, sep = ", ")
                 sys.exit()
-
-        # Materials:
-        valid_materials = [member.name for member in Materials]
-        if self.media in valid_materials:
-            self.media = Materials[self.media]
-        else:
-            print(f"ERROR: Material {self.media} is not in the database.")
-            print("MEDIA should be one of the following:")
-            print(*valid_materials, sep = ", ")
-            sys.exit()
 
 
     def check_parameter_validity(self):

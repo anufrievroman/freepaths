@@ -8,8 +8,6 @@ import numpy as np
 import enum
 
 from freepaths.config import cf
-from freepaths.materials import Materials
-from freepaths.sources import Distributions
 import freepaths.move
 
 
@@ -29,12 +27,12 @@ class Phonon:
         self.speed = None
         self.first_timestep = randint(0, cf.number_of_virtual_timesteps)
 
-        # Assigning initial properties of the phonon:
+        # Assign initial properties of the phonon:
         if self.branch_number is None:
             self.branch_number = choice(range(3))
         self.f_max = max(material.dispersion[:, self.branch_number + 1])
 
-        # Assigning initial coordinates and angles:
+        # Assign initial coordinates but ensure that it's not inside a hole:
         source = choice(cf.phonon_sources)
         while True:
             self.x, self.y, self.z = source.generate_coordinates()
@@ -42,16 +40,17 @@ class Phonon:
             if not is_in_hole:
                 break
 
+        # Assign initial angles:
         self.theta, self.phi = source.generate_angles()
         if cf.is_two_dimensional_material:
             self.phi = 0.0
             self.z = 0.0
 
-        # Frequency is assigned based on Planckian distribution in case MFP sampling mode:
+        # Frequency is assigned based on Plankian distribution in case MFP sampling mode:
         if phonon_number is None:
             self.assign_frequency(material)
 
-        # Otherwise, frequency is just asigned depending on the phonon number:
+        # Otherwise, frequency is just assigned depending on the phonon number:
         else:
             f_upper = abs(material.dispersion[phonon_number + 1, self.branch_number + 1])
             f_lower = abs(material.dispersion[phonon_number, self.branch_number +1])
@@ -63,7 +62,7 @@ class Phonon:
     @property
     def wavelength(self):
         """Calculate wavelength of the phonon"""
-        return self.speed/self.f
+        return self.speed / self.f
 
     @property
     def is_in_system(self):
@@ -84,7 +83,7 @@ class Phonon:
         # Frequency of the peak of the Plank distribution:
         f_peak = material.default_speed/(2*pi*hbar*material.default_speed/(2.82*k*cf.temp))
 
-        # Density of states for f_max in Debye apparoximation:
+        # Density of states for f_max in Debye approximation:
         dos_max = 3*((2*pi*f_peak)**2)/(2*(pi**2)*(material.default_speed**3))
 
         # Bose-Einstein distribution for f_max:
@@ -95,7 +94,7 @@ class Phonon:
 
         while True:                                                 # Until we obtain the frequency
             self.f = f_peak*5*random()                              # Let's draw a random frequency in the 0 - 5*f_peak range
-            dos = 3*((2*pi*self.f)**2)/(2*(pi**2)*(material.default_speed**3))  # Calculate the DOS in Debye apparoximation
+            dos = 3*((2*pi*self.f)**2)/(2*(pi**2)*(material.default_speed**3))  # Calculate the DOS in Debye approximation
             bose_einstein = 1/(exp((hbar*2*pi*self.f)/(k*cf.temp))-1)           # And the Bose-Einstein distribution
             plank_distribution = dos*hbar*2*pi*self.f*bose_einstein             # Plank distribution
 
@@ -114,38 +113,12 @@ class Phonon:
 
     def assign_internal_scattering_time(self, material):
         """Determine relaxation time after which this phonon will undergo internal scattering"""
-
         if cf.use_gray_approximation_mfp:
             self.time_of_internal_scattering = cf.gray_approximation_mfp / self.speed
         else:
-            omega = 2*pi*self.f
-
-            # Depending on the material we assign different relaxation times:
-            if material.name == Materials.Si:
-                deb_temp = 152.0
-                tau_impurity = 1/(2.95e-45 * (omega ** 4))
-                tau_umklapp = 1/(0.95e-19 * (omega ** 2) * cf.temp * exp(-deb_temp / cf.temp))
-                tau_internal = 1/((1/tau_impurity) + (1/tau_umklapp))
-
-            elif material.name == Materials.SiC:    # Ref. Joshi et al, JAP 88, 265 (2000)
-                # In SiC we also take into account 4 phonon scattering.
-                deb_temp = 1200
-                tau_impurity = 1/(8.46e-45 * (omega ** 4))
-                tau_umklapp = 1/(6.16e-20 * (omega ** 2) * cf.temp * exp(-deb_temp / cf.temp))
-                tau_4p = 1/(6.9e-23 * (cf.temp ** 2) * (omega ** 2))
-                tau_internal = 1/((1/tau_impurity) + (1/tau_umklapp) + (1/tau_4p))
-
-            elif material.name == Materials.Graphite:    # Ref. PRB 87, 115421 (2013)
-                # In graphene we assume that material is perfect and no impurity scattering is present.
-                deb_temp = 1000.0
-                tau_umklapp = 1/(3.18e-25 * (omega ** 2) * (cf.temp ** 3) * exp(-deb_temp / (3*cf.temp)))
-                tau_internal = 1/(1/tau_umklapp)
-
-            else:
-                raise ValueError('Specified material does not exist in the database.')
-
-            # Final relaxation time is determined with some randomization [PRB 94, 174303 (2016)]:
-            self.time_of_internal_scattering = -log(random()) * tau_internal
+            # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
+            omega = 2 * pi * self.f
+            self.time_of_internal_scattering = -log(random()) * material.relaxation_time(omega, cf.temp)
 
     def move(self):
         """Move a phonon in one timestep and return new coordinates"""

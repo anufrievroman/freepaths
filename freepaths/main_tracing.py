@@ -15,7 +15,7 @@ from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData
 from freepaths.progress import Progress
-from freepaths.materials import Material
+from freepaths.materials import Si, SiC, Graphite
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.animation import create_animation
@@ -29,7 +29,19 @@ class PhononSimulator:
     """
 
     def __init__(self, worker_id, total_phonons, shared_list, output_trajectories_of):
-        # save some general information about the process
+
+        # Initialize the material:
+        if cf.media == "Si":
+            self.material = Si()
+        elif cf.media == "SiC":
+            self.material = SiC()
+        elif cf.media == "Graphite":
+            self.material = Graphite()
+        else:
+            print(f"Material {self.material} is not supported")
+            sys.exit()
+
+        # Save some general information about the process:
         self.worker_id = worker_id
         self.total_phonons = total_phonons
         self.result_queue = shared_list
@@ -37,7 +49,6 @@ class PhononSimulator:
         self.output_trajectories_of = output_trajectories_of
 
         # Initiate data structures:
-        self.material = Material(cf.media, num_points=cf.number_of_phonons+1)
         self.scatter_stats = ScatteringData()
         self.general_stats = GeneralData()
         self.segment_stats = SegmentData()

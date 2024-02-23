@@ -148,4 +148,4 @@ def surface_scattering(ph, scattering_types):
                 break
 
     # Correct angle if it became more than 180 degrees:
-    # ph.correct_angle()
+    ph.correct_angle()

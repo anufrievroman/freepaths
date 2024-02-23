@@ -16,7 +16,7 @@ from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData
 from freepaths.progress import Progress
-from freepaths.materials import Material
+from freepaths.materials import Si, SiC, Graphite
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.output_plots import plot_data
@@ -29,8 +29,18 @@ def main(input_file):
     start_time = time.time()
     progress = Progress()
 
+    # Initialize the material:
+    if cf.media == "Si":
+        self.material = Si(num_points=cf.number_of_phonons +1)
+    elif cf.media == "SiC":
+        self.material = SiC(num_points=cf.number_of_phonons+1)
+    elif cf.media == "Graphite":
+        self.material = Graphite(num_points=cf.number_of_phonons+1)
+    else:
+        print(f"Material {self.material} is not supported")
+        sys.exit()
+
     # Initiate data structures:
-    material = Material(cf.media, num_points=cf.number_of_phonons+1)
     scatter_stats = ScatteringData()
     general_stats = GeneralData()
     segment_stats = SegmentData()
