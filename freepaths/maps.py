@@ -124,10 +124,7 @@ class ThermalMaps(Maps):
                 y_coord = cf.length / cf.number_of_pixels_y * (y_index + 0.5)
                 x_coord = -cf.width/2 + cf.width / cf.number_of_pixels_x * (x_index + 0.5)
 
-                pixel_volume_ratios[y_index, x_index] = all(
-                    hole.is_inside(x_coord, y_coord, None, cf) is None
-                    for hole in cf.holes
-                )
+                pixel_volume_ratios[y_index, x_index] = not any(hole.is_inside(x_coord, y_coord, None, cf) for hole in cf.holes)
 
         return pixel_volume_ratios
 

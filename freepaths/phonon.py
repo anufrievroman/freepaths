@@ -37,7 +37,7 @@ class Phonon:
         source = choice(cf.phonon_sources)
         while True:
             self.x, self.y, self.z = source.generate_coordinates()
-            is_in_hole = any(hole.is_inside(self.x, self.y, None, cf) is not None for hole in cf.holes)
+            is_in_hole = any(hole.is_inside(self.x, self.y, None, cf) for hole in cf.holes)
             if not is_in_hole:
                 break
 

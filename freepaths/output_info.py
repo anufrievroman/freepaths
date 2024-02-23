@@ -105,7 +105,7 @@ def output_scattering_information(scatter_stats):
 
 
 def output_parameter_warnings():
-    """Check if parameters used for this simulation made sense considering the results"""
+    """Check if parameters used for this simulation made sense considering the simulation results"""
 
     # Check if some phonons had longer travel times than initialization period:
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
@@ -118,9 +118,9 @@ def output_parameter_warnings():
     # Check if pixel size is too small:
     speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
     if max(speeds) * cf.timestep > cf.length / cf.number_of_pixels_y:
-        print(f'{Fore.RED}Warning: Pixels in y direction are smaller than one length of one step.{Style.RESET_ALL}')
+        print(f'{Fore.RED}Warning: Pixels in y direction are smaller than length of one step.{Style.RESET_ALL}')
     if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
-        print(f'{Fore.RED}Warning: Pixels in x direction are smaller than one length of one step.{Style.RESET_ALL}')
+        print(f'{Fore.RED}Warning: Pixels in x direction are smaller than length of one step.{Style.RESET_ALL}')
 
     # Check how many phonons reached the cold side during simulation:
     exit_angles = np.loadtxt("Data/All exit angles.csv")

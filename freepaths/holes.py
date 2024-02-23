@@ -1,8 +1,6 @@
 """
 Module that contains the Hole classes.
-These classes contain all methods associated with the hole.
-
-The functions from the scattering_parabolic, scattering_primitives, etc... are not in here yet.
+These classes contain all methods associated with scattering on holes.
 """
 
 
@@ -12,10 +10,31 @@ from matplotlib.patches import Rectangle, Circle, Polygon
 from scipy.spatial import cKDTree
 
 from freepaths.scattering_primitives import *
+from freepaths.scattering_types import ScatteringTypes
 
 
 class Hole:
-    pass
+    def is_inside(self, x, y, z, cf) -> bool:
+        """
+        Check if phonon with given coordinates traverses the boundary.
+        It returns True or False depending whether x, y, z is inside the hole
+        """
+        pass
+
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """
+        Calculate the new direction after scattering on the hole.
+        It returns ScatteringTypes object with the scattering type that occued
+        """
+        pass
+
+    def get_patch(self, color_holes, cf):
+        """
+        Create a patch in the shape of the hole to use in the plots.
+        It returns the matplotlib.patches objects like Rectangle etc.
+        """
+        pass
+
 
 class CircularHole(Hole):
     """Shape of a circular hole"""
@@ -26,26 +45,26 @@ class CircularHole(Hole):
         self.diameter = diameter
 
     def is_inside(self, x, y, z, cf):
+        """Check if phonon with given coordinates traverses the boundary"""
         radius = self.diameter / 2
-        if (x - self.x0) ** 2 + (y - self.y0) ** 2 <= radius**2:
-            return 'circle'
+        return (x - self.x0) ** 2 + (y - self.y0) ** 2 <= radius**2
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Check if a phonon strikes a circular hole and calculate the new direction"""
-        if self.is_inside(x, y, z, cf):
-            if y == self.y0:
-                y += 1e-9  # Prevent division by zero
-            tangent_theta = atan((x - self.x0) / (y - self.y0))
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
+        if y == self.y0:
+            y += 1e-9  # Prevent division by zero
+        tangent_theta = atan((x - self.x0) / (y - self.y0))
 
-            # check if the phonon is travelling towards the hole
-            current_distance = sqrt((self.x0 - ph.x)**2 + (self.y0 - ph.y)**2)
-            next_distance = sqrt((self.x0 - x)**2 + (self.y0 - y)**2)
-            if next_distance <= current_distance:
-                scattering_types.holes = circle_outer_scattering(
-                    ph, tangent_theta, y, self.y0, cf.hole_roughness, cf
-                )
+        # check if the phonon is travelling towards the hole
+        current_distance = sqrt((self.x0 - ph.x)**2 + (self.y0 - ph.y)**2)
+        next_distance = sqrt((self.x0 - x)**2 + (self.y0 - y)**2)
+        if next_distance <= current_distance:
+            scattering_types.holes = circle_outer_scattering(
+                ph, tangent_theta, y, self.y0, cf.hole_roughness, cf
+            )
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         return Circle(
             (1e6 * self.x0, 1e6 * self.y0),
             1e6 * self.diameter / 2,
@@ -63,46 +82,35 @@ class RectangularHole(Hole):
         self.size_y = size_y
 
     def is_inside(self, x, y, z, cf):
-        if (abs(x - self.x0) <= self.size_x / 2) and (
-            abs(y - self.y0) <= self.size_y / 2
-        ):
-            return 'rectangle'
+        """Check if phonon with given coordinates traverses the boundary"""
+        return (abs(x - self.x0) <= self.size_x / 2) and (abs(y - self.y0) <= self.size_y / 2)
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Check if the phonon strikes a rectangular hole and calculate new direction"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
-        # If the phonon is inside the rectangle:
-        if self.is_inside(x, y, z, cf):
-            # Coordinate y of the intersection with the hole side:
-            y1 = (self.y0 - y) + cos(ph.theta) * (
-                self.size_x / 2 - abs(self.x0 - x)
-            ) / abs(sin(ph.theta))
+        # Coordinate y of the intersection with the hole side:
+        y1 = (self.y0 - y) + cos(ph.theta) * (
+            self.size_x / 2 - abs(self.x0 - x)
+        ) / abs(sin(ph.theta))
 
-            # Scattering on the left wall:
-            if abs(y1) <= self.size_y / 2 and x < self.x0:
-                scattering_types.holes = vertical_surface_left_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+        # Scattering on the left wall:
+        if abs(y1) <= self.size_y / 2 and x < self.x0:
+            scattering_types.holes = vertical_surface_left_scattering(ph, cf.hole_roughness, cf)
 
-            # Scattering on the right wall:
-            elif abs(y1) <= self.size_y / 2 and x > self.x0:
-                scattering_types.holes = vertical_surface_right_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+        # Scattering on the right wall:
+        elif abs(y1) <= self.size_y / 2 and x > self.x0:
+            scattering_types.holes = vertical_surface_right_scattering(ph, cf.hole_roughness, cf)
 
-            # Scattering on the top wall:
-            elif y > self.y0:
-                scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.side_wall_roughness
-                )
+        # Scattering on the top wall:
+        elif y > self.y0:
+            scattering_types.holes = horizontal_surface_up_scattering(ph, cf.side_wall_roughness)
 
-            # Scattering on the bottom wall:
-            else:
-                scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.side_wall_roughness
-                )
+        # Scattering on the bottom wall:
+        else:
+            scattering_types.holes = horizontal_surface_down_scattering(ph, cf.side_wall_roughness)
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         return Rectangle(
             (1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)),
             1e6 * self.size_x,
@@ -121,32 +129,25 @@ class TriangularUpHole(Hole):
         self.size_y = size_y
 
     def is_inside(self, x, y, z, cf):
+        """Check if phonon with given coordinates traverses the boundary"""
         beta = atan(0.5 * self.size_x / self.size_y)
-        if (
-            self.size_y / 2 + (y - self.y0)
-            <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta)
-        ) and (abs(y - self.y0) < self.size_y / 2):
-            return 'triangle'
+        return ((self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
+                and (abs(y - self.y0) < self.size_y / 2))
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Check if the phonon strikes a reverse triangular hole and calculate new direction"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
-        # If phonon is inside the triangle:
-        if self.is_inside(x, y, z, cf):
-            # Scattering on the bottom wall of the triangle:
-            if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
-                scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.hole_roughness
-                )
+        # Scattering on the bottom wall of the triangle:
+        if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
+            scattering_types.holes = horizontal_surface_down_scattering(ph, cf.hole_roughness)
 
-            # Scattering on the sidewalls of the triangle:
-            else:
-                beta = atan(0.5 * self.size_x / self.size_y)
-                scattering_types.holes = inclined_surfaces_up_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+        # Scattering on the sidewalls of the triangle:
+        else:
+            beta = atan(0.5 * self.size_x / self.size_y)
+            scattering_types.holes = inclined_surfaces_up_scattering(ph, beta, x, self.x0, cf.hole_roughness)
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         return Polygon(
             [
                 [1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 - self.size_y / 2)],
@@ -168,34 +169,27 @@ class TriangularDownHole(Hole):
         self.size_y = size_y
 
     def is_inside(self, x, y, z, cf):
+        """Check if phonon with given coordinates traverses the boundary"""
         beta = atan(0.5 * self.size_x / self.size_y)
-        if (
-            self.size_y / 2 - (y - self.y0)
-            <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta)
-        ) and (abs(y - self.y0) < self.size_y / 2):
-            return 'triangle'
+        return ((self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
+                and (abs(y - self.y0) < self.size_y / 2))
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Check if the phonon strikes a reverse triangular hole and calculate new direction after the scattering"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
         # Angle of the triangle:
         beta = atan(0.5 * self.size_x / self.size_y)
 
-        # If phonon is inside the triangle:
-        if self.is_inside(x, y, z, cf):
-            # Scattering on the top wall of the triangle:
-            if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
-                scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.hole_roughness
-                )
+        # Scattering on the top wall of the triangle:
+        if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
+            scattering_types.holes = horizontal_surface_up_scattering(ph, cf.hole_roughness)
 
-            # Scattering on the sidewalls of the triangle:
-            else:
-                scattering_types.holes = inclined_surfaces_down_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+        # Scattering on the sidewalls of the triangle:
+        else:
+            scattering_types.holes = inclined_surfaces_down_scattering(ph, beta, x, self.x0, cf.hole_roughness)
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         return Polygon(
             [
                 [1e6 * (self.x0 - self.size_x / 2), 1e6 * (self.y0 + self.size_y / 2)],
@@ -218,62 +212,39 @@ class TriangularDownHalfHole(Hole):
         self.is_right_half = is_right_half
 
     def is_inside(self, x, y, z, cf):
+        """Check if phonon with given coordinates traverses the boundary"""
         beta = atan(0.5 * self.size_x / self.size_y)
+        if self.is_right_half:
+            return ((self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
+            and (abs(y - self.y0) < self.size_y / 2) and (x > self.x0))
+        else:
+           return ((self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
+            and (abs(y - self.y0) < self.size_y / 2) and (x < self.x0))
 
-        # If phonon is inside the right side of the triangle:
-        if (
-            self.is_right_half
-            and (
-                self.size_y / 2 - (y - self.y0)
-                <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta)
-            )
-            and (abs(y - self.y0) < self.size_y / 2)
-            and (x > self.x0)
-        ):
-            return 'right side'
-
-        # If phonon is inside the left side of the triangle:
-        elif (
-            not self.is_right_half
-            and (
-                self.size_y / 2 - (y - self.y0)
-                <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta)
-            )
-            and (abs(y - self.y0) < self.size_y / 2)
-            and (x < self.x0)
-        ):
-            return 'left side'
-
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Check if the phonon strikes a reverse triangular hole and calculate new direction"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
         # Angle of the triangle:
         beta = atan(0.5 * self.size_x / self.size_y)
 
         in_area = self.is_inside(x, y, z, cf)
 
-        # If phonon is inside the right side of the triangle:
-        if in_area == 'right side':
+        # Triangle oriented right:
+        if self.is_right_half:
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
-                scattering_types.holes = horizontal_surface_up_scattering(
-                    ph, cf.hole_roughness
-                )
+                scattering_types.holes = horizontal_surface_up_scattering(ph, cf.hole_roughness)
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x < self.x0:
-                scattering_types.holes = vertical_surface_left_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                scattering_types.holes = vertical_surface_left_scattering(ph, cf.hole_roughness, cf)
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                scattering_types.holes = inclined_surfaces_down_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                scattering_types.holes = inclined_surfaces_down_scattering(ph, beta, x, self.x0, cf.hole_roughness)
 
-        # If phonon is inside the left side of the triangle:
-        if in_area == 'left side':
+        # Triangle oriented left:
+        else:
             # Scattering on the top wall of the triangle:
             if (ph.y > self.y0 + self.size_y / 2) and (abs(ph.theta) > pi / 2):
                 scattering_types.holes = horizontal_surface_up_scattering(
@@ -282,17 +253,14 @@ class TriangularDownHalfHole(Hole):
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x > self.x0:
-                scattering_types.holes = vertical_surface_right_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                scattering_types.holes = vertical_surface_right_scattering(ph, cf.hole_roughness, cf)
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                scattering_types.holes = inclined_surfaces_down_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                scattering_types.holes = inclined_surfaces_down_scattering(ph, beta, x, self.x0, cf.hole_roughness)
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         if self.is_right_half:
             return Polygon(
                 [
@@ -332,81 +300,55 @@ class TriangularUpHalfHole(Hole):
         self.is_right_half = is_right_half
 
     def is_inside(self, x, y, z, cf):
+
+        """Check if phonon with given coordinates traverses the boundary"""
         beta = atan(0.5 * self.size_x / self.size_y)
 
-        # If phonon is inside the right side of the triangle:
-        if (
-            self.is_right_half
-            and (
-                self.size_y / 2 + (y - self.y0)
-                <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta)
-            )
-            and (abs(y - self.y0) < self.size_y / 2)
-            and (x > self.x0)
-        ):
-            return 'right side'
+        if self.is_right_half:
+            return (( self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
+                    and (abs(y - self.y0) < self.size_y / 2) and (x > self.x0))
+        else:
+            return ((self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
+                    and (abs(y - self.y0) < self.size_y / 2) and (x < self.x0))
 
-        # If phonon is inside the left side of the triangle:
-        elif (
-            not self.is_right_half
-            and (
-                self.size_y / 2 + (y - self.y0)
-                <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta)
-            )
-            and (abs(y - self.y0) < self.size_y / 2)
-            and (x < self.x0)
-        ):
-            return 'left side'
-
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Check if the phonon strikes a reverse triangular hole and calculate new direction"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
         # Angle of the triangle:
         beta = atan(0.5 * self.size_x / self.size_y)
 
         in_area = self.is_inside(x, y, z, cf)
 
-        # If phonon is inside the right side of the triangle:
-        if in_area == 'right side':
+        # Triangle oriented right:
+        if self.is_right_half:
             # Scattering on the bottom wall of the triangle:
             if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
-                scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.hole_roughness
-                )
+                scattering_types.holes = horizontal_surface_down_scattering(ph, cf.hole_roughness)
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x < self.x0:
-                scattering_types.holes = vertical_surface_left_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                scattering_types.holes = vertical_surface_left_scattering(ph, cf.hole_roughness, cf)
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                scattering_types.holes = inclined_surfaces_up_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                scattering_types.holes = inclined_surfaces_up_scattering(ph, beta, x, self.x0, cf.hole_roughness)
 
-        # If phonon is inside the left side of the triangle:
-        elif in_area == 'left side':
+        # Triangle oriented left:
+        else:
             # Scattering on the bottom wall of the triangle:
             if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
-                scattering_types.holes = horizontal_surface_down_scattering(
-                    ph, cf.hole_roughness
-                )
+                scattering_types.holes = horizontal_surface_down_scattering(ph, cf.hole_roughness)
 
             # Scattering on the vertical sidewall of the triangle:
             elif ph.x > self.x0:
-                scattering_types.holes = vertical_surface_right_scattering(
-                    ph, cf.hole_roughness, cf
-                )
+                scattering_types.holes = vertical_surface_right_scattering(ph, cf.hole_roughness, cf)
 
             # Scattering on the inclined sidewall of the triangle:
             else:
-                scattering_types.holes = inclined_surfaces_up_scattering(
-                    ph, beta, x, self.x0, cf.hole_roughness
-                )
+                scattering_types.holes = inclined_surfaces_up_scattering(ph, beta, x, self.x0, cf.hole_roughness)
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         if self.is_right_half:
             return Polygon(
                 [
@@ -443,44 +385,41 @@ class PointLineHole(Hole):
 
         assert points is not None, "Please provide some points to the PointLineHole"
 
-        # rotate points
+        # Rotate points:
         if rotation != 0 and rotation is not None:
             points = self.rotate_points(points, rotation)
-        # move points to x0, y0 position
+
+        # Move points to x0, y0 position:
         self.points = array(points) + (x, y)
-        # build tree for fast search
+
+        # Build cKDTree for fast search:
         self.tree = cKDTree(self.points)
         self.thickness = thickness
 
     def is_inside(self, x, y, z, cf):
-        distance, idx = self.tree.query((x, y))
-        if distance < self.thickness / 2:
-            return str(idx)
+        """Check if phonon with given coordinates traverses the boundary"""
+        distance, _ = self.tree.query((x, y))
+        return distance < self.thickness / 2
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        if point_id := self.is_inside(x, y, z, cf):
-            self.circles_scattering_function(ph, scattering_types, x, y, z, cf, self.points[int(point_id)])
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
-    def get_patch(self, color_holes, cf):
-        return [Circle(
-            (x*1e6, y*1e6),
-            self.thickness*1e6/2,
-            facecolor=color_holes,
-        ) for x,y in self.points]
-
-    def circles_scattering_function(self, ph, scattering_types, x, y, z, cf, center_point):
-        x0, y0 = center_point
+        # First, find nearest circle and get its coordinates:
+        distance, index = self.tree.query((x, y))
+        x0, y0 = self.points[index]
         if y == y0:
             y += 1e-9  # Prevent division by zero
         tangent_theta = atan((x - x0) / (y - y0))
 
-        # check if the phonon is traveling towards the hole
+        # Check if the phonon is traveling towards the hole:
         current_distance, _ = self.tree.query((ph.x, ph.y))
-        next_distance, _ = self.tree.query((x, y))
-        if next_distance <= current_distance:
-            scattering_types.holes = circle_outer_scattering(
-                ph, tangent_theta, y, y0, cf.hole_roughness, cf
-            )
+        if distance <= current_distance:
+            scattering_types.holes = circle_outer_scattering(ph, tangent_theta, y, y0, cf.hole_roughness, cf)
+
+    def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
+        return [Circle((x*1e6, y*1e6), self.thickness*1e6/2, facecolor=color_holes,) for x, y in self.points]
+
 
     def rotate_points(self, points, angle):
         rotated_points = []
@@ -501,12 +440,15 @@ class PointLineHole(Hole):
 
 
 class FunctionLineHole(PointLineHole):
-    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x*2*pi/300e-9)/2*200e-9, function_range=(-150e-9, 150e-9), size_x=None, size_y=None, resolution=1e-9, rotation=0):
+    """Create a line of holes from a mathematical function"""
+
+    def __init__(self, x=0, y=0, thickness=60e-9, function=lambda x: sin(x*2*pi/300e-9)/2*200e-9, function_range=(-150e-9, 150e-9),
+                size_x=None, size_y=None, resolution=1e-9, rotation=0):
         points = self.points_from_function(function, function_range, size_x, size_y, resolution, thickness)
         super().__init__(x, y, points, thickness, rotation)
 
     def points_from_function(self, function, function_range, size_x, size_y, resolution, thickness):
-        # generate the points in the function space
+        """Generate the points in the function space"""
         number_of_circles = round((function_range[1] - function_range[0])/resolution if size_x is None else (size_x-thickness)/resolution)
 
         xs = linspace(function_range[0], function_range[1], number_of_circles)
@@ -534,54 +476,48 @@ class ParabolaTop(Hole):
         self.focus = focus
 
     def is_inside(self, x, y, z, cf):
-        # If phonon is beyond the parabola:
+        """Check if phonon with given coordinates traverses the boundary"""
         y_cept = -((cf.width / 2) ** 2) / (4 * self.focus) + self.tip
-        if y > y_cept and (x**2 + 4 * self.focus * (y - self.tip)) >= 0:
-            return 'parabola'
+        return (y > y_cept) and (x**2 + 4 * self.focus * (y - self.tip)) >= 0
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Scattering on top parabolic boundary"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
-        # If phonon is above the parabola:
-        if self.is_inside(x, y, z, cf):
-            # Calculate angle to the surface and specular scattering probability:
-            normal_theta = pi * (x < 0) - atan(2 * self.focus / x)
-            dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
-            angle = acos(dot_product)
-            p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+        # Calculate angle to the surface and specular scattering probability:
+        normal_theta = pi * (x < 0) - atan(2 * self.focus / x)
+        dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
+        angle = acos(dot_product)
+        p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
 
-            # Specular scattering:
-            if random() < p:
-                if abs(ph.theta) > pi / 2:
-                    ph.theta = ph.theta - 2 * normal_theta
-                else:
-                    ph.theta = 2 * normal_theta - ph.theta
-                scattering_types.walls = Scattering.SPECULAR
-
-            # Diffuse scattering:
+        # Specular scattering:
+        if random() < p:
+            if abs(ph.theta) > pi / 2:
+                ph.theta = ph.theta - 2 * normal_theta
             else:
-                scattering_types.walls = Scattering.DIFFUSE
-                for _ in range(10):
-                    # Lambert distribution
-                    ph.theta = normal_theta + asin(2 * random() - 1) - pi / 2
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                ph.theta = 2 * normal_theta - ph.theta
+            scattering_types.walls = Scattering.SPECULAR
 
-                    # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
-                        break
+        # Diffuse scattering:
+        else:
+            scattering_types.walls = Scattering.DIFFUSE
+            for _ in range(10):
+                # Lambert distribution
+                ph.theta = normal_theta + asin(2 * random() - 1) - pi / 2
+                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+
+                # Accept the angles only if they do not immediately cause new scattering:
+                if no_new_scattering(ph, cf):
+                    break
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         eval_xs = linspace(-cf.width / 2, cf.width / 2, 50)
         parabola_ys = -(eval_xs**2) / (4 * self.focus) + self.tip
         parabola_points = column_stack((eval_xs, parabola_ys))
         polygon_point = vstack(
             (parabola_points, [cf.width / 2, cf.length], [-cf.width / 2, cf.length])
         )
-        return Polygon(
-            polygon_point * 1e6,
-            closed=True,
-            facecolor=color_holes,
-        )
+        return Polygon(polygon_point * 1e6, closed=True, facecolor=color_holes,)
 
 
 class ParabolaBottom(Hole):
@@ -592,52 +528,48 @@ class ParabolaBottom(Hole):
         self.focus = focus
 
     def is_inside(self, x, y, z, cf):
+        """Check if phonon with given coordinates traverses the boundary"""
         y_cept = (cf.width / 2) ** 2 / (4 * self.focus) + self.tip
-        if y < y_cept and (x**2 - 4 * self.focus * (y - self.tip)) >= 0:
-            return 'parabola'
+        return (y < y_cept) and (x**2 - 4 * self.focus * (y - self.tip)) >= 0
 
-    def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
-        """Scattering on bottom parabolic boundary"""
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the hole"""
 
-        # If phonon is below the parabola:
-        if self.is_inside(x, y, z, cf):
-            # Calculate angle to the surface and specular scattering probability:
-            normal_theta = pi * (x < 0) - atan(-2 * self.focus / x)
-            dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
-            angle = acos(dot_product)
-            p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+        # Calculate angle to the surface and specular scattering probability:
+        normal_theta = pi * (x < 0) - atan(-2 * self.focus / x)
+        dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
+        angle = acos(dot_product)
+        p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
 
-            # Specular scattering:
-            if random() < p:
-                ph.theta = - ph.theta + 2 * normal_theta
-                scattering_types.walls = Scattering.SPECULAR
+        # Specular scattering:
+        if random() < p:
+            ph.theta = - ph.theta + 2 * normal_theta
+            scattering_types.walls = Scattering.SPECULAR
 
-            # Diffuse scattering:
-            else:
-                scattering_types.walls = Scattering.DIFFUSE
-                for _ in range(10):
-                    # Lambertian distribution
-                    ph.theta = normal_theta + asin(2 * random() - 1) - pi / 2
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+        # Diffuse scattering:
+        else:
+            scattering_types.walls = Scattering.DIFFUSE
+            for _ in range(10):
+                # Lambertian distribution
+                ph.theta = normal_theta + asin(2 * random() - 1) - pi / 2
+                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
-                    # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
-                        break
+                # Accept the angles only if they do not immediately cause new scattering:
+                if no_new_scattering(ph, cf):
+                    break
 
     def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of the hole to use in the plots"""
         eval_xs = linspace(-cf.width / 2, cf.width / 2, 50)
         parabola_ys = eval_xs**2 / (4 * self.focus) + self.tip
         parabola_points = column_stack((eval_xs, parabola_ys))
         polygon_point = vstack((parabola_points, [cf.width / 2, 0], [-cf.width / 2, 0]))
-        return Polygon(
-            polygon_point * 1e6,
-            closed=True,
-            facecolor=color_holes,
-        )
+        return Polygon(polygon_point * 1e6, closed=True, facecolor=color_holes,)
 
 
-class CircularPillar(Hole):
+class CircularPillar():
     """Shape of a circular pillar with inclined wall"""
+
 
     def __init__(self, x=0, y=0, diameter=200e-9, height=300e-9, wall_angle=pi / 2):
         self.x0 = x
@@ -672,8 +604,5 @@ class CircularPillar(Hole):
             )
 
     def get_patch(self, color_holes, cf):
-        return Circle(
-            (1e6 * self.x0, 1e6 * self.y0),
-            1e6 * self.diameter / 2,
-            facecolor=color_holes,
-        )
+        """Create a patch in the shape of the hole to use in the plots"""
+        return Circle((1e6 * self.x0, 1e6 * self.y0), 1e6 * self.diameter / 2, facecolor=color_holes,)

@@ -131,7 +131,8 @@ def surface_scattering(ph, scattering_types):
     if cf.holes:
         # Check for each hole and each hole type:
         for hole in cf.holes:
-            hole.check_if_scattering(ph, scattering_types, x, y, z, cf)
+            if hole.is_inside(x, y, z, cf):
+                hole.scatter(ph, scattering_types, x, y, z, cf)
 
             # If there was any scattering, then no need to check rest of the holes:
             if scattering_types.holes is not None:
