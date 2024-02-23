@@ -8,7 +8,8 @@ import numpy as np
 import enum
 
 from freepaths.config import cf
-from freepaths.options import Distributions, Materials
+from freepaths.materials import Materials
+from freepaths.sources import Distributions
 import freepaths.move
 
 

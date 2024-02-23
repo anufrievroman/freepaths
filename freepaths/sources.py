@@ -1,9 +1,22 @@
 """Module provides the phonon source object"""
 
+import enum
+
 from random import random
 from math import pi, asin
 from numpy import sign
-from freepaths.options import Distributions
+
+
+class Distributions(enum.Enum):
+    """Possible distributions of angles"""
+    RANDOM_UP = 1
+    RANDOM_DOWN = 2
+    RANDOM_RIGHT = 3
+    RANDOM_LEFT = 4
+    LAMBERT = 5
+    DIRECTIONAL = 6
+    DIRECTIONAL_DOWN = 7
+    UNIFORM = 8
 
 
 class Source:
@@ -30,40 +43,29 @@ class Source:
         if self.angle_distribution == Distributions.RANDOM_UP:
             theta = -pi/2 + pi*random()
             phi = asin(2*random() - 1)
-            return theta, phi
-
-        if self.angle_distribution == Distributions.RANDOM_DOWN:
+        elif self.angle_distribution == Distributions.RANDOM_DOWN:
             rand_sign = sign((2*random() - 1))
             theta = rand_sign*(pi/2 + pi/2*random())
             phi = asin(2*random() - 1)
-            return theta, phi
-
-        if self.angle_distribution == Distributions.RANDOM_RIGHT:
+        elif self.angle_distribution == Distributions.RANDOM_RIGHT:
             theta = pi*random()
             phi = asin(2*random() - 1)
-            return theta, phi
-
-        if self.angle_distribution == Distributions.RANDOM_LEFT:
+        elif self.angle_distribution == Distributions.RANDOM_LEFT:
             theta = - pi*random()
             phi = asin(2*random() - 1)
-            return theta, phi
-
-        if self.angle_distribution == Distributions.DIRECTIONAL:
+        elif self.angle_distribution == Distributions.DIRECTIONAL:
             theta = 1e-10
             phi = -pi/2 + pi*random()
-            return theta, phi
-
-        if self.angle_distribution == Distributions.DIRECTIONAL_DOWN:
+        elif self.angle_distribution == Distributions.DIRECTIONAL_DOWN:
             theta = -pi+1e-10
             phi = -pi/2 + pi*random()
-            return theta, phi
-
-        if self.angle_distribution == Distributions.LAMBERT:
+        elif self.angle_distribution == Distributions.LAMBERT:
             theta = asin(2*random() - 1)
             phi = asin((asin(2*random() - 1))/(pi/2))
-            return theta, phi
-
-        if self.angle_distribution == Distributions.UNIFORM:
+        elif self.angle_distribution == Distributions.UNIFORM:
             theta = -pi + 2*pi*random()
             phi = asin(2*random() - 1)
-            return theta, phi
+        else:
+            raise ValueError("Invalid distribution type")
+
+        return theta, phi

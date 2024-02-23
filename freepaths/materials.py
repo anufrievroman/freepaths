@@ -7,8 +7,17 @@ AlN - Ref. PRB 58 12899 (1998)
 Graphite/Graphene - Ref. Yanagisawa et al, Surface and Interface Analysis 37 133-136 (2005)
 """
 
+import enum
 import numpy as np
-from freepaths.options import Materials
+
+
+class Materials(enum.Enum):
+    """Possible materials"""
+    Si = 1
+    SiC = 2
+    Diamond = 3
+    AlN = 4
+    Graphite = 5
 
 
 class Material:

@@ -7,7 +7,8 @@ import sys
 import argparse
 from colorama import Fore, Style
 
-from freepaths.options import Materials, Distributions
+from freepaths.materials import Materials
+from freepaths.sources import Distributions
 from freepaths.holes import *
 
 # Import a default input file:
