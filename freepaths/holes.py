@@ -525,6 +525,7 @@ class FunctionLineHole(PointLineHole):
 
         return vstack((xs, ys)).T
 
+
 class ParabolaTop(Hole):
     """Shape of a parabolic wall"""
 
@@ -541,13 +542,14 @@ class ParabolaTop(Hole):
     def check_if_scattering(self, ph, scattering_types, x, y, z, cf):
         """Scattering on top parabolic boundary"""
 
-        # If phonon is beyond the parabola:
+        # If phonon is above the parabola:
         if self.is_inside(x, y, z, cf):
             # Calculate angle to the surface and specular scattering probability:
             normal_theta = pi * (x < 0) - atan(2 * self.focus / x)
             dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
             angle = acos(dot_product)
             p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+
             # Specular scattering:
             if random() < p:
                 if abs(ph.theta) > pi / 2:
@@ -556,6 +558,7 @@ class ParabolaTop(Hole):
                     ph.theta = 2 * normal_theta - ph.theta
                 scattering_types.walls = Scattering.SPECULAR
 
+            # Diffuse scattering:
             else:
                 scattering_types.walls = Scattering.DIFFUSE
                 for _ in range(10):
@@ -606,12 +609,10 @@ class ParabolaBottom(Hole):
 
             # Specular scattering:
             if random() < p:
-                if abs(ph.theta) > pi / 2:
-                    ph.theta = ph.theta - 2 * normal_theta
-                else:
-                    ph.theta = 2 * normal_theta - ph.theta
+                ph.theta = - ph.theta + 2 * normal_theta
                 scattering_types.walls = Scattering.SPECULAR
 
+            # Diffuse scattering:
             else:
                 scattering_types.walls = Scattering.DIFFUSE
                 for _ in range(10):

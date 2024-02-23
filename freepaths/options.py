@@ -20,4 +20,5 @@ class Distributions(enum.Enum):
     RANDOM_LEFT = 4
     LAMBERT = 5
     DIRECTIONAL = 6
-    UNIFORM = 7
+    DIRECTIONAL_DOWN = 7
+    UNIFORM = 8

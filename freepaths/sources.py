@@ -53,6 +53,11 @@ class Source:
             phi = -pi/2 + pi*random()
             return theta, phi
 
+        if self.angle_distribution == Distributions.DIRECTIONAL_DOWN:
+            theta = -pi+1e-10
+            phi = -pi/2 + pi*random()
+            return theta, phi
+
         if self.angle_distribution == Distributions.LAMBERT:
             theta = asin(2*random() - 1)
             phi = asin((asin(2*random() - 1))/(pi/2))
