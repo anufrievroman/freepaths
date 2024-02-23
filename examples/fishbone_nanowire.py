@@ -1,7 +1,5 @@
 """Config file to simulate a fishbone nanowire in Si at 4K"""
 
-import numpy as np
-
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Fishbone nanowire'
 NUMBER_OF_PHONONS              = 300
@@ -37,7 +35,7 @@ IGNORE_FAULTY_PHONONS          = False
 
 # Material parameters:
 MEDIA                          = "Si"
-SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K (NOT CORRECT)
+SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
 #SPECIFIC_HEAT_CAPACITY        = 714     # [J/kg/K] for Si at 300 K
 
 
@@ -48,7 +46,7 @@ GRAY_APPROXIMATION_MFP         = 200e-9
 
 
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=100e-9,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
 
 
 # Roughness [m]:

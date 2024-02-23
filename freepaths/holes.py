@@ -1,5 +1,5 @@
 """
-Module that contains the Hole classes. 
+Module that contains the Hole classes.
 These classes contain all methods associated with the hole.
 
 The functions from the scattering_parabolic, scattering_primitives, etc... are not in here yet.
@@ -36,7 +36,7 @@ class CircularHole(Hole):
             if y == self.y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - self.x0) / (y - self.y0))
-            
+
             # check if the phonon is travelling towards the hole
             current_distance = sqrt((self.x0 - ph.x)**2 + (self.y0 - ph.y)**2)
             next_distance = sqrt((self.x0 - x)**2 + (self.y0 - y)**2)

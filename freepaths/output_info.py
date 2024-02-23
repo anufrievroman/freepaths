@@ -104,7 +104,7 @@ def output_scattering_information(scatter_stats):
             file.writelines(info3)
 
 
-def post_parameter_check():
+def output_parameter_warnings():
     """Check if parameters used for this simulation made sense considering the results"""
 
     # Check if some phonons had longer travel times than initialization period:

@@ -35,7 +35,12 @@ class Phonon:
 
         # Assigning initial coordinates and angles:
         source = choice(cf.phonon_sources)
-        self.x, self.y, self.z = source.generate_coordinates()
+        while True:
+            self.x, self.y, self.z = source.generate_coordinates()
+            is_in_hole = any(hole.is_inside(self.x, self.y, None, cf) is not None for hole in cf.holes)
+            if not is_in_hole:
+                break
+
         self.theta, self.phi = source.generate_angles()
         if cf.is_two_dimensional_material:
             self.phi = 0.0

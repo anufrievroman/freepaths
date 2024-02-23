@@ -111,10 +111,11 @@ class ThermalMaps(Maps):
         self.vol_cell_y = cf.length * cf.thickness * cf.width / cf.number_of_pixels_y
         self.vol_pixel =  cf.length * cf.thickness * cf.width / (cf.number_of_pixels_x * cf.number_of_pixels_y)
 
-        # Calculate the pixel volumes with respect to holes
+        # Calculate the pixel volumes with respect to holes:
         self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
 
     def calculate_pixel_volumes(self, number_of_pixels_x, number_of_pixels_y):
+        """Calculate a map showing if the pixel contains material (1) or a hole (0)"""
         pixel_volume_ratios = np.zeros((number_of_pixels_y, number_of_pixels_x))
         for x_index in range(number_of_pixels_x):
             for y_index in range(number_of_pixels_y):
@@ -139,29 +140,22 @@ class ThermalMaps(Maps):
         This first time step is unique for each phonon. This is done to simulate more relistic continious heat flow.
         """
 
-        # Calculate the index of the pixel in which this phonon is now:
-
-        # move the recording point forwards half a timestep as to remove asymetric boundary fluxes (doesn't work)
+        # Move the recording point forwards half a timestep as to remove asymetric boundary fluxes (doesn't work)
         ph_x, ph_y, _ = move(ph, cf.timestep/2)
 
+        # Calculate the index of the pixel in which we record this phonon:
         index_x = int(((ph_x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
         index_y = int(ph_y // (cf.length / cf.number_of_pixels_y))
-
-        # Instead of the code below, we need to correct the volume more carefully, taking into account holes
-        # Here we arbitrarily correct the volume of the unit cells in pillars:
-        # if cf.pillars:
-            # self.vol_cell_x += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
-            # self.vol_cell_y += 2.5 * 0.3333 * cf.pillar_height * (cf.circular_hole_diameter / 2) ** 2
 
         # Prevent error if the phonon is outside the structure:
         if (0 <= index_x < cf.number_of_pixels_x) and (0 <= index_y < cf.number_of_pixels_y):
 
-            # Calculate pixel volume correction factors
+            # Calculate pixel volume correction factors:
             vol_pixel_correction = self.vol_pixel_ratio[index_y, index_x]
             vol_pixel_correction_x = np.mean(self.vol_pixel_ratio[:, index_x])
             vol_pixel_correction_y = np.mean(self.vol_pixel_ratio[index_y, :])
 
-            # do not record data if the pixel is an empty one
+            # Do not record data if the pixel is an empty one:
             if vol_pixel_correction == 0 and cf.ignore_faulty_phonons:
                 return
 
@@ -207,7 +201,7 @@ class ThermalMaps(Maps):
         and temperature profiles accumulated in that interval"""
 
         # Initialize array for thermal conductivity in each time interval
-        self.effective_thermal_conductivity[:, 0] = self.timeframe_steps 
+        self.effective_thermal_conductivity[:, 0] = self.timeframe_steps
         self.effective_thermal_conductivity[:, 0] *= cf.timestep * 1e9
         self.material_thermal_conductivity[:, 0] = self.timeframe_steps
         self.material_thermal_conductivity[:, 0] *= cf.timestep * 1e9
@@ -219,7 +213,7 @@ class ThermalMaps(Maps):
             # We need to improve the d_T calculation so that the gradient is calculated
             # from hot to cold in any direction.
 
-            # Temperature gradient:
+            # Temperature gradient obtained by linear fit of T(y):
             coordinates_y = np.arange(cf.number_of_pixels_y) * cf.length / cf.number_of_pixels_y
             slope, _ = np.polyfit(coordinates_y, self.temperature_profile_y[:, timeframe_number], 1)
             grad_T = -slope
