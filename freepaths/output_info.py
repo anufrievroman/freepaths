@@ -22,6 +22,7 @@ def output_general_information(start_time):
                 f'\nNumber of timesteps = {cf.number_of_timesteps}',
                 f'\nLength of a timestep = {cf.timestep} s',
                 f'\nTemperature = {cf.temp} K\n',
+                f'\nMaterial: {cf.media}\n',
                 f'\nLength = {cf.length * 1e9:.1f} nm',
                 f'\nWidth = {cf.width * 1e9:.1f} nm',
                 f'\nThickness = {cf.thickness * 1e9:.1f} nm\n',

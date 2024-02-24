@@ -35,6 +35,6 @@ IGNORE_FAULTY_PHONONS          = False
 # Material:
 MEDIA                          = "Graphite"
 IS_TWO_DIMENSIONAL_MATERIAL    = True
-SPECIFIC_HEAT_CAPACITY         = 710.0  # [J/kg/K] for Graphene at 300 K
+
 
 PHONON_SOURCES = [Source(size_x=WIDTH, size_y=0, size_z=THICKNESS, angle_distribution="random_up")]

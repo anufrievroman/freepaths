@@ -35,9 +35,6 @@ NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
 
 # Material parameters:
 MEDIA                          = 'Si'
-SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-# SPECIFIC_HEAT_CAPACITY         = 714  # [J/kg/K] for Si at 300 K
-# SPECIFIC_HEAT_CAPACITY         = 606  # [J/kg/K] for SiC at 300 K
 
 
 # Internal scattering:

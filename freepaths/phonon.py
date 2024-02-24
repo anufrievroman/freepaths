@@ -118,7 +118,7 @@ class Phonon:
         else:
             # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
             omega = 2 * pi * self.f
-            self.time_of_internal_scattering = -log(random()) * material.relaxation_time(omega, cf.temp)
+            self.time_of_internal_scattering = -log(random()) * material.relaxation_time(omega)
 
     def move(self):
         """Move a phonon in one timestep and return new coordinates"""

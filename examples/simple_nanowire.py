@@ -16,8 +16,6 @@ NUMBER_OF_PROCESSES = 10
 
 # Material parameters:
 MEDIA                          = 'Si'
-SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
-#SPECIFIC_HEAT_CAPACITY        = 714     # [J/kg/K] for Si at 300 K
 
 
 # System dimensions [m]:

@@ -32,11 +32,11 @@ class PhononSimulator:
 
         # Initialize the material:
         if cf.media == "Si":
-            self.material = Si()
+            self.material = Si(cf.temp)
         elif cf.media == "SiC":
-            self.material = SiC()
+            self.material = SiC(cf.temp)
         elif cf.media == "Graphite":
-            self.material = Graphite()
+            self.material = Graphite(cf.temp)
         else:
             print(f"Material {self.material} is not supported")
             sys.exit()

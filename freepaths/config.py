@@ -62,7 +62,6 @@ class Config:
 
         # Material parameters:
         self.media = MEDIA
-        self.specific_heat_capacity = SPECIFIC_HEAT_CAPACITY
 
         # Internal scattering:
         self.include_internal_scattering = INCLUDE_INTERNAL_SCATTERING
@@ -205,6 +204,9 @@ class Config:
             print("ERROR: parameter COLD_SIDE_POSITION is deprecated.")
             print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
             sys.exit()
+
+        if 'SPECIFIC_HEAT_CAPACITY' in globals():
+            print("Warning: parameter SPECIFIC_HEAT_CAPACITY is deprecated. Heat capacity is automatiacally set by material.")
 
         if any([
             'HOT_SIDE_POSITION' in globals(),

@@ -30,7 +30,6 @@ IGNORE_FAULTY_PHONONS            = False
 
 # Material parameters:
 MEDIA                            = "Si"
-SPECIFIC_HEAT_CAPACITY           = 714  # [J/kg/K] for Si at 300 K
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING      = True

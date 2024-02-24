@@ -38,7 +38,6 @@ IGNORE_FAULTY_PHONONS          = False
 
 # Material parameters:
 MEDIA                          = 'Si'
-SPECIFIC_HEAT_CAPACITY         = 0.0176  # [J/kg/K] for Si at 4 K
 
 
 # STRUCTURE:
