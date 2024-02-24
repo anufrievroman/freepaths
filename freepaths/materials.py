@@ -4,7 +4,12 @@ import numpy as np
 
 
 class Si:
-    """Physical properties of silicon"""
+    """
+    Physical properties of silicon.
+    Dispersion - Ref. APL 95 161901 (2009)
+    Relaxation time - Maire et al, Scientific Reports 7, 41794 (2017)
+    Heat capacity - Desai P.D. Journal of Physical and Chemical Reference Data 15, 67 (1986)
+    """
 
     def __init__(self, temp, num_points=1000):
         self.name = "Si"
@@ -15,7 +20,7 @@ class Si:
         self.assign_heat_capacity()
 
     def assign_dispersion(self, num_points):
-        """Assign phonon dispersion. Ref. APL 95 161901 (2009)"""
+        """Assign phonon dispersion"""
 
         coefficients_LA = [-9.70e-19, -2.405e-8, 1369.42, 0]
         coefficients_TA = [7.967e-29, 5.674e-19, -7.711e-8, 1081.74, 0]
@@ -34,10 +39,7 @@ class Si:
         return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
 
     def assign_heat_capacity(self):
-        """
-        Calculate heat capacity [J/kg/K] in 3 - 300K range using the polinomial fits.
-        Ref. Desai P.D. Journal of Physical and Chemical Reference Data 15, 67 (1986)
-        """
+        """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
         below_20K_coeffs = np.array([0.00055196, -0.0052611, 0.03086194, -0.05493787])
         between_20_and_50K_coeffs = np.array([-9.26222400e-04, 1.49879304e-01, -4.37458293e+00, 3.84245589e+01])
         above_50K_coeffs = np.array([-2.75839317e-06, -5.16662077e-03, 4.66701391e+00, -1.49876958e+02])
@@ -51,7 +53,12 @@ class Si:
 
 
 class SiC:
-    """Physical properties of silicon carbide"""
+    """
+    Physical properties of silicon carbide
+    Dispersion - PRB 50 17054 (1994)
+    Relaxation time - Joshi et al, JAP 88, 265 (2000)
+    Heat capacity - Collins et al. Journal of Applied Physics 68, 6510 (1990)
+    """
 
     def __init__(self, temp, num_points=1000):
         self.name = "SiC"
@@ -62,7 +69,7 @@ class SiC:
         self.assign_heat_capacity()
 
     def assign_dispersion(self, num_points):
-        """Assign phonon dispersion. Ref. PRB 50 17054 (1994)"""
+        """Assign phonon dispersion"""
 
         coefficients_LA = [-3.48834e-18, 1.7604452e-08, 1737.36296, 0]
         coefficients_TA = [-2.21696e-19, -3.43668e-08, 1077.98941, 0]
@@ -74,11 +81,7 @@ class SiC:
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
     def relaxation_time(self, omega):
-        """
-        Calculate relaxation time at a given frequency and temperature.
-        In SiC we also take into account 4 phonon scattering.
-        Ref. Joshi et al, JAP 88, 265 (2000)
-        """
+        """Calculate relaxation time at a given frequency and temperature including 4 phonon scattering"""
         deb_temp = 1200
         tau_impurity = 1 / (8.46e-45 * (omega ** 4))
         tau_umklapp = 1 / (6.16e-20 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
@@ -87,10 +90,8 @@ class SiC:
 
 
     def assign_heat_capacity(self):
-        """
-        Calculate heat capacity [J/kg/K] in 3 - 500K range using the polinomial fits of experimental data.
-        Ref. Collins et al. Journal of Applied Physics 68, 6510 (1990)
-        """
+        """Calculate heat capacity [J/kg/K] in 3 - 500K range using the polynomial fits of experimental data"""
+
         below_90K_coeffs = np.array([7.08396921e-05, -9.66654246e-04, 9.03926727e-02, 2.99362037e-01])
         between_90_and_200K_coeffs = np.array([-6.59772636e-04, 3.02766713e-01, -4.12089642e+01, 1.82434354e+03])
         above_200K_coeffs = np.array([-3.57059689e-06, 1.21917876e-03, 2.28676930e+00, -7.23941447e+01])
@@ -104,7 +105,12 @@ class SiC:
 
 
 class Graphite:
-    """Physical properties of graphite"""
+    """
+    Physical properties of graphite.
+    Dispersion - Carbon 91 266-274 (2015)
+    Relaxation time - Ref. PRB 87, 115421 (2013)
+    Heat capacity - Isaacs, L.L.; Wang, W.Y., Therm. Conduct. 17th, 55-61 (1981)
+    """
 
     def __init__(self, temp, num_points=1000):
         self.name = "Graphite"
@@ -115,7 +121,7 @@ class Graphite:
         self.assign_heat_capacity()
 
     def assign_dispersion(self, num_points):
-        """Assign phonon dispersion. Carbon 91 266-274 (2015)"""
+        """Assign phonon dispersion"""
 
         coefficients_LA = [-1.24989e-18, -4.11304e-08, 3640.918, 0]
         coefficients_TA = [-1.52298e-18, -4.72535e-08, 2304.367, 0]
@@ -130,8 +136,7 @@ class Graphite:
     def relaxation_time(self, omega):
         """
         Calculate relaxation time at a given frequency and temperature.
-        In graphene, we assume that material is perfect, i.e. without impurity scattering.
-        Ref. PRB 87, 115421 (2013)
+        In graphite, we assume that material is perfect, i.e. without impurity scattering.
         """
         deb_temp = 1000.0
         tau_umklapp = 1 / (3.18e-25 * (omega ** 2) * (self.temp ** 3) * np.exp(-deb_temp / (3*self.temp)))
@@ -139,10 +144,7 @@ class Graphite:
 
 
     def assign_heat_capacity(self):
-        """
-        Calculate heat capacity [J/kg/K] from the equation.
-        Ref. Isaacs, L.L.; Wang, W.Y., Thermal properties of POCO process graphite, Therm. Conduct. 17th, 1981, 55-61.
-        """
+        """Calculate heat capacity [J/kg/K] from the equation"""
         coeffs = np.array([6.309e-9, 6.27e-6, 8.729e-4, 0])
         self.heat_capacity = 1000 * np.polyval(coeffs, self.temp)
 
@@ -150,7 +152,10 @@ class Graphite:
 # Materials below are not fully supported and don't have the relaxation times:
 
 class Diamond:
-    """Physical properties of diamond"""
+    """
+    Physical properties of diamond
+    Dispersion - Ref. PRB 58 12899 (1998)
+    """
 
     def __init__(self, temp, num_points=1000):
         self.name = "Diamond"
@@ -160,7 +165,7 @@ class Diamond:
         self.assign_dispersion(num_points)
 
     def assign_dispersion(self, num_points):
-        """Assign phonon dispersion. Ref. PRB 58 12899 (1998)"""
+        """Assign phonon dispersion"""
 
         A1 = 4309.95222
         B1 = -8.855338e-08
@@ -168,18 +173,22 @@ class Diamond:
         A2 = 3185.66561
         B2 = -4.104260e-08
         C2 = -5.042335e-18
+
         self.dispersion = np.zeros((num_points, 4))
         self.dispersion[:, 0] = [k * 11707071561.7 / (num_points - 1) for k in range(num_points)]     # Wavevectors
         self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]  # LA branch
         self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
-    def relaxation_time(self, omega, temp):
+    def relaxation_time(self, omega):
         pass
 
 
 class AlN:
-    """Physical properties of AlN"""
+    """
+    Physical properties of AlN.
+    Dispersion - Yanagisawa et al, Surface and Interface Analysis 37 133-136 (2005)
+    """
 
     def __init__(self, temp, num_points=1000):
         self.name = "AlN"
@@ -190,18 +199,20 @@ class AlN:
         self.assign_dispersion(num_points)
 
     def assign_dispersion(self, num_points):
-        """Assign phonon dispersion. Ref. Yanagisawa et al, Surface and Interface Analysis 37 133-136 (2005)"""
+        """Assign phonon dispersion"""
+
         A1 = 946.677
         B1 = 3.08258e-08
         C1 = -2.990977e-18
         A2 = 1852.27
         B2 = -2.08813e-08
         C2 = -3.047928e-18
+
         self.dispersion[:, 0] = [k * 12576399382.998995 / (num_points - 1) for k in range(num_points)]
         self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]    # LA branch
         self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]    # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
-    def relaxation_time(self, omega, temp):
+    def relaxation_time(self, omega):
         pass
 
