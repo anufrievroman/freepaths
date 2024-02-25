@@ -61,7 +61,7 @@ HOT_SIDE_POSITION_LEFT              = True
 HOT_SIDE_POSITION_BOTTOM            = False
 
 # Phonon source:
-PHONON_SOURCES = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=LENGTH, size_z=THICKNESS, angle_distribution="random_right")]
+PHONON_SOURCES = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=LENGTH, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
 
 HOLES = []
 

@@ -42,6 +42,7 @@ class Phonon:
 
         # Assign initial angles:
         self.theta, self.phi = source.generate_angles()
+        self.correct_angle()
         if cf.is_two_dimensional_material:
             self.phi = 0.0
             self.z = 0.0

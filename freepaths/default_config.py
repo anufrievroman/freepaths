@@ -57,7 +57,7 @@ HOT_SIDE_POSITION_RIGHT          = False
 HOT_SIDE_POSITION_LEFT           = False
 
 # Phonon source:
-PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=0,  size_y=0, size_z=0, angle_distribution="random_up")]
+PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=0,  size_y=0, size_z=0, angle_distribution="random", angle=0)]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS              = 2e-9

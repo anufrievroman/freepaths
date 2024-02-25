@@ -37,4 +37,4 @@ MEDIA                          = "Graphite"
 IS_TWO_DIMENSIONAL_MATERIAL    = True
 
 
-PHONON_SOURCES = [Source(size_x=WIDTH, size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
+PHONON_SOURCES = [Source(size_x=WIDTH, size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]

@@ -35,7 +35,7 @@ HOT_SIDE_POSITION_BOTTOM         = False
 
 
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=10e-9, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="directional")]
+PHONON_SOURCES                 = [Source(x=0, y=10e-9, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="directional", angle=0)]
 
 
 # Parabolic boundary:

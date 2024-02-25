@@ -21,4 +21,4 @@ OUTPUT_TRAJECTORIES_OF_FIRST   = 30
 OUTPUT_ANIMATION_FPS           = 24
 
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random_up")]
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]

@@ -45,7 +45,7 @@ GRAY_APPROXIMATION_MFP         = None
 
 
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random_right")]
+PHONON_SOURCES                 = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
 
 # Walls:
 INCLUDE_RIGHT_SIDEWALL           = False
