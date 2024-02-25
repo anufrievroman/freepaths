@@ -11,8 +11,8 @@ from freepaths.config import cf
 def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
-    exit_angles = np.loadtxt("Data/All exit angles.csv")
-    percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
+    travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
+    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_phonons)
 
     with open("Information.txt", "w+", encoding="utf-8") as file:
         info = (
@@ -124,7 +124,6 @@ def output_parameter_warnings():
         print(f'{Fore.RED}Warning: Pixels in x direction are smaller than length of one step.{Style.RESET_ALL}')
 
     # Check how many phonons reached the cold side during simulation:
-    exit_angles = np.loadtxt("Data/All exit angles.csv")
-    percentage = int(100 * np.count_nonzero(exit_angles) / cf.number_of_phonons)
+    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_phonons)
     if percentage < 95:
         print(f'{Fore.RED}Warning: Only {percentage}% of phonons reached the cold side. Increase number of timesteps.{Style.RESET_ALL}')

@@ -41,4 +41,4 @@ NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
 
 
 # Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
+PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
