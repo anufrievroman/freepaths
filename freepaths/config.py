@@ -37,7 +37,7 @@ class Config:
         """Initiate all the parameters from global variables"""
 
         # General parameters:
-        self.output_folder_name = OUTPUT_FOLDER_NAME
+        self.output_folder_name = str(OUTPUT_FOLDER_NAME)
         self.number_of_phonons = NUMBER_OF_PHONONS
         self.number_of_timesteps = NUMBER_OF_TIMESTEPS
         self.number_of_nodes = NUMBER_OF_NODES
