@@ -130,8 +130,8 @@ def plot_frequency_distribution():
     filename = "Data/All initial frequencies.csv"
     frequency_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(frequency_distribution[:, 0], frequency_distribution[:, 1], 'royalblue')
-    ax.set_xlabel('Frequency (Hz)')
+    ax.plot(frequency_distribution[:, 0] * 1e-12, frequency_distribution[:, 1], 'royalblue')
+    ax.set_xlabel('Frequency (THz)')
     ax.set_ylabel('Number of phonons')
     fig.savefig("Distribution of initial frequencies.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -181,7 +181,7 @@ def plot_velocity_distribution():
     fig, ax = plt.subplots()
     speeds = np.loadtxt("Data/All group velocities.csv")
     frequencies = np.loadtxt("Data/All initial frequencies.csv")
-    ax.plot(frequencies, speeds, '.', c='royalblue')
+    ax.plot(frequencies, speeds, '.', markersize=2, c='royalblue')
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Group velocity (m/s)')
     fig.savefig('Group velocities.pdf', format='pdf', bbox_inches="tight")
@@ -192,7 +192,7 @@ def plot_time_in_segments():
     """Plot time spent in segments"""
     fig, ax = plt.subplots()
     segment, time = np.genfromtxt("Data/Time spent in segments.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
-    ax.plot(segment, time, '-', c='royalblue')
+    ax.plot(segment, time, '-o', markersize=2, c='royalblue')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Time spent (ns)')
     fig.savefig("Time spent in segments.pdf", format='pdf', bbox_inches="tight")
@@ -203,8 +203,8 @@ def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
     time, effective_thermal_conductivity, material_thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
-    ax.plot(time, effective_thermal_conductivity, linewidth=1, label='k_eff')
-    ax.plot(time, material_thermal_conductivity, linewidth=1, label='k_mat')
+    ax.plot(time, material_thermal_conductivity, '-o', markersize=2, linewidth=1, color='deeppink', label='κ$_{mat}$')
+    ax.plot(time, effective_thermal_conductivity, '-o', markersize=2, linewidth=1, color='royalblue', label='κ$_{eff}$')
     ax.set_ylabel('Thermal conductivity (W/mK)')
     ax.set_xlabel('Time (ns)')
     ax.legend()
@@ -264,7 +264,7 @@ def plot_thermal_map():
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(thermal_map)))
     plt.xlabel('x (μm)')
     plt.ylabel('y (μm)')
-    cbar = plt.colorbar()
+    cbar = plt.colorbar(shrink=0.6)
     cbar.set_label('Energy density', rotation=90)
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
     plt.close(fig)
@@ -278,8 +278,6 @@ def plot_pixel_volumes():
     plt.imshow(pixel_volumes, cmap='hot', interpolation='none', extent=boundaries)
     plt.xlabel('x (μm)')
     plt.ylabel('y (μm)')
-    cbar = plt.colorbar()
-    cbar.set_label('Pixel volume', rotation=90)
     fig.savefig("Pixel volumes.pdf", bbox_inches="tight")
     plt.close(fig)
 
@@ -294,7 +292,7 @@ def plot_heat_flux_map(file, label, units="a.u."):
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
     plt.xlabel('x (μm)', fontsize=10)
     plt.ylabel('y (μm)', fontsize=10)
-    cbar = plt.colorbar()
+    cbar = plt.colorbar(shrink=0.6)
     cbar.set_label(f"{label} ({units})", rotation=90, fontsize=10)
     fig.savefig(f"{label}.pdf", bbox_inches="tight")
     plt.close(fig)
@@ -372,16 +370,19 @@ def plot_scattering_statistics():
     fig, ax = plt.subplots()
     all_scattering_rates = []
     for scattering_type in range(scattering_data.shape[0]):
+        if scattering_type == 6: # Skip hot side scattering
+            continue
         # Calculate and plot scattering events per second:
         scattering_rate = [events / time for events, time in zip(scattering_data[scattering_type, :], time_spent)]
         all_scattering_rates.append(scattering_rate)
-        ax.plot(segments, scattering_rate, '-')
+        ax.plot(segments, scattering_rate,  '-o', markersize=2)
 
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Scattering rate (1/ns)')
     legend = ["Sidewalls diffuse", "Sidewalls specular", "Top & bottom diffuse", "Top & bottom specular",
-              "Holes diffuse", "Holes specular", "Hot side", "Internal", "Pillars diffuse", "Pillars specular"]
-    ax.legend(legend, loc='upper right')
+              "Holes diffuse", "Holes specular", "Internal", "Pillars diffuse", "Pillars specular"]
+    # ax.legend(legend, loc='upper right')
+    ax.legend(legend, loc='lower center', ncol=2, fancybox=True)
     plt.yscale('log')
     ax.set_ylim(bottom=1.0)
     fig.savefig("Scattering rates.pdf", format='pdf', bbox_inches="tight")

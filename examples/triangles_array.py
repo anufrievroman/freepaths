@@ -4,7 +4,7 @@ import numpy as np
 
 
 # General parameters:
-OUTPUT_FOLDER_NAME             = 'Array of slits'
+OUTPUT_FOLDER_NAME             = 'Array of triangles'
 NUMBER_OF_PHONONS              = 2000
 NUMBER_OF_TIMESTEPS            = 30000
 T                              = 4.0
