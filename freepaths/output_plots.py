@@ -20,6 +20,7 @@ else:
     plt.rcParams['font.family'] = ['sans-serif']
 plt.rcParams['axes.titlesize'] = 10
 plt.rcParams['axes.labelsize'] = 10
+plt.rcParams['axes.titlesize'] = 8
 plt.rcParams['lines.linewidth'] = 1.0
 plt.rcParams['xtick.direction'] = "in"
 plt.rcParams['ytick.direction'] = "in"
@@ -228,11 +229,14 @@ def plot_thermal_conductivity():
     ax.plot([av_start, av_end], [av_mat_tc, av_mat_tc], '-', markersize=2, linewidth=2, color='deeppink', label='$\overline{\kappa}_{mat}$')
     ax.plot([av_start, av_end], [av_eff_tc, av_eff_tc], '-', markersize=2, linewidth=2, color='royalblue', label='$\overline{\kappa}_{eff}$')
 
-    ax.set_ylabel('Thermal conductivity (W/mK)')
+    ax.set_ylabel('Thermal conductivity (W/m·K)')
     ax.set_xlabel('Time (ns)')
 
     ax.set_xlim(left=0.0)
     ax.legend()
+    kappa_mat_str = "$\overline{\kappa}_{mat}$"
+    kappa_eff_str = "$\overline{\kappa}_{eff}$"
+    ax.set_title(f'{kappa_mat_str} = {av_mat_tc} ± {std_mat_tc} W/m·K, {kappa_eff_str} = {av_eff_tc} ± {std_eff_tc} W/m·K', color='grey')
     fig.savefig("Thermal conductivity.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 

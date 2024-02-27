@@ -7,14 +7,20 @@ from freepaths.sources import Source
 # General parameters:
 OUTPUT_FOLDER_NAME               = "Si nanowire at 300 K"
 NUMBER_OF_PHONONS                = 5000
-NUMBER_OF_TIMESTEPS              = 200000
 NUMBER_OF_NODES                  = 400
-TIMESTEP                         = 2e-12
 T                                = 300
 OUTPUT_SCATTERING_MAP            = False
 OUTPUT_TRAJECTORIES_OF_FIRST     = 50
 OUTPUT_STRUCTURE_COLOR           = "#F0F0F0"
 NUMBER_OF_LENGTH_SEGMENTS        = 10
+
+# Time parameters:
+TIMESTEP                         = 2e-12
+NUMBER_OF_TIMESTEPS              = 200000
+NUMBER_OF_VIRTUAL_TIMESTEPS      = NUMBER_OF_TIMESTEPS * 3
+NUMBER_OF_TIMEFRAMES             = 8
+NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
+
 
 # Animation:
 OUTPUT_PATH_ANIMATION            = False
@@ -23,9 +29,6 @@ OUTPUT_ANIMATION_FPS             = 24
 # Map & profiles parameters:
 NUMBER_OF_PIXELS_X               = 25
 NUMBER_OF_PIXELS_Y               = 100
-NUMBER_OF_VIRTUAL_TIMESTEPS      = 300000
-INITIALIZATION_TIMESTEPS         = 50000
-NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
 IGNORE_FAULTY_PHONONS            = False
 
 # Material parameters:

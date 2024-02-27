@@ -217,10 +217,10 @@ class ThermalMaps(Maps):
             self.material_thermal_conductivity[timeframe_number, 1] = J_material / grad_T
 
             # Calculate single averaged value in the steady state range:
-            self.av_effective_thermal_conductivity = np.mean(self.effective_thermal_conductivity[cf.number_of_initialization_timeframes:, 1])
-            self.av_material_thermal_conductivity = np.mean(self.material_thermal_conductivity[cf.number_of_initialization_timeframes:, 1])
-            self.std_effective_thermal_conductivity = np.std(self.effective_thermal_conductivity[cf.number_of_initialization_timeframes:, 1])
-            self.std_material_thermal_conductivity = np.std(self.material_thermal_conductivity[cf.number_of_initialization_timeframes:, 1])
+            self.av_effective_thermal_conductivity = np.mean(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+            self.av_material_thermal_conductivity = np.mean(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+            self.std_effective_thermal_conductivity = np.std(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+            self.std_material_thermal_conductivity = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
 
 
 
@@ -241,7 +241,7 @@ class ThermalMaps(Maps):
 
         # Saving the thermal conductivity data:
         data_tc = np.vstack((self.effective_thermal_conductivity.T, self.material_thermal_conductivity[:, 1])).T
-        av_start = cf.number_of_initialization_timeframes * self.timepteps_per_timeframe * cf.timestep * 1e9
+        av_start = cf.number_of_stabilization_timeframes * self.timepteps_per_timeframe * cf.timestep * 1e9
         av_end = cf.number_of_timeframes * self.timepteps_per_timeframe * cf.timestep * 1e9
         data_av_tc = np.vstack((self.av_effective_thermal_conductivity, self.av_material_thermal_conductivity,
                                 self.std_effective_thermal_conductivity, self.std_material_thermal_conductivity, av_start, av_end)).T
