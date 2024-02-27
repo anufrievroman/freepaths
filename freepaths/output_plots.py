@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.colors import LogNorm
 from matplotlib import font_manager
 
@@ -202,11 +203,35 @@ def plot_time_in_segments():
 def plot_thermal_conductivity():
     """Plot thermal conductivity against time segment"""
     fig, ax = plt.subplots()
-    time, effective_thermal_conductivity, material_thermal_conductivity = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
-    ax.plot(time, material_thermal_conductivity, '-o', markersize=2, linewidth=1, color='deeppink', label='κ$_{mat}$')
-    ax.plot(time, effective_thermal_conductivity, '-o', markersize=2, linewidth=1, color='royalblue', label='κ$_{eff}$')
+    time, eff_tc, mat_tc = np.genfromtxt("Data/Thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
+    av_eff_tc, av_mat_tc, std_eff_tc, std_mat_tc, av_start, av_end = np.genfromtxt("Data/Average thermal conductivity.csv", unpack=True, delimiter=',', skip_header=1)
+
+    # Plot thermal conductivity vs time:
+    ax.plot(time, mat_tc, '-o', markersize=2, linewidth=1, color='deeppink', label='κ$_{mat}$')
+    ax.plot(time, eff_tc, '-o', markersize=2, linewidth=1, color='royalblue', label='κ$_{eff}$')
+
+    # Add labels:
+    ax.text(av_start/2, max(mat_tc), 'Stabilization period', color='grey', fontsize=8, ha='center')
+    ax.text(av_start + (av_end-av_start)/2, max(mat_tc), 'Measurement period', color='grey', fontsize=8, ha='center')
+
+    # Plot the range of averaging:
+    ax.axvline(x=av_start, color='grey', linestyle='--')
+    ax.axvline(x=av_end, color='grey', linestyle='--')
+
+    # Plot the standard deviation range:
+    rectangle_mat = patches.Rectangle((av_start, av_mat_tc-std_mat_tc), av_end-av_start, 2*std_mat_tc, linewidth=0, facecolor='deeppink', alpha=0.2)
+    rectangle_eff = patches.Rectangle((av_start, av_eff_tc-std_eff_tc), av_end-av_start, 2*std_eff_tc, linewidth=0, facecolor='royalblue', alpha=0.2)
+    ax.add_patch(rectangle_eff)
+    ax.add_patch(rectangle_mat)
+
+    # Plot the averaged values in the averaging range:
+    ax.plot([av_start, av_end], [av_mat_tc, av_mat_tc], '-', markersize=2, linewidth=2, color='deeppink', label='$\overline{\kappa}_{mat}$')
+    ax.plot([av_start, av_end], [av_eff_tc, av_eff_tc], '-', markersize=2, linewidth=2, color='royalblue', label='$\overline{\kappa}_{eff}$')
+
     ax.set_ylabel('Thermal conductivity (W/mK)')
     ax.set_xlabel('Time (ns)')
+
+    ax.set_xlim(left=0.0)
     ax.legend()
     fig.savefig("Thermal conductivity.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -216,11 +241,8 @@ def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    # because the initialization timesteps are shorter the data needs to be scaled
-    adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
-    for timeframe in range(cf.number_of_initialization_timeframes):
-        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Time frame {timeframe}')
-    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Time frame {cf.number_of_initialization_timeframes+1}')
+    for timeframe_num in range(len(data) - 1):
+        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
     ax.legend()
@@ -230,23 +252,22 @@ def plot_temperature_profile():
 
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
+
+    # Effective heat flux:
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    # because the initialization timesteps are shorter the data needs to be scaled
-    adjustment_factor = (cf.number_of_virtual_timesteps-cf.initialization_timesteps)/(cf.initialization_timesteps/cf.number_of_initialization_timeframes)
-    for timeframe in range(cf.number_of_initialization_timeframes):
-        ax.plot(data[0], data[timeframe + 1] * adjustment_factor, linewidth=1, label=f'Time frame {timeframe}')
-    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1], linewidth=1, label=f'Time frame {cf.number_of_initialization_timeframes+1}')
+    for timeframe_num in range((len(data) - 1) // 2):
+        ax.plot(data[0], data[timeframe_num + 1], linewidth=1, label=f'Time frame {timeframe_num+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
     fig.savefig("Heat flux profile effective.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
+    # Material heat flux:
     fig, ax = plt.subplots()
-    for timeframe in range(cf.number_of_initialization_timeframes):
-        ax.plot(data[0], data[timeframe + 1 + cf.number_of_initialization_timeframes+1] * adjustment_factor, linewidth=1, label=f'Time frame {timeframe}')
-    ax.plot(data[0], data[cf.number_of_initialization_timeframes + 1 + cf.number_of_initialization_timeframes+1], linewidth=1, label=f'Time freame {cf.number_of_initialization_timeframes+1}')
+    for timeframe_num in range((len(data) - 1) // 2):
+        ax.plot(data[0], data[2*timeframe_num + 1], linewidth=1, label=f'Time frame {timeframe_num+1}')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()

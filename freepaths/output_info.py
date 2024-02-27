@@ -110,11 +110,11 @@ def output_parameter_warnings():
 
     # Check if some phonons had longer travel times than initialization period:
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    long_travel_times = travel_times[travel_times > cf.initialization_timesteps * cf.timestep]
-    percentage = (len(long_travel_times) / len(travel_times)) * 100
-    if percentage > 10:
-        print(f'{Fore.RED}Warning: Travel time of {percentage}% of phonons was longer than the stabilization period.')
-        print(f'Increase stabilization period as the thermal conductivity might be incorrect.{Style.RESET_ALL}')
+    # long_travel_times = travel_times[travel_times > cf.number_of_initialization_timeframes * cf.timestep]
+    # percentage = (len(long_travel_times) / len(travel_times)) * 100
+    # if percentage > 10:
+        # print(f'{Fore.RED}Warning: Travel time of {percentage}% of phonons was longer than the stabilization period.')
+        # print(f'Increase stabilization period as the thermal conductivity might be incorrect.{Style.RESET_ALL}')
 
     # Check if pixel size is too small:
     speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')

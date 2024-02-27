@@ -56,7 +56,8 @@ class Config:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
-        self.initialization_timesteps = INITIALIZATION_TIMESTEPS
+        # self.initialization_timesteps = INITIALIZATION_TIMESTEPS
+        self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
         self.number_of_initialization_timeframes = NUMBER_OF_INITIALIZATION_TIMEFRAMES
         self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
 
@@ -128,6 +129,9 @@ class Config:
             self.output_trajectories_of_first = self.number_of_phonons
             print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
 
+        if self.number_of_timesteps <= self.number_of_initialization_timeframes:
+            print("WARNING: Parameter NUMBER_OF_INITIALIZATION_TIMEFRAMES exceeded or equal to NUMBER_OF_TIMEFRAMES.\n")
+
         for source in self.phonon_sources:
             if source.y > self.length:
                 print("ERROR: Y coordinate of a source exceeded LENGHT.\n")
@@ -187,10 +191,6 @@ class Config:
 
     def check_depricated_parameters(self):
         """Check for deprecated parameters and warn about them"""
-
-        if 'NUMBER_OF_TIMEFRAMES' in globals():
-            print("ERROR: parameter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
-            sys.exit()
 
         if 'INCLUDE_TOP_PARABOLA' in globals():
             print("ERROR: parameter INCLUDE_TOP_PARABOLA is deprecated. Use ParabolaTop hole instead.")
