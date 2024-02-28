@@ -11,16 +11,6 @@ T                              = 4.0
 # Multiprocessing
 NUMBER_OF_PROCESSES = 10
 
-
-# Simulation time parameters:
-TIMESTEP                       = 1.0e-12
-total_simulation_time = 300e-9 # This should be at least a couple times the initialization time
-NUMBER_OF_VIRTUAL_TIMESTEPS    = int(total_simulation_time / TIMESTEP)
-initialization_time = 50e-9 # This should be set so that it is bigger than most phonons travel times
-INITIALIZATION_TIMESTEPS       = int(initialization_time / TIMESTEP)
-NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
-
-
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 2000e-9

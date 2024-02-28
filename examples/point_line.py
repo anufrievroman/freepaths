@@ -11,16 +11,13 @@ NUMBER_OF_TIMESTEPS            = 30000
 T                              = 50
 TIMESTEP                       = 1e-12
 
-
 # Multiprocessing
 NUMBER_OF_PROCESSES            = 10
-
 
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 300e-9
 LENGTH                         = 300e-9
-
 
 # Map & profiles parameters:
 pixel_size = 5e-9
@@ -28,21 +25,19 @@ NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
 IGNORE_FAULTY_PHONONS          = False
 
-
 # Sources
 PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
-
 # Holes
 
-# see the Creating new holes (the easy way) tutorial in the documentation for more examples
+# See the Creating new holes (the easy way) tutorial in the documentation for more examples
 def points_on_bezier(control_point1, handle1, control_point2, handle2, number_of_points):
     # get coordinate points
     x1, y1 = control_point1
-    x2 = x1 + handle1[0] 
+    x2 = x1 + handle1[0]
     y2 = y1 + handle1[1]
     x4, y4 = control_point2
-    x3 = x4 + handle2[0] 
+    x3 = x4 + handle2[0]
     y3 = y4 + handle2[1]
     # define function
     bezier_function = lambda t, p1, p2, p3, p4: (1-t)**3*p1 + 3*t*(1-t)**2*p2 + 3*t**2*(1-t)*p3 + t**3*p4

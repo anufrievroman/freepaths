@@ -31,13 +31,13 @@ def main(input_file):
 
     # Initialize the material:
     if cf.media == "Si":
-        self.material = Si(cf.temp, num_points=cf.number_of_phonons +1)
+        material = Si(cf.temp, num_points=cf.number_of_phonons +1)
     elif cf.media == "SiC":
-        self.material = SiC(cf.temp, num_points=cf.number_of_phonons+1)
+        material = SiC(cf.temp, num_points=cf.number_of_phonons+1)
     elif cf.media == "Graphite":
-        self.material = Graphite(cf.temp, num_points=cf.number_of_phonons+1)
+        material = Graphite(cf.temp, num_points=cf.number_of_phonons+1)
     else:
-        print(f"Material {self.material} is not supported")
+        print(f"Material {cf.media} is not supported")
         sys.exit()
 
     # Initiate data structures:

@@ -108,9 +108,11 @@ def output_scattering_information(scatter_stats):
 def output_parameter_warnings():
     """Check if parameters used for this simulation made sense considering the simulation results"""
 
-    # Check if some phonons had longer travel times than initialization period:
+    # Check if some phonons had longer travel times than stabilization period:
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    long_travel_times = travel_times[travel_times > cf.initialization_timesteps * cf.timestep]
+    total_time = cf.timestep * cf.number_of_timesteps
+    time_of_stabilization = cf.number_of_stabilization_timeframes * total_time / cf. number_of_timeframes
+    long_travel_times = travel_times[travel_times > time_of_stabilization]
     percentage = (len(long_travel_times) / len(travel_times)) * 100
     if percentage > 10:
         print(f'{Fore.RED}Warning: Travel time of {percentage}% of phonons was longer than the stabilization period.')

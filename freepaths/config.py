@@ -39,14 +39,18 @@ class Config:
         # General parameters:
         self.output_folder_name = str(OUTPUT_FOLDER_NAME)
         self.number_of_phonons = NUMBER_OF_PHONONS
-        self.number_of_timesteps = NUMBER_OF_TIMESTEPS
         self.number_of_nodes = NUMBER_OF_NODES
-        self.timestep = TIMESTEP
         self.temp = T
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.output_structure_color = OUTPUT_STRUCTURE_COLOR
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
+
+        # Time parameters:
+        self.timestep = TIMESTEP
+        self.number_of_timesteps = NUMBER_OF_TIMESTEPS
+        self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
+        self.number_of_stabilization_timeframes = NUMBER_OF_STABILIZATION_TIMEFRAMES
 
         # Animation:
         self.output_path_animation = OUTPUT_PATH_ANIMATION
@@ -56,8 +60,6 @@ class Config:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
-        self.initialization_timesteps = INITIALIZATION_TIMESTEPS
-        self.number_of_initialization_timeframes = NUMBER_OF_INITIALIZATION_TIMEFRAMES
         self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
 
         # Material parameters:
@@ -84,6 +86,7 @@ class Config:
         self.hot_side_position_right = HOT_SIDE_POSITION_RIGHT
         self.hot_side_position_left = HOT_SIDE_POSITION_LEFT
 
+        # Sources:
         self.phonon_sources = PHONON_SOURCES
 
         # Cold side positions:
@@ -104,7 +107,7 @@ class Config:
         self.holes = HOLES
         self.pillars = PILLARS
 
-        # Number of processes to be used for this simulation:
+        # Multiprocessing:
         self.num_workers = NUMBER_OF_PROCESSES
 
     def convert_to_enums(self):
@@ -127,6 +130,11 @@ class Config:
         if self.number_of_phonons < self.output_trajectories_of_first:
             self.output_trajectories_of_first = self.number_of_phonons
             print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
+
+        if self.number_of_timeframes <= self.number_of_stabilization_timeframes:
+            print("ERROR: Parameter NUMBER_OF_STABILIZATION_TIMEFRAMES exceeds or equal to NUMBER_OF_TIMEFRAMES.")
+            print("We need to have at least one timeframe after NUMBER_OF_STABILIZATION_TIMEFRAMES to measure the thermal conductivity.")
+            sys.exit()
 
         for source in self.phonon_sources:
             if source.y > self.length:
@@ -187,10 +195,6 @@ class Config:
 
     def check_depricated_parameters(self):
         """Check for deprecated parameters and warn about them"""
-
-        if 'NUMBER_OF_TIMEFRAMES' in globals():
-            print("ERROR: parameter NUMBER_OF_TIMEFRAMES is deprecated. See NUMBER_OF_INITIALIZATION_TIMEFRAMES and INITIALIZATION_TIMESTEPS.")
-            sys.exit()
 
         if 'INCLUDE_TOP_PARABOLA' in globals():
             print("ERROR: parameter INCLUDE_TOP_PARABOLA is deprecated. Use ParabolaTop hole instead.")
