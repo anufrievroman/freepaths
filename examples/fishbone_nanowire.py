@@ -3,28 +3,22 @@
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Fishbone nanowire'
 NUMBER_OF_PHONONS              = 3000
-NUMBER_OF_TIMESTEPS            = 30000
 T                              = 4.0
-
 
 # Multiprocessing
 NUMBER_OF_PROCESSES = 10
 
-
 # Simulation time parameters:
 TIMESTEP                       = 1.0e-12
-total_simulation_time = 300e-9 # This should be at least a couple times the initialization time
-NUMBER_OF_VIRTUAL_TIMESTEPS    = int(total_simulation_time / TIMESTEP)
-initialization_time = 20e-9 # This should be set so that it is bigger than most phonons travel times
-INITIALIZATION_TIMESTEPS       = int(initialization_time / TIMESTEP)
-NUMBER_OF_INITIALIZATION_TIMEFRAMES = 3
-
+NUMBER_OF_TIMESTEPS            = 100000
+NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*4
+NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
+NUMBER_OF_TIMEFRAMES = 8
 
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 500e-9
 LENGTH                         = 1500e-9
-
 
 # Map & profiles parameters:
 pixel_size = 10e-9
@@ -32,10 +26,8 @@ NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
 IGNORE_FAULTY_PHONONS          = False
 
-
 # Material parameters:
 MEDIA                          = "Si"
-
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True

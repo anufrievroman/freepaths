@@ -38,7 +38,7 @@ class PhononSimulator:
         elif cf.media == "Graphite":
             self.material = Graphite(cf.temp)
         else:
-            print(f"Material {self.material} is not supported")
+            print(f"Material {cf.media} is not supported")
             sys.exit()
 
         # Save some general information about the process:

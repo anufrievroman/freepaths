@@ -8,6 +8,7 @@ from matplotlib import font_manager
 
 from freepaths.config import cf
 from freepaths.output_structure import draw_structure
+from freepaths.materials import Si, SiC, Graphite
 import matplotlib.pyplot as plt
 
 # Style of the plots:
@@ -444,6 +445,36 @@ def plot_structure():
     plt.close(fig)
 
 
+def plot_material_properties():
+    """Plot phonon dispersion and display some other material properties"""
+
+    # Initialize the material:
+    if cf.media == "Si":
+        material = Si(cf.temp)
+    elif cf.media == "SiC":
+        material = SiC(cf.temp)
+    elif cf.media == "Graphite":
+        material = Graphite(cf.temp)
+    else:
+        print(f"Material {cf.media} is not supported")
+        sys.exit()
+
+    # Plot phonon dispersion:
+    fig, ax = plt.subplots()
+    for index in range(material.dispersion.shape[1] - 1):
+        ax.plot(material.dispersion[:,0], material.dispersion[:,index + 1] * 1e-12, linewidth=1, label=f'{index}')
+    ax.set_xlabel('Wavevector (1/m)')
+    ax.set_ylabel('Frequency (THz)')
+    ax.set_ylim(bottom=0)
+    ax.set_xlim(left=0)
+
+    # Add material properties:
+    ax.set_title(f'{material.name},  T = {cf.temp} K,  C$_p$ = {material.heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³')
+
+    fig.savefig("Material properties.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+
+
 def plot_data(mfp_sampling=False):
     """Create plots of various distributions"""
     plot_structure()
@@ -469,3 +500,4 @@ def plot_data(mfp_sampling=False):
     # plot_heat_flux_map(file="Data/Heat flux map x weighted.csv", label="Heat flux map x weighted", units="W/m²")
     # plot_heat_flux_map(file="Data/Heat flux map y weighted.csv", label="Heat flux map y weighted", units="W/m²")
     plot_scattering_map()
+    plot_material_properties()
