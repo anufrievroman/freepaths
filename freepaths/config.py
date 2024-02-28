@@ -129,7 +129,6 @@ class Config:
         """Check if various parameters are valid"""
         if self.number_of_phonons < self.output_trajectories_of_first:
             self.output_trajectories_of_first = self.number_of_phonons
-            print("WARNING: Parameter OUTPUT_TRAJECTORIES_OF_FIRST exceeded NUMBER_OF_PHONONS.\n")
 
         if self.number_of_timeframes <= self.number_of_stabilization_timeframes:
             print("ERROR: Parameter NUMBER_OF_STABILIZATION_TIMEFRAMES exceeds or equal to NUMBER_OF_TIMEFRAMES.")

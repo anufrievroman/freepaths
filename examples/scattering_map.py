@@ -1,24 +1,22 @@
-"""Config file to simulate a fishbone nanowire in Si at 4K"""
+"""Config file to simulate a scattering map in a fishbone nanowire in Si at 50 K"""
 
 # General parameters:
-OUTPUT_FOLDER_NAME             = 'Fishbone nanowire'
-NUMBER_OF_PHONONS              = 3000
-T                              = 4.0
+OUTPUT_FOLDER_NAME             = 'Scattering map in fishbone nanowire'
+NUMBER_OF_PHONONS              = 300
+T                              = 50.0
+OUTPUT_SCATTERING_MAP          = True
 
 # Multiprocessing
 NUMBER_OF_PROCESSES = 10
 
 # Simulation time parameters:
 TIMESTEP                       = 1.0e-12
-NUMBER_OF_TIMESTEPS            = 100000
-NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*4
-NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
-NUMBER_OF_TIMEFRAMES = 8
+NUMBER_OF_TIMESTEPS            = 10000
 
 # System dimensions [m]:
-THICKNESS                      = 150e-9
+THICKNESS                      = 200e-9
 WIDTH                          = 500e-9
-LENGTH                         = 1500e-9
+LENGTH                         = 600e-9
 
 # Map & profiles parameters:
 pixel_size = 10e-9
@@ -52,7 +50,7 @@ HOLES = []
 PERIOD_X                       = WIDTH
 PERIOD_Y                       = 300e-9
 NUMBER_OF_PERIODS_X = 2
-NUMBER_OF_PERIODS_Y = 6
+NUMBER_OF_PERIODS_Y = 3
 for i in range(NUMBER_OF_PERIODS_Y):
     for j in range(NUMBER_OF_PERIODS_X):
         x_coor = -(NUMBER_OF_PERIODS_X - 1) * PERIOD_X / 2 + j * PERIOD_X

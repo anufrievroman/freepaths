@@ -213,8 +213,9 @@ class ThermalMaps(Maps):
             J_material = np.mean(self.material_heat_flux_profile_y[:, timeframe_number])
 
             # By definition, J = -K * grad(T), so:
-            self.effective_thermal_conductivity[timeframe_number, 1] = J_effective / grad_T
-            self.material_thermal_conductivity[timeframe_number, 1] = J_material / grad_T
+            if grad_T != 0:
+                self.effective_thermal_conductivity[timeframe_number, 1] = J_effective / grad_T
+                self.material_thermal_conductivity[timeframe_number, 1] = J_material / grad_T
 
             # Calculate single averaged value in the steady state range:
             self.av_effective_thermal_conductivity = np.mean(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])

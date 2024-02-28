@@ -120,5 +120,5 @@ def main(input_file):
     output_parameter_warnings()
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
-    sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity}{Style.RESET_ALL}\n W/m·K")
-    sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n")
+    sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
+    sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")
