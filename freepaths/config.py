@@ -5,6 +5,7 @@ checks the validity of the parameters and converts the variables into enums
 
 import sys
 import argparse
+import logging
 from colorama import Fore, Style
 
 from freepaths.sources import Distributions
@@ -13,6 +14,9 @@ from freepaths.holes import *
 # Import a default input file:
 from freepaths.default_config import *
 
+# Start logging:
+logging.basicConfig(level=logging.WARNING, format=f"{Fore.RED}%(levelname)s:{Style.RESET_ALL} %(message)s",
+                    handlers=[logging.StreamHandler(), ])
 
 # Parse user arguments:
 WEBSITE = 'https://anufrievroman.gitbook.io/freepaths'
@@ -27,7 +31,7 @@ args = parser.parse_args()
 if args.input_file:
     exec(open(args.input_file, encoding='utf-8').read(), globals())
 else:
-    print(f"{Fore.RED}You provided no input file, so we will run a demo simulation:{Style.RESET_ALL}")
+    logging.warning("You provided no input file, so we will run a demo simulation:")
 
 
 class Config:
@@ -119,9 +123,7 @@ class Config:
             if source.angle_distribution in valid_distributions:
                 source.angle_distribution = Distributions[source.angle_distribution.upper()]
             else:
-                print("ERROR: Parameter angle_distribution of a source is not set correctly.")
-                print("The angle_distribution should be one of the following:")
-                print(*valid_distributions, sep = ", ")
+                logging.error("Parameter angle_distribution of a source is not set correctly.")
                 sys.exit()
 
 
@@ -131,85 +133,79 @@ class Config:
             self.output_trajectories_of_first = self.number_of_phonons
 
         if self.number_of_timeframes <= self.number_of_stabilization_timeframes:
-            print("ERROR: Parameter NUMBER_OF_STABILIZATION_TIMEFRAMES exceeds or equal to NUMBER_OF_TIMEFRAMES.")
-            print("We need to have at least one timeframe after NUMBER_OF_STABILIZATION_TIMEFRAMES to measure the thermal conductivity.")
+            logging.error("Parameter NUMBER_OF_STABILIZATION_TIMEFRAMES exceeds or equal to NUMBER_OF_TIMEFRAMES.\n" +
+                          "Leave at least one timeframe after NUMBER_OF_STABILIZATION_TIMEFRAMES.\n" +
+                          f"See the documentation at {WEBSITE}")
             sys.exit()
 
         for source in self.phonon_sources:
             if source.y > self.length:
-                print("ERROR: Y coordinate of a source exceeded LENGHT.\n")
+                logging.error("Y coordinate of a source exceeded LENGHT")
                 sys.exit()
 
             if source.y < 0:
-                print("ERROR: Y coordinate of a source is negative.\n")
+                logging.error("Y coordinate of a source is negative.")
                 sys.exit()
 
             if source.y - source.size_y / 2 < 0:
-                print("ERROR: Source size along Y coordinate is too large.\n")
+                logging.error("Source size along Y coordinate is too large")
                 sys.exit()
 
             if abs(source.x) > self.width/2:
-                print("ERROR: X coordinate of a source exceeds WIDTH.\n")
+                logging.error("X coordinate of a source exceeds WIDTH")
                 sys.exit()
 
             if abs(source.x + source.size_x / 2) > self.width/2:
-                print("ERROR: Source size along X coordinate is too large.\n")
+                logging.error("Source size along X coordinate is too large")
                 sys.exit()
 
             if abs(source.z) > self.thickness/2:
-                print("ERROR: Z coordinate of a source exceeds THICKNESS.\n")
+                logging.error("Z coordinate of a source exceeds THICKNESS")
                 sys.exit()
 
             if abs(source.z + source.size_z / 2) > self.thickness/2:
-                print("ERROR: Source size along Z coordinate is too large.\n")
+                logging.error("Source size along Z coordinate is too large")
                 sys.exit()
 
         if self.output_path_animation and self.number_of_timesteps > 5000:
-            print("WARNING: NUMBER_OF_TIMESTEPS is rather large for animation.\n")
+            logging.warning("NUMBER_OF_TIMESTEPS is rather large for animation")
 
         if (self.cold_side_position_top and self.include_top_sidewall or
             self.hot_side_position_top and self.include_top_sidewall or
             self.cold_side_position_top and self.hot_side_position_top):
-            print("ERROR: Top side is assigned multiple functions.\n")
+            logging.error("Top side is assigned multiple functions")
             sys.exit()
 
         if (self.cold_side_position_bottom and self.include_bottom_sidewall or
             self.hot_side_position_bottom and self.include_bottom_sidewall or
             self.cold_side_position_bottom and self.hot_side_position_bottom):
-            print("ERROR: Bottom side is assigned multiple functions.\n")
+            logging.error("Bottom side is assigned multiple functions")
             sys.exit()
 
         if (self.cold_side_position_right and self.include_right_sidewall or
             self.hot_side_position_right and self.include_right_sidewall or
             self.cold_side_position_right and self.hot_side_position_right):
-            print("ERROR: Right side is assigned multiple functions.\n")
+            logging.error("Right side is assigned multiple functions")
             sys.exit()
 
         if (self.cold_side_position_left and self.include_left_sidewall or
             self.hot_side_position_left and self.include_left_sidewall or
             self.cold_side_position_left and self.hot_side_position_left):
-            print("ERROR: Left side is assigned multiple functions.\n")
+            logging.error("Left side is assigned multiple functions")
             sys.exit()
 
 
     def check_depricated_parameters(self):
         """Check for deprecated parameters and warn about them"""
 
-        if 'INCLUDE_TOP_PARABOLA' in globals():
-            print("ERROR: parameter INCLUDE_TOP_PARABOLA is deprecated. Use ParabolaTop hole instead.")
-            sys.exit()
-
-        if 'INCLUDE_BOTTOM_PARABOLA' in globals():
-            print("ERROR: parameter INCLUDE_BOTTOM_PARABOLA is deprecated. Use ParabolaBottom hole instead.")
-            sys.exit()
-
         if 'COLD_SIDE_POSITION' in globals():
-            print("ERROR: parameter COLD_SIDE_POSITION is deprecated.")
-            print("Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True.\n")
+            logging.error("Parameter COLD_SIDE_POSITION is deprecated.\n" +
+                          "Use specific boolean parameters like COLD_SIDE_POSITION_TOP = True\n" +
+                          f"See the documentation at {WEBSITE}")
             sys.exit()
 
         if 'SPECIFIC_HEAT_CAPACITY' in globals():
-            print("Warning: parameter SPECIFIC_HEAT_CAPACITY is deprecated. Heat capacity is automatiacally set by material.")
+            logging.warning("Parameter SPECIFIC_HEAT_CAPACITY is deprecated. Heat capacity is set from material.")
 
         if any([
             'HOT_SIDE_POSITION' in globals(),
@@ -224,9 +220,9 @@ class Config:
             'PHONON_SOURCE_WIDTH_Y' in globals(),
             'PHONON_SOURCE_ANGLE_DISTRIBUTION' in globals(),
             ]):
-            print("ERROR: parameters related to HOT_SIDE_... or PHONON_SOURCE_.. are deprecated. ")
-            print("Phonon source should be defined through the PHONON_SOURCES variable.\n")
-            print("See updated documentation for more details.\n")
+            logging.error("Parameters related to HOT_SIDE_... or PHONON_SOURCE_... were deprecated.\n" +
+                          "Phonon source should be defined through the PHONON_SOURCES variable.\n" +
+                          f"See the documentation at {WEBSITE}")
             sys.exit()
 
 cf = Config()

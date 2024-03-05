@@ -6,6 +6,7 @@ import time
 import shutil
 import scipy
 import math
+import logging
 from colorama import Fore, Style
 
 # Modules:
@@ -37,7 +38,7 @@ def main(input_file):
     elif cf.media == "Graphite":
         material = Graphite(cf.temp, num_points=cf.number_of_phonons+1)
     else:
-        print(f"Material {cf.media} is not supported")
+        logging.error(f"Material {cf.media} is not supported")
         sys.exit()
 
     # Initiate data structures:

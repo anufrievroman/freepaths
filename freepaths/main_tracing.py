@@ -6,6 +6,7 @@ import time
 import shutil
 import colorama
 import multiprocessing
+import logging
 from colorama import Fore, Style
 
 # Modules:
@@ -38,7 +39,7 @@ class PhononSimulator:
         elif cf.media == "Graphite":
             self.material = Graphite(cf.temp)
         else:
-            print(f"Material {cf.media} is not supported")
+            logging.error(f"Material {cf.media} is not supported")
             sys.exit()
 
         # Save some general information about the process:
