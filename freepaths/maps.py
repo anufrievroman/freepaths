@@ -165,14 +165,12 @@ class ThermalMaps(Maps):
             self.thermal_map[index_y, index_x] += energy
             self.heat_flux_map_x[index_y, index_x] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
-            self.heat_flux_map_xy[index_y, index_x] += np.sqrt(self.heat_flux_map_x[index_y, index_x]**2 +
-                                                               self.heat_flux_map_y[index_y, index_x]**2)
 
             # Calculate to which timeframe this timestep belongs:
             timeframe_number = (ph.first_timestep + timestep_number) // self.timepteps_per_timeframe
 
             # Record temperature and energy into the corresponding time segment:
-            if timeframe_number < cf.number_of_timeframes:
+            if timeframe_number < cf.number_of_timeframes and vol_pixel_correction_x != 0 and vol_pixel_correction_y != 0:
                 self.effective_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_x
                 self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y
                 # the material heat_flux_profile could also be calculated afterwards by dividing the effective profile with the volume ratio
@@ -190,6 +188,11 @@ class ThermalMaps(Maps):
                                               out=np.zeros_like(self.heat_flux_map_x), where=~zero_mask)
         self.heat_flux_map_y_weighted = np.divide(self.heat_flux_map_y, self.number_phonons_in_pixel,
                                               out=np.zeros_like(self.heat_flux_map_y), where=~zero_mask)
+
+
+    def calculate_heat_flux_modulus(self):
+        """Calculate heat flux modulus as sqrt(q_x^2 + q_y^2)"""
+        self.heat_flux_map_xy += np.sqrt(self.heat_flux_map_x**2 + self.heat_flux_map_y**2)
 
 
     def calculate_thermal_conductivity(self):
