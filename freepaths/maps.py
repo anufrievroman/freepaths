@@ -166,7 +166,7 @@ class ThermalMaps(Maps):
             self.heat_flux_map_x[index_y, index_x] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
             self.heat_flux_map_xy[index_y, index_x] += np.sqrt(self.heat_flux_map_x[index_y, index_x]**2 +
-                                                               self.heat_flux_map_x[index_y, index_x]**2)
+                                                               self.heat_flux_map_y[index_y, index_x]**2)
 
             # Calculate to which timeframe this timestep belongs:
             timeframe_number = (ph.first_timestep + timestep_number) // self.timepteps_per_timeframe
