@@ -476,28 +476,37 @@ def plot_material_properties():
 
 
 def plot_data(mfp_sampling=False):
-    """Create plots of various distributions"""
-    plot_structure()
-    plot_trajectories()
-    plot_angle_distribution()
-    plot_free_path_distribution()
-    plot_frequency_distribution()
-    plot_wavelength_distribution()
-    plot_travel_time_distribution()
-    plot_mean_free_path_distribution()
-    plot_velocity_distribution()
-    plot_time_in_segments()
-    plot_thermal_conductivity()
-    plot_temperature_profile()
-    plot_heat_flux_profile()
-    plot_thermal_map()
-    plot_pixel_volumes()
-    plot_scattering_statistics()
+    """Create plots of various distributions, maps, profiles, and other quantities"""
+    function_list = [
+        plot_structure,
+        plot_trajectories,
+        plot_angle_distribution,
+        plot_free_path_distribution,
+        plot_frequency_distribution,
+        plot_wavelength_distribution,
+        plot_travel_time_distribution,
+        plot_mean_free_path_distribution,
+        plot_velocity_distribution,
+        plot_time_in_segments,
+        plot_thermal_conductivity,
+        plot_temperature_profile,
+        plot_heat_flux_profile,
+        plot_thermal_map,
+        plot_pixel_volumes,
+        plot_scattering_statistics,
+        plot_scattering_map,
+        plot_material_properties,
+    ]
+    
+    # Run main functions and handle exceptions:
+    for func in function_list:
+        try:
+            func()
+        except Exception as e:
+            print(f"Function {func.__name__} failed: {e}") 
+
+    # Run additional functions:
     plot_cumulative_thermal_conductivity(mfp_sampling)
     plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
     plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
     plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
-    # plot_heat_flux_map(file="Data/Heat flux map x weighted.csv", label="Heat flux map x weighted", units="W/m²")
-    # plot_heat_flux_map(file="Data/Heat flux map y weighted.csv", label="Heat flux map y weighted", units="W/m²")
-    plot_scattering_map()
-    plot_material_properties()
