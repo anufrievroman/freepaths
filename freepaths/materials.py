@@ -40,7 +40,7 @@ class Si:
 
     def assign_heat_capacity(self):
         """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
-        below_20K_coeffs = np.array([0.00055196, -0.0052611, 0.03086194, -0.05493787])
+        below_20K_coeffs = np.array([0.00044801, -0.00239681,  0.00756769])
         between_20_and_50K_coeffs = np.array([-9.26222400e-04, 1.49879304e-01, -4.37458293e+00, 3.84245589e+01])
         above_50K_coeffs = np.array([-2.75839317e-06, -5.16662077e-03, 4.66701391e+00, -1.49876958e+02])
         if self.temp < 20:

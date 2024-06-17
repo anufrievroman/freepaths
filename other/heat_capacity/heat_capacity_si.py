@@ -23,13 +23,16 @@ above_50K_heat_capacity = heat_capacity[above_50K_indices]
 def third_degree_func(x, a, b, c, d):
     return a * x**3 + b * x**2 + c * x + d
 
+def third_degree_func_zero(x, a, b, c):
+    return a * x**3 + b * x**2 + c * x
+
 # Perform curve fitting for each part
-below_20K_popt, _ = curve_fit(third_degree_func, below_20K_temperature, below_20K_heat_capacity)
+below_20K_popt, _ = curve_fit(third_degree_func_zero, below_20K_temperature, below_20K_heat_capacity)
 between_20_and_50K_popt, _ = curve_fit(third_degree_func, between_20_and_50K_temperature, between_20_and_50K_heat_capacity)
 above_50K_popt, _ = curve_fit(third_degree_func, above_50K_temperature, above_50K_heat_capacity)
 
 # Generate y-values for the fitted curves
-below_20K_y_fit = third_degree_func(below_20K_temperature, *below_20K_popt)
+below_20K_y_fit = third_degree_func_zero(below_20K_temperature, *below_20K_popt)
 between_20_and_50K_y_fit = third_degree_func(between_20_and_50K_temperature, *between_20_and_50K_popt)
 above_50K_y_fit = third_degree_func(above_50K_temperature, *above_50K_popt)
 
@@ -51,8 +54,8 @@ plt.plot(above_50K_temperature, above_50K_y_fit, color='green', linestyle='--')
 plt.xlabel('Temperature (K)')
 plt.ylabel('Heat Capacity (J/kg/K)')
 plt.title('Fitted Curve of Heat Capacity vs Temperature')
-plt.xscale('log')
-plt.yscale('log')
+# plt.xscale('log')
+# plt.yscale('log')
 plt.legend()
 
 plt.show()

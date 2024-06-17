@@ -312,7 +312,7 @@ def plot_heat_flux_map(file, label, units="a.u."):
     fig = plt.figure()
     heat_flux_map = np.genfromtxt(file, unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
     heat_flux_map = np.flipud(heat_flux_map)
-    minimum_of_colorbar = 1e6
+    minimum_of_colorbar = 1e5
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(heat_flux_map, cmap='jet', interpolation='none', extent=boundaries,
                norm=LogNorm(vmin=minimum_of_colorbar, vmax=np.amax(heat_flux_map)))
