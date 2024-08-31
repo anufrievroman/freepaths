@@ -103,11 +103,11 @@ class RectangularHole(Hole):
 
         # Scattering on the top wall:
         elif y > self.y0:
-            scattering_types.holes = horizontal_surface_up_scattering(ph, cf.side_wall_roughness)
+            scattering_types.holes = horizontal_surface_up_scattering(ph, cf.hole_roughness)
 
         # Scattering on the bottom wall:
         else:
-            scattering_types.holes = horizontal_surface_down_scattering(ph, cf.side_wall_roughness)
+            scattering_types.holes = horizontal_surface_down_scattering(ph, cf.hole_roughness)
 
     def get_patch(self, color_holes, cf):
         """Create a patch in the shape of the hole to use in the plots"""
@@ -140,11 +140,16 @@ class TriangularUpHole(Hole):
         # Scattering on the bottom wall of the triangle:
         if (ph.y < self.y0 - self.size_y / 2) and (abs(ph.theta) < pi / 2):
             scattering_types.holes = horizontal_surface_down_scattering(ph, cf.hole_roughness)
+            # triangle_scattering_places.floor = scattering_types.holes
 
         # Scattering on the sidewalls of the triangle:
         else:
             beta = atan(0.5 * self.size_x / self.size_y)
             scattering_types.holes = inclined_surfaces_up_scattering(ph, beta, x, self.x0, cf.hole_roughness)
+            # if x > self.x0:
+                # triangle_scattering_places.right_wall = scattering_types.holes
+            # else:
+                # triangle_scattering_places.left_wall = scattering_types.holes
 
     def get_patch(self, color_holes, cf):
         """Create a patch in the shape of the hole to use in the plots"""

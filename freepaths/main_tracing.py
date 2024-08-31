@@ -14,7 +14,7 @@ from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
-from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData
+from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.progress import Progress
 from freepaths.materials import Si, SiC, Graphite
 from freepaths.maps import ScatteringMap, ThermalMaps
@@ -54,6 +54,7 @@ class PhononSimulator:
         self.general_stats = GeneralData()
         self.segment_stats = SegmentData()
         self.path_stats = PathData()
+        self.places_stats = TriangleScatteringData()
         self.scatter_maps = ScatteringMap()
         self.thermal_maps = ThermalMaps()
 
@@ -65,7 +66,7 @@ class PhononSimulator:
         flight = Flight(phonon)
 
         # Run this phonon through the structure:
-        run_phonon(phonon, flight, self.scatter_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+        run_phonon(phonon, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
 
         # Record the properties returned for this phonon:
         self.general_stats.save_phonon_data(phonon)
@@ -97,6 +98,7 @@ class PhononSimulator:
         collected_data = {
             'scatter_stats': self.scatter_stats.dump_data(),
             'general_stats': self.general_stats.dump_data(),
+            'places_stats': self.places_stats.dump_data(),
             'segment_stats': self.segment_stats.dump_data(),
             'path_stats': self.path_stats.dump_data(),
             'scatter_maps': self.scatter_maps.dump_data(),
@@ -180,6 +182,7 @@ def main(input_file):
     # Initiate data structures to collect the data from the workers:
     # material = Material(cf.media, num_points=cf.number_of_phonons+1)
     scatter_stats = ScatteringData()
+    places_stats = TriangleScatteringData()
     general_stats = GeneralData()
     segment_stats = SegmentData()
     path_stats = PathData()
@@ -200,6 +203,7 @@ def main(input_file):
     execution_time_list = []
     for collected_data in result_list:
         scatter_stats.read_data(collected_data['scatter_stats'])
+        places_stats.read_data(collected_data['places_stats'])
         general_stats.read_data(collected_data['general_stats'])
         segment_stats.read_data(collected_data['segment_stats'])
         path_stats.read_data(collected_data['path_stats'])
@@ -235,6 +239,7 @@ def main(input_file):
     sys.stdout.write("\rSaving raw data...")
     general_stats.write_into_files()
     scatter_stats.write_into_files()
+    places_stats.write_into_files()
     segment_stats.write_into_files()
     thermal_maps.write_into_files()
     scatter_maps.write_into_files()

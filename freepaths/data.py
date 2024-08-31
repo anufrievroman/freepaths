@@ -53,6 +53,8 @@ class GeneralData(Data):
         """Initialize arrays for writing various properties"""
         self.initial_angles = []
         self.exit_angles = []
+        self.hole_diff_scattering_angles = []
+        self.hole_spec_scattering_angles = []
         self.free_paths = []
         self.free_paths_along_y = []
         self.frequencies = []
@@ -71,6 +73,8 @@ class GeneralData(Data):
         self.initial_angles.append(flight.initial_theta)
         self.exit_angles.append(flight.exit_theta)
         self.free_paths.extend(flight.free_paths)
+        self.hole_diff_scattering_angles.extend(flight.hole_diff_scattering_angles)
+        self.hole_spec_scattering_angles.extend(flight.hole_spec_scattering_angles)
         self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.travel_times.append(flight.travel_time)
         self.mean_free_paths.append(flight.mean_free_path)
@@ -82,6 +86,8 @@ class GeneralData(Data):
         np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', header="Ly [m]", encoding='utf-8')
         np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
         np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All hole specular scattering angles.csv", self.hole_spec_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
         np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', header="Travel time [s]", encoding='utf-8')
@@ -93,6 +99,8 @@ class GeneralData(Data):
         return {
             'initial_angles': self.initial_angles,
             'exit_angles': self.exit_angles,
+            'hole_diff_scattering_angles': self.hole_diff_scattering_angles,
+            'hole_spec_scattering_angles': self.hole_spec_scattering_angles,
             'free_paths': self.free_paths,
             'free_paths_along_y': self.free_paths_along_y,
             'frequencies': self.frequencies,
@@ -175,6 +183,53 @@ class ScatteringData(Data):
             'internal': self.internal,
             'total': self.total
         }
+
+
+class TriangleScatteringData(Data):
+    """Statistics of phonon scattering events on triangular holes"""
+
+    def __init__(self):
+        """Initialize arrays according to the number of segments"""
+        self.right_wall_diffuse = 0
+        self.right_wall_specular = 0
+        self.left_wall_diffuse = 0
+        self.left_wall_specular = 0
+        self.floor_diffuse = 0
+        self.floor_specular = 0
+
+    def save_scattering_events(self, y, triangle_scattering_places):
+        """Analyze types of scattering at the current timestep and add it to the statistics"""
+
+        try:
+            self.right_wall_diffuse  += 1 if triangle_scattering_places.right_wall == Scattering.DIFFUSE else 0
+            self.right_wall_specular += 1 if triangle_scattering_places.right_wall == Scattering.SPECULAR else 0
+            self.left_wall_diffuse  += 1 if triangle_scattering_places.left_wall == Scattering.DIFFUSE else 0
+            self.left_wall_specular += 1 if triangle_scattering_places.left_wall == Scattering.SPECULAR else 0
+            self.floor_diffuse += 1 if triangle_scattering_places.floor == Scattering.DIFFUSE else 0
+            self.floor_specular += 1 if triangle_scattering_places.floor == Scattering.SPECULAR else 0
+        except:
+            pass
+
+    def write_into_files(self):
+        """Write data into a file"""
+        filename = "Data/Triangle scattering statistics.csv"
+        data = np.vstack(np.array([self.right_wall_diffuse, self.right_wall_specular,
+                self.left_wall_diffuse, self.left_wall_specular,
+                self.floor_diffuse, self.floor_specular])).T
+        header = "Inclined right diffuse, Inclinded right specular, Inclined left diffuse, Inclinded left specular, Floor diffuse, Floor specular"
+        np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
+
+    def dump_data(self):
+        """Return data of a process in the form of a dictionary to be attached to the global data"""
+        return {
+            'right_wall_diffuse': self.right_wall_diffuse,
+            'right_wall_specular': self.right_wall_specular,
+            'left_wall_diffuse': self.left_wall_diffuse,
+            'left_wall_specular': self.left_wall_specular,
+            'floor_diffuse': self.floor_diffuse,
+            'floor_specular': self.floor_specular,
+        }
+
 
 
 class SegmentData(Data):

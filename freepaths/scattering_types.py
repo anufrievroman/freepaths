@@ -36,8 +36,18 @@ class ScatteringTypes:
 
     @property
     def is_internal(self):
-        """Is any of the scattering types diffuse?"""
+        """Is the scattering type internal?"""
         return self.internal is not None
+
+    @property
+    def is_diffuse_on_hole(self):
+        """Was there a diffuse scattering on holes?"""
+        return self.holes == Scattering.DIFFUSE
+
+    @property
+    def is_specular_on_hole(self):
+        """Was there a specular scattering on holes?"""
+        return self.holes == Scattering.SPECULAR
 
     @property
     def is_scattered(self):
@@ -57,3 +67,26 @@ class ScatteringTypes:
         self.walls = None
         self.internal = None
         self.hot_side = None
+
+
+class ScatteringPlaces:
+    """Phonon scattering places on a triangle"""
+
+    def __init__(self):
+        """Initialize possible scattering places"""
+        self.right_wall = None
+        self.left_wall = None
+        self.floor = None
+
+    @property
+    def is_scattered(self):
+        """Has any of the scattering events occurred?"""
+        return any([self.right_wall,
+                    self.left_wall,
+                    self.floor])
+
+    def reset(self):
+        """Reset all scattering places to None"""
+        self.right_wall = None
+        self.left_wall = None
+        self.floor = None

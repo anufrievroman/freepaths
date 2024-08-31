@@ -38,21 +38,20 @@ def vertical_surface_left_scattering(ph, roughness, cf, is_diffuse=False):
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
-    if random() < p and not is_diffuse:
+    if random() < p and (not is_diffuse):
         ph.theta = - ph.theta
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        for attempt in range(10):
+    for attempt in range(10):
 
-            # Lambert cosine distribution:
-            ph.theta = -pi/2 + asin(2*random() - 1)
-            ph.phi = asin((asin(2*random() - 1))/(pi/2))
+        # Lambert cosine distribution:
+        ph.theta = -pi/2 + asin(2*random() - 1)
+        ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
-            # Accept the angles if they do not cause new scattering:
-            if no_new_scattering(ph, cf):
-                return Scattering.DIFFUSE
+        # Accept the angles if they do not cause new scattering:
+        if no_new_scattering(ph, cf):
+            return Scattering.DIFFUSE
 
 
 def vertical_surface_right_scattering(ph, roughness, cf, is_diffuse=False):
@@ -63,21 +62,20 @@ def vertical_surface_right_scattering(ph, roughness, cf, is_diffuse=False):
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
-    if random() < p and not is_diffuse:
+    if random() < p and (not is_diffuse):
         ph.theta = - ph.theta
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        for attempt in range(10):
+    for attempt in range(10):
 
-            # Lambert cosine distribution:
-            ph.theta = +pi/2 + asin(2*random() - 1)
-            ph.phi = asin((asin(2*random() - 1))/(pi/2))
+        # Lambert cosine distribution:
+        ph.theta = +pi/2 + asin(2*random() - 1)
+        ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
-            # Accept the angles if they do not cause new scattering:
-            if no_new_scattering(ph, cf):
-                return Scattering.DIFFUSE
+        # Accept the angles if they do not cause new scattering:
+        if no_new_scattering(ph, cf):
+            return Scattering.DIFFUSE
 
 
 def horizontal_surface_down_scattering(ph, roughness, is_diffuse=False):
@@ -88,17 +86,16 @@ def horizontal_surface_down_scattering(ph, roughness, is_diffuse=False):
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
-    if random() < p and not is_diffuse:
+    if random() < p and (not is_diffuse):
         ph.theta = sign(ph.theta)*pi - ph.theta
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        # Lambert cosine distribution:
-        rand_sign = sign((2*random() - 1))
-        ph.theta = rand_sign*pi/2 + rand_sign*acos(random())
-        ph.phi = asin((asin(2*random() - 1))/(pi/2))
-        return Scattering.DIFFUSE
+    # Lambert cosine distribution:
+    rand_sign = sign((2*random() - 1))
+    ph.theta = rand_sign*pi/2 + rand_sign*acos(random())
+    ph.phi = asin((asin(2*random() - 1))/(pi/2))
+    return Scattering.DIFFUSE
 
 
 def horizontal_surface_up_scattering(ph, roughness, is_diffuse=False):
@@ -114,18 +111,17 @@ def horizontal_surface_up_scattering(ph, roughness, is_diffuse=False):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        # Lambert cosine distribution:
-        ph.theta = asin(2*random() - 1)
-        ph.phi = asin((asin(2*random() - 1))/(pi/2))
-        return Scattering.DIFFUSE
+    # Lambert cosine distribution:
+    ph.theta = asin(2*random() - 1)
+    ph.phi = asin((asin(2*random() - 1))/(pi/2))
+    return Scattering.DIFFUSE
 
 
 def inclined_surfaces_down_scattering(ph, beta, x, x0, roughness):
     """Scattering from a inclined surfaces pointing down like V"""
 
     # Calculate angle to the surface and specular scattering probability:
-    a = acos(cos(ph.phi)*cos(ph.theta - sign(x - x0)*(pi/2 - beta)))
+    a = acos(cos(ph.phi)*cos(pi/2 - abs(ph.theta) - beta))
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
@@ -134,18 +130,17 @@ def inclined_surfaces_down_scattering(ph, beta, x, x0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        rand_sign = sign((2*random() - 1))
-        ph.theta = rand_sign*pi - rand_sign*asin(random()) - sign(x - x0)*(pi/2 - beta)
-        ph.phi = asin((asin(2*random() - 1))/(pi/2))
-        return Scattering.DIFFUSE
+    rand_sign = sign((2*random() - 1))
+    ph.theta = rand_sign*pi - rand_sign*asin(random()) - sign(x - x0)*(pi/2 - beta)
+    ph.phi = asin((asin(2*random() - 1))/(pi/2))
+    return Scattering.DIFFUSE
 
 
 def inclined_surfaces_up_scattering(ph, beta, x, x0, roughness):
     """Scattering from a inclined surfaces pointing up like ^"""
 
     # Calculate angle to the surface and specular scattering probability:
-    a = acos(cos(ph.phi)*cos(ph.theta + sign(x - x0)*(pi/2 - beta)))
+    a = acos(cos(ph.phi)*cos(pi/2 - abs(ph.theta) + beta))
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
@@ -154,11 +149,9 @@ def inclined_surfaces_up_scattering(ph, beta, x, x0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        # Lambert cosine distribution:
-        ph.theta = asin(2*random() - 1) + sign(x - x0)*(pi/2 - beta)
-        ph.phi = asin((asin(2*random() - 1))/(pi/2))
-        return Scattering.DIFFUSE
+    ph.theta = asin(2*random() - 1) + sign(x - x0)*(pi/2 - beta)
+    ph.phi = asin((asin(2*random() - 1))/(pi/2))
+    return Scattering.DIFFUSE
 
 
 def in_plane_surface_scattering(ph, roughness):
@@ -174,15 +167,14 @@ def in_plane_surface_scattering(ph, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        # Random distribution:
-        # theta = -pi + random()*2*pi
-        # phi = -asin(random())
+    # Random distribution:
+    # theta = -pi + random()*2*pi
+    # phi = -asin(random())
 
-        # Lambert cosine distribution:
-        ph.theta = - pi + random()*2*pi
-        ph.phi = - sign(ph.phi) *  random()*pi/2
-        return Scattering.DIFFUSE
+    # Lambert cosine distribution:
+    ph.theta = - pi + random()*2*pi
+    ph.phi = - sign(ph.phi) *  random()*pi/2
+    return Scattering.DIFFUSE
 
 
 def circle_outer_scattering(ph, tangent_theta, y, y0, roughness, cf):
@@ -198,20 +190,19 @@ def circle_outer_scattering(ph, tangent_theta, y, y0, roughness, cf):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        for attempt in range(10):
+    for attempt in range(10):
 
-            # Random distribution:
-            # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
-            # phi = asin(2*random() - 1)
+        # Random distribution:
+        # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
+        # phi = asin(2*random() - 1)
 
-            # Lambert cosine distribution:
-            ph.theta = tangent_theta - (asin(2*random() - 1)) - pi*(y < y0)
-            ph.phi = asin((asin(2*random() - 1))/(pi/2))
+        # Lambert cosine distribution:
+        ph.theta = tangent_theta - (asin(2*random() - 1)) - pi*(y < y0)
+        ph.phi = asin((asin(2*random() - 1))/(pi/2))
 
-            # Accept the angles only if they do not immediately cause new scattering:
-            if no_new_scattering(ph, cf):
-                return Scattering.DIFFUSE
+        # Accept the angles only if they do not immediately cause new scattering:
+        if no_new_scattering(ph, cf):
+            return Scattering.DIFFUSE
 
 
 def circle_inner_scattering(ph, tangent_theta, y, y0, roughness):
@@ -226,10 +217,9 @@ def circle_inner_scattering(ph, tangent_theta, y, y0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
-        ph.phi = asin((asin(2*random() - 1))/(pi/2))
-        return Scattering.DIFFUSE
+    ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
+    ph.phi = asin((asin(2*random() - 1))/(pi/2))
+    return Scattering.DIFFUSE
 
 
 def circle_inclined_inner_scattering(ph, tangent_theta, y, y0, roughness):
@@ -263,7 +253,6 @@ def circle_inclined_inner_scattering(ph, tangent_theta, y, y0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else:
-        ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
-        ph.phi = asin((asin(2*random() - 1))/(pi/2)) # - (pi / 2 - pillar.wall_angle)
-        return Scattering.DIFFUSE
+    ph.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
+    ph.phi = asin((asin(2*random() - 1))/(pi/2)) # - (pi / 2 - pillar.wall_angle)
+    return Scattering.DIFFUSE

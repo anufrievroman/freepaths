@@ -46,55 +46,55 @@ def output_scattering_information(scatter_stats):
     total_hole = np.sum(scatter_stats.hole_diffuse) + np.sum(scatter_stats.hole_specular)
     total_pill = np.sum(scatter_stats.pillar_diffuse) + np.sum(scatter_stats.pillar_specular)
 
-    scat_on_walls = 100*(np.sum(scatter_stats.wall_diffuse) +
+    sc_on_walls = 100*(np.sum(scatter_stats.wall_diffuse) +
                          np.sum(scatter_stats.wall_specular)) / total
-    scat_on_walls_diff = 100*np.sum(scatter_stats.wall_diffuse) / total_wall
-    scat_on_walls_spec = 100*np.sum(scatter_stats.wall_specular) / total_wall
+    sc_on_walls_diff = 100*np.sum(scatter_stats.wall_diffuse) / total_wall
+    sc_on_walls_spec = 100*np.sum(scatter_stats.wall_specular) / total_wall
 
-    scat_on_topbot = 100*(np.sum(scatter_stats.top_diffuse) +
+    sc_on_topbot = 100*(np.sum(scatter_stats.top_diffuse) +
                           np.sum(scatter_stats.top_specular)) / total
 
     if total_topbot != 0:
-        scat_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
-        scat_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
+        sc_on_topbot_diff = 100*np.sum(scatter_stats.top_diffuse) / total_topbot
+        sc_on_topbot_spec = 100*np.sum(scatter_stats.top_specular) / total_topbot
     else:
-        scat_on_topbot_diff = 0
-        scat_on_topbot_spec = 0
+        sc_on_topbot_diff = 0
+        sc_on_topbot_spec = 0
 
     retherm = 100*np.sum(scatter_stats.hot_side) / total
     internal = 100*np.sum(scatter_stats.internal) / total
 
     info1 = (
-            f'\n{scat_on_walls:.2f}% - scattering on side walls ',
-            f'({scat_on_walls_diff:.2f}% - diffuse, ',
-            f'{scat_on_walls_spec:.2f}% - specular)',
-            f'\n{scat_on_topbot:.2f}% - scattering on top and bottom walls ',
-            f'({scat_on_topbot_diff:.2f}% - diffuse, ',
-            f'{scat_on_topbot_spec:.2f}% - specular)',
+            f'\n{sc_on_walls:.2f}% - scattering on side walls ',
+            f'({sc_on_walls_diff:.2f}% - diffuse, ',
+            f'{sc_on_walls_spec:.2f}% - specular)',
+            f'\n{sc_on_topbot:.2f}% - scattering on top and bottom walls ',
+            f'({sc_on_topbot_diff:.2f}% - diffuse, ',
+            f'{sc_on_topbot_spec:.2f}% - specular)',
             f'\n{retherm:.2f}% - rethermalization at the hot side',
             f'\n{internal:.2f}% - internal scattering processes',
     )
 
     if cf.holes:
-        scat_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
+        sc_on_holes = 100*(np.sum(scatter_stats.hole_diffuse) +
                              np.sum(scatter_stats.hole_specular)) / total
-        scat_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
-        scat_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
+        sc_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
+        sc_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
         info2 = (
-                f'\n{scat_on_holes:.2f}% - scattering on hole walls ',
-                f'({scat_on_holes_diff:.2f}% - diffuse, ',
-                f'{scat_on_holes_spec:.2f}% - specular)',
+                f'\n{sc_on_holes:.2f}% - scattering on hole walls ',
+                f'({sc_on_holes_diff:.2f}% - diffuse, ',
+                f'{sc_on_holes_spec:.2f}% - specular)',
         )
 
     if cf.pillars:
-        scat_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
+        sc_on_pill = 100*(np.sum(scatter_stats.pillar_diffuse) +
                             np.sum(scatter_stats.pillar_specular)) / total
-        scat_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
-        scat_on_pill_spec = 100*np.sum(scatter_stats.pillar_specular) / total_pill
+        sc_on_pill_diff = 100*np.sum(scatter_stats.pillar_diffuse) / total_pill
+        sc_on_pill_spec = 100*np.sum(scatter_stats.pillar_specular) / total_pill
         info3 = (
-                f'\n{scat_on_pill:.2f}% - scattering on pillar walls ',
-                f'({scat_on_pill_diff:.2f}% - diffuse, ',
-                f'{scat_on_pill_spec:.2f}% - specular)'
+                f'\n{sc_on_pill:.2f}% - scattering on pillar walls ',
+                f'({sc_on_pill_diff:.2f}% - diffuse, ',
+                f'{sc_on_pill_spec:.2f}% - specular)'
         )
 
     # Write info into a text file:
@@ -116,7 +116,7 @@ def output_parameter_warnings():
     long_travel_times = travel_times[travel_times > time_of_stabilization]
     percentage = (len(long_travel_times) / len(travel_times)) * 100
     if percentage > 10:
-        logging.warning("Travel time of {percentage}% of phonons was longer than the stabilization period.\n" +
+        logging.warning(f"Travel time of {percentage}% of phonons was longer than the stabilization period.\n" +
                           "Increase stabilization period as the thermal conductivity might be incorrect.")
 
     # Check if pixel size is too small:
@@ -129,4 +129,4 @@ def output_parameter_warnings():
     # Check how many phonons reached the cold side during simulation:
     percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_phonons)
     if percentage < 95:
-        logging.warning("Only {percentage}% of phonons reached the cold side. Increase number of timesteps.")
+        logging.warning(f"Only {percentage}% of phonons reached the cold side. Increase number of timesteps.")

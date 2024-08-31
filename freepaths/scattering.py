@@ -107,7 +107,7 @@ def ceiling_scattering(ph, scattering_types, x, y, z):
         scattering_types.top_bottom = in_plane_surface_scattering(ph, cf.top_roughness)
 
 
-def surface_scattering(ph, scattering_types):
+def surface_scattering(ph, scattering_types, triangle_scattering_places):
     """Check for a surface scattering on this step"""
 
     # Preliminary move to see if phonon would cross something:

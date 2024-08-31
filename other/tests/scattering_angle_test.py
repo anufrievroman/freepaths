@@ -34,8 +34,8 @@ for n in range(1000):
     # phi = arcsin(random())
 
     # Lambert cosine distribution (correct):
-    theta = -pi + random()*2*pi
-    phi = random()*pi/2
+    # theta = -pi + random()*2*pi
+    # phi = random()*pi/2
 
     ##############################################
     # TOP SCATTERING:
@@ -118,8 +118,8 @@ for n in range(1000):
     # SIDEWALLS OF THE TRIANGLE FACING UP:
 
     # Lambert cosine distribution:
-    # theta=arcsin(2*random() - 1) + sign(x - x0)*(pi/2 - beta)
-    # phi = arcsin((arcsin(2*random() - 1))/(pi/2))
+    theta=arcsin(2*random() - 1) + sign(x - x0)*(pi/2 - beta)
+    phi = arcsin((arcsin(2*random() - 1))/(pi/2))
 
     # TOP OF THE TRIANGLE FACING DOWN:
     # Lambert cosine distribution:

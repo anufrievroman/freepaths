@@ -1,5 +1,7 @@
 """Module that calculates and outputs vaious plots and distributions from the saved files"""
 
+import logging
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -17,7 +19,7 @@ if 'Arial' in all_fonts:
     plt.rcParams['font.family'] = 'Arial'
 else:
     # Use a generic font or specify multiple options
-    print('Warning: Arial font not available. Falling back on other sans-serif font')
+    logging.warning("Arial font not available. Falling back on default sans-serif font")
     plt.rcParams['font.family'] = ['sans-serif']
 plt.rcParams['axes.titlesize'] = 10
 plt.rcParams['axes.labelsize'] = 10
@@ -35,6 +37,7 @@ plt.rcParams['figure.figsize'] = [5, 3.5]
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['legend.fontsize'] = 8
+plt.rcParams['grid.linewidth'] = 0.5
 
 
 def distribution_calculation(filename, data_range, number_of_nodes):
@@ -52,11 +55,24 @@ def angle_distribution_calculation():
     """Analyse measured phonon angles and create their distribution"""
     all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
     initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
+    hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
+    hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
     distribution = np.zeros((360, 3))
     distribution[:, 0] = range(-180, 180)
     exit_angles = all_exit_angles[all_exit_angles != 0]
     distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
     distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
+    return distribution
+
+
+def scattering_angle_distribution_calculation():
+    """Analyse scattering phonon angles and create their distribution"""
+    hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
+    hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
+    distribution = np.zeros((360, 3))
+    distribution[:, 0] = range(-180, 180)
+    distribution[:, 1], _ = np.histogram(np.degrees(hole_diff_angles), 360, range=(-180, 180))
+    distribution[:, 2], _ = np.histogram(np.degrees(hole_spec_angles), 360, range=(-180, 180))
     return distribution
 
 
@@ -100,7 +116,7 @@ def plot_cumulative_thermal_conductivity(mfp_sampling):
 
 
 def plot_angle_distribution():
-    """Plot distribution of angles"""
+    """Plot distribution of initial and exit angles"""
     angle_distributions = angle_distribution_calculation()
     fig, ax = plt.subplots()
     ax.plot(angle_distributions[:, 0], angle_distributions[:, 1], 'royalblue')
@@ -112,6 +128,24 @@ def plot_angle_distribution():
     fig.savefig("Distribution of angles.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
+
+
+def plot_scattering_angle_distribution():
+    """Plot distribution of hole scattering angles"""
+    angle_distributions = scattering_angle_distribution_calculation()
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    ax.grid(zorder=0)
+    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 'royalblue', label="Diffuse", zorder=2)
+    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 0, alpha=0.2, zorder=2)
+    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 'deeppink', label="Specular", zorder=3)
+    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 0, alpha=0.2, zorder=3)
+    ax.set_theta_zero_location('N')
+    ax.set_theta_direction(-1)
+    ax.legend(facecolor='white', framealpha=1, ncols=2, loc="lower center", bbox_to_anchor=(0.5, -0.17))
+    ax.set_title('Number of scattered phonons per angle')
+    fig.savefig("Distribution of hole scattering angles.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+    np.savetxt('Data/Distribution of hole scattering angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
 
 
 def plot_free_path_distribution():
@@ -227,16 +261,16 @@ def plot_thermal_conductivity():
     ax.add_patch(rectangle_mat)
 
     # Plot the averaged values in the averaging range:
-    ax.plot([av_start, av_end], [av_mat_tc, av_mat_tc], '-', markersize=2, linewidth=2, color='deeppink', label='$\overline{\kappa}_{mat}$')
-    ax.plot([av_start, av_end], [av_eff_tc, av_eff_tc], '-', markersize=2, linewidth=2, color='royalblue', label='$\overline{\kappa}_{eff}$')
+    ax.plot([av_start, av_end], [av_mat_tc, av_mat_tc], '-', markersize=2, linewidth=2, color='deeppink', label=r'$\overline{\kappa}_{mat}$')
+    ax.plot([av_start, av_end], [av_eff_tc, av_eff_tc], '-', markersize=2, linewidth=2, color='royalblue', label=r'$\overline{\kappa}_{eff}$')
 
     ax.set_ylabel('Thermal conductivity (W/m·K)')
     ax.set_xlabel('Time (ns)')
 
     ax.set_xlim(left=0.0)
     ax.legend()
-    kappa_mat_str = "$\overline{\kappa}_{mat}$"
-    kappa_eff_str = "$\overline{\kappa}_{eff}$"
+    kappa_mat_str = r"$\overline{\kappa}_{mat}$"
+    kappa_eff_str = r"$\overline{\kappa}_{eff}$"
     ax.set_title(f'{kappa_mat_str} = {av_mat_tc} ± {std_mat_tc} W/m·K, {kappa_eff_str} = {av_eff_tc} ± {std_eff_tc} W/m·K', color='grey')
     fig.savefig("Thermal conductivity.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -456,7 +490,7 @@ def plot_material_properties():
     elif cf.media == "Graphite":
         material = Graphite(cf.temp)
     else:
-        print(f"Material {cf.media} is not supported")
+        logging.error(f"Material {cf.media} is not supported")
         sys.exit()
 
     # Plot phonon dispersion:
@@ -469,7 +503,7 @@ def plot_material_properties():
     ax.set_xlim(left=0)
 
     # Add material properties:
-    ax.set_title(f'{material.name},  T = {cf.temp} K,  C$_p$ = {material.heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³')
+    ax.set_title(f'{material.name},  T = {cf.temp} K,  C$_p$ = {material.heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
 
     fig.savefig("Material properties.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -481,6 +515,7 @@ def plot_data(mfp_sampling=False):
         plot_structure,
         plot_trajectories,
         plot_angle_distribution,
+        plot_scattering_angle_distribution,
         plot_free_path_distribution,
         plot_frequency_distribution,
         plot_wavelength_distribution,
@@ -497,13 +532,13 @@ def plot_data(mfp_sampling=False):
         plot_scattering_map,
         plot_material_properties,
     ]
-    
+
     # Run main functions and handle exceptions:
     for func in function_list:
         try:
             func()
         except Exception as e:
-            print(f"Function {func.__name__} failed: {e}") 
+            logging.warning(f"Function {func.__name__} failed: {e}")
 
     # Run additional functions:
     plot_cumulative_thermal_conductivity(mfp_sampling)

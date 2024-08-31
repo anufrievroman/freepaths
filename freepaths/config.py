@@ -29,7 +29,11 @@ args = parser.parse_args()
 
 # If a file is provided, overwrite the default values:
 if args.input_file:
-    exec(open(args.input_file, encoding='utf-8').read(), globals())
+    try:
+        exec(open(args.input_file, encoding='utf-8').read(), globals())
+    except FileNotFoundError:
+        logging.error("Input file does not exist. Check if you are in the right folder and the file name is correct.")
+        sys.exit()
 else:
     logging.warning("You provided no input file, so we will run a demo simulation:")
 

@@ -40,6 +40,8 @@ class Flight:
         self.travel_time = 0.0
         self.time_since_previous_scattering = 0.0
         self.free_paths = []
+        self.hole_diff_scattering_angles = []
+        self.hole_spec_scattering_angles = []
         self.free_paths_along_y = []
         self.thermal_conductivity = 0.0
 
@@ -60,6 +62,14 @@ class Flight:
         """Save current free path to the list of free paths"""
         self.free_paths.append(self.free_path)
         self.free_paths_along_y.append(self.free_path_along_y)
+
+    def save_hole_diff_scattering_angle(self, angle):
+        """Save angle of diffuse scattering from the hole"""
+        self.hole_diff_scattering_angles.append(angle)
+
+    def save_hole_spec_scattering_angle(self, angle):
+        """Save angle of specular scattering from the hole"""
+        self.hole_spec_scattering_angles.append(angle)
 
     def restart(self):
         """Restart the flight after a scattering event"""

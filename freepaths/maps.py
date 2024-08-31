@@ -67,7 +67,7 @@ class ScatteringMap(Maps):
 
         # Save into file:
         header = "Specular X, Specular Y, Diffuse X, Diffuse Y, Internal X, Internal Y"
-        np.savetxt("Data/Scattering map.csv", data, fmt='%1.2e', delimiter=",", header=header, encoding='utf-8')
+        np.savetxt("Data/Scattering map.csv", data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
 
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
