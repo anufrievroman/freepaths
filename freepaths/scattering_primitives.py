@@ -141,6 +141,7 @@ def inclined_surfaces_up_scattering(ph, beta, x, x0, roughness):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*cos(pi/2 - abs(ph.theta) + beta))
+    # a = acos(cos(ph.phi)*cos(abs(ph.theta) - pi/2 + beta))
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
@@ -181,7 +182,7 @@ def circle_outer_scattering(ph, tangent_theta, y, y0, roughness, cf):
     """Scattering from the outer surface of the circle"""
 
     # Calculate angle to the surface and specular scattering probability:
-    a = acos(cos(ph.phi)*cos(ph.theta + sign(y - y0)*tangent_theta))
+    a = acos(cos(ph.phi)*cos(ph.theta - tangent_theta))
     p = specularity(a, roughness, ph.wavelength)
 
     # Specular scattering:
