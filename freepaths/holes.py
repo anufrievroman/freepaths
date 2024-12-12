@@ -75,23 +75,31 @@ class CircularHole(Hole):
 class RectangularHole(Hole):
     """Shape of a rectangular hole"""
 
-    def __init__(self, x=0, y=0, size_x=100e-9, size_y=100e-9):
+    def __init__(self, x=0, y=0, size_x=100e-9, size_y=100e-9, depth=None):
         self.x0 = x
         self.y0 = y
         self.size_x = size_x
         self.size_y = size_y
+        self.depth = depth
 
     def is_inside(self, x, y, z, cf):
-        """Check if phonon with given coordinates traverses the boundary"""
-        return (abs(x - self.x0) <= self.size_x / 2) and (abs(y - self.y0) <= self.size_y / 2)
+        """Check if phonon with given coordinates traverses the boundary. It also depens on in the hole is complete or partial."""
+        if self.depth and z:
+            return (abs(x - self.x0) <= self.size_x / 2) and (abs(y - self.y0) <= self.size_y / 2) and (z > cf.thickness/2 - self.depth)
+        else:
+            return (abs(x - self.x0) <= self.size_x / 2) and (abs(y - self.y0) <= self.size_y / 2)
+
 
     def scatter(self, ph, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
 
-        # Coordinate y of the intersection with the hole side:
-        y1 = (self.y0 - y) + cos(ph.theta) * (
-            self.size_x / 2 - abs(self.x0 - x)
-        ) / abs(sin(ph.theta))
+        # If phonon arrives from below, then it's bottom scattering:
+        if self.depth and ph.z < (cf.thickness/2 - self.depth):
+            scattering_types.holes = in_plane_surface_scattering(ph, cf.top_roughness)
+            return
+
+        # Otherwise, calculate coordinate y of the intersection with the hole side:
+        y1 = (self.y0 - y) + cos(ph.theta) * (self.size_x / 2 - abs(self.x0 - x)) / abs(sin(ph.theta))
 
         # Scattering on the left wall:
         if abs(y1) <= self.size_y / 2 and x < self.x0:

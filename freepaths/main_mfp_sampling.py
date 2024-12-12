@@ -15,7 +15,7 @@ from freepaths.config import cf
 from freepaths.run_phonon import run_phonon
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
-from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData
+from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.progress import Progress
 from freepaths.materials import Si, SiC, Graphite
 from freepaths.maps import ScatteringMap, ThermalMaps
@@ -45,6 +45,7 @@ def main(input_file):
     scatter_stats = ScatteringData()
     general_stats = GeneralData()
     segment_stats = SegmentData()
+    places_stats = TriangleScatteringData()
     path_stats = PathData()
     scatter_maps = ScatteringMap()
     thermal_maps = ThermalMaps()
@@ -67,7 +68,7 @@ def main(input_file):
             flight = Flight(phonon)
 
             # Run this phonon through the structure:
-            run_phonon(phonon, flight, scatter_stats, segment_stats, thermal_maps, scatter_maps, material)
+            run_phonon(phonon, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material)
 
             # Heat capacity, Ref. PRB 88 155318 (2013):
             omega = 2 * math.pi * phonon.f
