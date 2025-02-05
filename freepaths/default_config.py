@@ -69,10 +69,12 @@ PILLAR_ROUGHNESS                 = 2e-9
 TOP_ROUGHNESS                    = 0.2e-9
 BOTTOM_ROUGHNESS                 = 0.2e-9
 PILLAR_TOP_ROUGHNESS             = 0.2e-9
+INTERFACE_ROUGHNESS              = 0.2e-9
 
 # Holes and pillars:
 HOLES                            = []
 PILLARS                          = []
+INTERFACES                       = []
 
 # Multiprocessing:
 NUMBER_OF_PROCESSES              = 10

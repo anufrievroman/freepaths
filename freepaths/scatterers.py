@@ -6,6 +6,7 @@ These classes contain all methods associated with scattering on holes.
 
 from math import atan
 from numpy import pi, array, linspace, column_stack, vstack
+from random import random
 from matplotlib.patches import Rectangle, Circle, Polygon
 from scipy.spatial import cKDTree
 
@@ -619,3 +620,104 @@ class CircularPillar():
     def get_patch(self, color_holes, cf):
         """Create a patch in the shape of the hole to use in the plots"""
         return Circle((1e6 * self.x0, 1e6 * self.y0), 1e6 * self.diameter / 2, facecolor=color_holes,)
+
+
+class Interface:
+    def is_crossed(self, ph, x, y, z) -> bool:
+        """
+        Check if phonon with given coordinates traverses the plane.
+        It returns True or False depending whether x, y, z are on the other side.
+        """
+        pass
+
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """
+        Calculate the new direction after scattering on the interface wall.
+        It returns ScatteringTypes object with the scattering type that occured.
+        """
+        pass
+
+    def is_transmitted(self) -> bool:
+        """
+        Check if phonon transmitted without scattering, taking into account the probability.
+        It return True if transmission occured or False if it must scatter.
+        """
+        pass
+
+    def get_patch(self, color_holes, cf):
+        """
+        Create a patch in the shape of a thin line to use in the plots.
+        It returns the matplotlib.patches objects like Rectangle etc.
+        """
+        pass
+
+
+class VerticalPlane(Interface):
+    """Vertical plane that represents an interface"""
+
+    def __init__(self, position_x=0, transmission=0):
+        self.position_x = position_x
+        self.transmission = transmission
+
+    def is_crossed(self, ph, x, y, z):
+        """Check if phonon with traverses the vertical plane at given coordinate"""
+        return (ph.x < self.position_x < x) or (ph.x > self.position_x > x)
+
+    def is_transmitted(self):
+        """Check if phonon traverses the plane given the transmission probability"""
+        return random() < self.transmission
+
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the interface wall"""
+
+        # Scattering on the left wall:
+        if x < self.position_x:
+            scattering_types.interfaces = vertical_surface_left_scattering(ph, cf.interface_roughness, cf)
+
+        # Scattering on the right wall:
+        else:
+            scattering_types.interfaces = vertical_surface_right_scattering(ph, cf.interface_roughness, cf)
+
+    def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of a thin line to use in the plots"""
+        return Rectangle(
+            (1e6 * self.position_x, 0),
+            1e6 * 0.005*cf.width, 1e6 * cf.length,
+            facecolor=color_holes,
+        )
+
+
+
+class HorizontalPlane(Interface):
+    """Horizontal plane that represents an interface"""
+
+    def __init__(self, position_z=0, transmission=0):
+        self.position_z = position_z
+        self.transmission = transmission
+
+    def is_crossed(self, ph, x, y, z):
+        """Check if phonon with traverses the vertical plane at given coordinate"""
+        return (ph.z < self.position_z < z) or (ph.z > self.position_z > z)
+
+    def is_transmitted(self):
+        """Check if phonon traverses the plane given the transmission probability"""
+        return random() < self.transmission
+
+    def scatter(self, ph, scattering_types, x, y, z, cf):
+        """Calculate the new direction after scattering on the interface wall"""
+
+        # Scattering on the left wall:
+        if x < self.position_z:
+            scattering_types.interfaces = horizontal_surface_up_scattering(ph, cf.interface_roughness, cf)
+
+        # Scattering on the right wall:
+        else:
+            scattering_types.interfaces = horizontal_surface_down_scattering(ph, cf.interface_roughness, cf)
+
+    def get_patch(self, color_holes, cf):
+        """Create a patch in the shape of a thin line to use in the plots"""
+        return Rectangle(
+            (0, 1e6 * self.position_z),
+            1e6 * cf.length, 1e6 * 0.005*cf.thickness,
+            facecolor=color_holes,
+        )

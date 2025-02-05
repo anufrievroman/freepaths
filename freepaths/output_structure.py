@@ -2,8 +2,9 @@
 
 from matplotlib.patches import Rectangle
 from freepaths.config import cf
+from freepaths.scatterers import HorizontalPlane, VerticalPlane
 
-def draw_structure(cf, color_holes="white", color_back="gray"):
+def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
     """Draw shape of the structure using patches from matplotlib"""
 
     # Overal shape as gray area:
@@ -26,6 +27,12 @@ def draw_structure(cf, color_holes="white", color_back="gray"):
         patch = pillar.get_patch(color_holes, cf)
         patches.extend(patch if isinstance(patch, list) else [patch])
 
+    # Interfaces as white patches:
+    for interface in cf.interfaces:
+        if isinstance(interface, VerticalPlane):
+            patch = interface.get_patch(color_holes, cf)
+            patches.extend(patch if isinstance(patch, list) else [patch])
+
     # Phonon source areas as red patches:
     for source in cf.phonon_sources:
         width_x = 1e6 * cf.width / 49 if source.size_x == 0 else 1e6 * source.size_x
@@ -36,5 +43,27 @@ def draw_structure(cf, color_holes="white", color_back="gray"):
             (x, y), width_x, width_y, facecolor='red', alpha=0.5
         )
         patches.append(phonon_source_patch)
+
+    return patches
+
+
+def draw_structure_side_view(cf, color_holes="white", color_back="gray"):
+    """Draw shape of the structure using patches from matplotlib"""
+
+    # Overal shape as gray area:
+    patches = [
+        Rectangle(
+            (0, -1e6 * cf.thickness/2),
+            1e6 * cf.length,
+            1e6 * cf.thickness,
+            facecolor=color_back,
+        )
+    ]
+
+    # Interfaces as white patches:
+    for interface in cf.interfaces:
+        if isinstance(interface, HorizontalPlane):
+            patch = interface.get_patch(color_holes, cf)
+            patches.extend(patch if isinstance(patch, list) else [patch])
 
     return patches

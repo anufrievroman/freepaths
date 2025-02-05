@@ -24,6 +24,7 @@ class ScatteringTypes:
         self.walls = None
         self.internal = None
         self.hot_side = None
+        self.interfaces = None
 
     @property
     def is_diffuse(self):
@@ -32,7 +33,8 @@ class ScatteringTypes:
                     self.pillars == Scattering.DIFFUSE,
                     self.top_bottom == Scattering.DIFFUSE,
                     self.walls == Scattering.DIFFUSE,
-                    self.hot_side == Scattering.DIFFUSE])
+                    self.hot_side == Scattering.DIFFUSE,
+                    self.interfaces == Scattering.DIFFUSE])
 
     @property
     def is_internal(self):
@@ -57,7 +59,8 @@ class ScatteringTypes:
                     self.top_bottom,
                     self.walls,
                     self.internal,
-                    self.hot_side])
+                    self.hot_side,
+                    self.interfaces])
 
     def reset(self):
         """Reset all scattering types to None"""
@@ -67,6 +70,7 @@ class ScatteringTypes:
         self.walls = None
         self.internal = None
         self.hot_side = None
+        self.interfaces = None
 
 
 class ScatteringPlaces:

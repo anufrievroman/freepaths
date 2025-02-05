@@ -125,7 +125,7 @@ def worker_process(worker_id, total_phonons, shared_list, output_trajectories_of
 def display_workers_finished(finished_workers):
     """ Print out the number of active workers"""
     while True:
-        text_to_display = f'  Workers finished: {finished_workers.value}/{cf.num_workers}'
+        text_to_display = f'  Processes finished: {finished_workers.value}/{cf.num_workers}'
         sys.stdout.write(text_to_display)
         sys.stdout.write(f'\033[{len(text_to_display)}D') # move cursor back
         sys.stdout.flush()

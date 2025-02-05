@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from freepaths.config import cf
-from freepaths.output_structure import draw_structure
+from freepaths.output_structure import draw_structure_top_view
 
 
 def generate_frames_xy():
@@ -28,7 +28,7 @@ def generate_frames_xy():
         fig, ax = plt.subplots()
 
         # Draw the structure:
-        patches = draw_structure(cf, color_back=cf.output_structure_color)
+        patches = draw_structure_top_view(cf, color_back=cf.output_structure_color)
 
         for patch in patches:
             ax.add_patch(patch)

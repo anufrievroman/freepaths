@@ -9,7 +9,7 @@ import logging
 from colorama import Fore, Style
 
 from freepaths.sources import Distributions
-from freepaths.holes import *
+from freepaths.scatterers import *
 
 # Import a default input file:
 from freepaths.default_config import *
@@ -110,10 +110,12 @@ class Config:
         self.top_roughness = TOP_ROUGHNESS
         self.bottom_roughness = BOTTOM_ROUGHNESS
         self.pillar_top_roughness = PILLAR_TOP_ROUGHNESS
+        self.interface_roughness = INTERFACE_ROUGHNESS
 
         # Hole array parameters:
         self.holes = HOLES
         self.pillars = PILLARS
+        self.interfaces = INTERFACES
 
         # Multiprocessing:
         self.num_workers = NUMBER_OF_PROCESSES

@@ -23,56 +23,40 @@ def reinitialization(ph, scattering_types):
     x, y, _ = move(ph, cf.timestep)
 
     if cf.hot_side_position_bottom and y < 0:
-        scattering_types.hot_side = horizontal_surface_up_scattering(
-            ph, cf.side_wall_roughness, is_diffuse=True
-        )
+        scattering_types.hot_side = horizontal_surface_up_scattering(ph, cf.side_wall_roughness, is_diffuse=True)
 
     if cf.hot_side_position_top and y > cf.length:
-        scattering_types.hot_side = horizontal_surface_down_scattering(
-            ph, cf.side_wall_roughness, is_diffuse=True
-        )
+        scattering_types.hot_side = horizontal_surface_down_scattering(ph, cf.side_wall_roughness, is_diffuse=True)
 
     if cf.hot_side_position_right and x > cf.width / 2:
-        scattering_types.hot_side = vertical_surface_left_scattering(
-            ph, cf.side_wall_roughness, cf, is_diffuse=True
-        )
+        scattering_types.hot_side = vertical_surface_left_scattering(ph, cf.side_wall_roughness, cf, is_diffuse=True)
 
     if cf.hot_side_position_left and x < -cf.width / 2:
-        scattering_types.hot_side = vertical_surface_right_scattering(
-            ph, cf.side_wall_roughness, cf, is_diffuse=True
-        )
+        scattering_types.hot_side = vertical_surface_right_scattering(ph, cf.side_wall_roughness, cf, is_diffuse=True)
 
 
 def scattering_on_right_sidewall(ph, scattering_types, x, y, z):
     """Scatter phonon if it reached right side wall"""
     if x > cf.width / 2:
-        scattering_types.walls = vertical_surface_left_scattering(
-            ph, cf.side_wall_roughness, cf
-        )
+        scattering_types.walls = vertical_surface_left_scattering(ph, cf.side_wall_roughness, cf)
 
 
 def scattering_on_left_sidewall(ph, scattering_types, x, y, z):
     """Scatter phonon if it reached left side wall"""
     if x < -cf.width / 2:
-        scattering_types.walls = vertical_surface_right_scattering(
-            ph, cf.side_wall_roughness, cf
-        )
+        scattering_types.walls = vertical_surface_right_scattering(ph, cf.side_wall_roughness, cf)
 
 
 def scattering_on_top_sidewall(ph, scattering_types, x, y, z):
     """Check if the phonon hits top side wall and output new vector"""
     if y > cf.length:
-        scattering_types.walls = horizontal_surface_down_scattering(
-            ph, cf.side_wall_roughness
-        )
+        scattering_types.walls = horizontal_surface_down_scattering(ph, cf.side_wall_roughness)
 
 
 def scattering_on_bottom_sidewall(ph, scattering_types, x, y, z):
     """Check if the phonon hits bottom side wall and output new vector"""
     if y < 0.0:
-        scattering_types.walls = horizontal_surface_up_scattering(
-            ph, cf.side_wall_roughness
-        )
+        scattering_types.walls = horizontal_surface_up_scattering(ph, cf.side_wall_roughness)
 
 
 def floor_scattering(ph, scattering_types, x, y, z):
@@ -93,15 +77,11 @@ def ceiling_scattering(ph, scattering_types, x, y, z):
             is_under_pillar = distance_from_pillar_center < pillar.diameter / 2
             if is_under_pillar:
                 if z > pillar.height + cf.thickness / 2:
-                    scattering_types.top_bottom = in_plane_surface_scattering(
-                        ph, cf.top_roughness
-                    )
+                    scattering_types.top_bottom = in_plane_surface_scattering(ph, cf.top_roughness)
                 return
         # Regular scattering if phonon is not under any of the pillars:
         if ph.z < cf.thickness / 2:
-            scattering_types.top_bottom = in_plane_surface_scattering(
-                ph, cf.top_roughness
-            )
+            scattering_types.top_bottom = in_plane_surface_scattering(ph, cf.top_roughness)
 
     else:
         scattering_types.top_bottom = in_plane_surface_scattering(ph, cf.top_roughness)
@@ -146,6 +126,12 @@ def surface_scattering(ph, scattering_types, triangle_scattering_places):
             # If there was any scattering, then no need to check other pillars:
             if scattering_types.pillars is not None:
                 break
+
+    # Scattering on interfaces:
+    if cf.interfaces:
+        for interface in cf.interfaces:
+            if interface.is_crossed(ph, x, y, z) and interface.is_transmitted():
+                interface.scatter(ph, scattering_types, x, y, z, cf)
 
     # Correct angle if it became more than 180 degrees:
     ph.correct_angle()

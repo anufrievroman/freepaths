@@ -126,6 +126,8 @@ class ScatteringData(Data):
         self.pillar_specular = np.zeros(cf.number_of_length_segments+1)
         self.hot_side = np.zeros(cf.number_of_length_segments+1)
         self.internal = np.zeros(cf.number_of_length_segments+1)
+        self.interfaces_diffuse = np.zeros(cf.number_of_length_segments+1)
+        self.interfaces_specular = np.zeros(cf.number_of_length_segments+1)
         self.total = np.zeros(cf.number_of_length_segments+1)
 
     def save_scattering_events(self, y, scattering_types):
@@ -151,6 +153,10 @@ class ScatteringData(Data):
             # Scattering on pillars:
             self.pillar_diffuse[segment]  += 1 if scattering_types.pillars == Scattering.DIFFUSE else 0
             self.pillar_specular[segment] += 1 if scattering_types.pillars == Scattering.SPECULAR else 0
+
+            # Scattering on pillars:
+            self.interfaces_diffuse[segment]  += 1 if scattering_types.interfaces == Scattering.DIFFUSE else 0
+            self.interfaces_specular[segment] += 1 if scattering_types.interfaces == Scattering.SPECULAR else 0
 
             # Internal scattering and rethermalization on hot side:
             self.hot_side[segment] += 1 if scattering_types.hot_side == Scattering.DIFFUSE else 0
@@ -181,6 +187,8 @@ class ScatteringData(Data):
             'pillar_specular': self.pillar_specular,
             'hot_side': self.hot_side,
             'internal': self.internal,
+            'interfaces_diffuse': self.interfaces_diffuse,
+            'interfaces_specular': self.interfaces_specular,
             'total': self.total
         }
 

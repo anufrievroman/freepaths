@@ -9,7 +9,7 @@ from matplotlib.colors import LogNorm
 from matplotlib import font_manager
 
 from freepaths.config import cf
-from freepaths.output_structure import draw_structure
+from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
 from freepaths.materials import Si, SiC, Graphite
 import matplotlib.pyplot as plt
 
@@ -384,8 +384,8 @@ def plot_trajectories():
     # Create XY plot:
     fig, ax = plt.subplots()
 
-    # Draw structures:
-    patches = draw_structure(cf, color_holes='white', color_back=cf.output_structure_color)
+    # Draw structure:
+    patches = draw_structure_top_view(cf, color_holes='white', color_back=cf.output_structure_color)
     for patch in patches:
         ax.add_patch(patch)
 
@@ -405,6 +405,12 @@ def plot_trajectories():
 
     # Create YZ plot:
     fig, ax = plt.subplots()
+
+    # Draw structure:
+    patches = draw_structure_side_view(cf, color_holes='white', color_back=cf.output_structure_color)
+    for patch in patches:
+        ax.add_patch(patch)
+
     for index in range(cf.output_trajectories_of_first):
         y_coordinates = np.trim_zeros(data[:, 3 * index + 1], trim='b')
         num_of_points = len(y_coordinates)
@@ -465,7 +471,7 @@ def plot_structure():
     fig, ax = plt.subplots()
 
     # Draw structures:
-    patches = draw_structure(cf, color_holes='black', color_back='royalblue')
+    patches = draw_structure_top_view(cf, color_holes='black', color_back='royalblue')
     for patch in patches:
         ax.add_patch(patch)
 
