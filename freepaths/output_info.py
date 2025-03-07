@@ -83,7 +83,7 @@ def output_scattering_information(scatter_stats):
                              np.sum(scatter_stats.hole_specular)) / total
         sc_on_holes_diff = 100*np.sum(scatter_stats.hole_diffuse) / total_hole
         sc_on_holes_spec = 100*np.sum(scatter_stats.hole_specular) / total_hole
-        info1.extend([
+        info.extend([
                     f'\n{sc_on_holes:.2f}% - scattering on hole walls ',
                     f'({sc_on_holes_diff:.2f}% - diffuse, ',
                     f'{sc_on_holes_spec:.2f}% - specular)']
