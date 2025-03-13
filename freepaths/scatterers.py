@@ -687,7 +687,6 @@ class VerticalPlane(Interface):
         )
 
 
-
 class HorizontalPlane(Interface):
     """Horizontal plane that represents an interface"""
 
@@ -707,7 +706,7 @@ class HorizontalPlane(Interface):
         """Calculate the new direction after scattering on the interface wall"""
 
         # Scattering on the left wall:
-        if x < self.position_z:
+        if z < self.position_z:
             scattering_types.interfaces = horizontal_surface_up_scattering(ph, cf.interface_roughness, cf)
 
         # Scattering on the right wall:

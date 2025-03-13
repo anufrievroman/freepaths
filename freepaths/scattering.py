@@ -130,7 +130,7 @@ def surface_scattering(ph, scattering_types, triangle_scattering_places):
     # Scattering on interfaces:
     if cf.interfaces:
         for interface in cf.interfaces:
-            if interface.is_crossed(ph, x, y, z) and interface.is_transmitted():
+            if interface.is_crossed(ph, x, y, z) and not interface.is_transmitted():
                 interface.scatter(ph, scattering_types, x, y, z, cf)
 
     # Correct angle if it became more than 180 degrees:
