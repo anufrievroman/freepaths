@@ -58,6 +58,7 @@ HOT_SIDE_POSITION_TOP            = False
 HOT_SIDE_POSITION_BOTTOM         = True
 HOT_SIDE_POSITION_RIGHT          = False
 HOT_SIDE_POSITION_LEFT           = False
+RETHERMALIZATION_ON_HOT_SIDES    = True
 
 # Phonon source:
 PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=0,  size_y=0, size_z=0, angle_distribution="random", angle=0)]

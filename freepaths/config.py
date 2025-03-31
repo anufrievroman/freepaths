@@ -93,6 +93,7 @@ class Config:
         self.hot_side_position_bottom = HOT_SIDE_POSITION_BOTTOM
         self.hot_side_position_right = HOT_SIDE_POSITION_RIGHT
         self.hot_side_position_left = HOT_SIDE_POSITION_LEFT
+        self.rethermalization_on_hot_sides = RETHERMALIZATION_ON_HOT_SIDES
 
         # Sources:
         self.phonon_sources = PHONON_SOURCES

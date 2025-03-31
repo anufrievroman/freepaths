@@ -66,17 +66,36 @@ class Phonon:
         return self.speed / self.f
 
     @property
-    def is_in_system(self):
-        """Checks if the phonon at this timestep did not reach the cold side.
-        Depending on where user set cold sides, we check if phonon crossed that line"""
-        is_inside_top = self.y < cf.length
-        is_inside_bottom = self.y > 0
-        is_inside_right = self.x < cf.width / 2.0
-        is_inside_left = self.x > - cf.width / 2.0
-        return ((not cf.cold_side_position_top or is_inside_top) and
-                (not cf.cold_side_position_bottom or is_inside_bottom) and
-                (not cf.cold_side_position_right or is_inside_right) and
-                (not cf.cold_side_position_left or is_inside_left))
+    def has_crossed_cold_side(self):
+        """
+        Checks if the phonon at this timestep crossed the cold side.
+        Depending on where user set cold sides, we check if phonon crossed that line.
+        Return boolean of wheather any of the cold sides has been crossed.
+        """
+        has_crossed_top = self.y > cf.length
+        has_crossed_bottom = self.y < 0
+        has_crossed_right = self.x > cf.width / 2.0
+        has_crossed_left = self.x < - cf.width / 2.0
+        return ((cf.cold_side_position_top and has_crossed_top) or
+                (cf.cold_side_position_bottom and has_crossed_bottom) or
+                (cf.cold_side_position_right and has_crossed_right) or
+                (cf.cold_side_position_left and has_crossed_left))
+
+    @property
+    def has_crossed_hot_side(self):
+        """
+        Checks if the phonon at this timestep crossed the hot side.
+        Depending on where user set hot sides, we check if phonon crossed that line.
+        Return boolean of wheather any of the hot sides has been crossed.
+        """
+        has_crossed_top = self.y > cf.length
+        has_crossed_bottom = self.y < 0
+        has_crossed_right = self.x > cf.width / 2.0
+        has_crossed_left = self.x < - cf.width / 2.0
+        return ((cf.hot_side_position_top and has_crossed_top) or
+                (cf.hot_side_position_bottom and has_crossed_bottom) or
+                (cf.hot_side_position_right and has_crossed_right) or
+                (cf.hot_side_position_left and has_crossed_left))
 
     def assign_frequency(self, material):
         """Assigning frequency with probability according to Planckian distribution"""
