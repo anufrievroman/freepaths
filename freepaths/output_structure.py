@@ -34,7 +34,7 @@ def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
             patches.extend(patch if isinstance(patch, list) else [patch])
 
     # Phonon source areas as red patches:
-    for source in cf.phonon_sources:
+    for source in cf.particles_sources:
         width_x = 1e6 * cf.width / 49 if source.size_x == 0 else 1e6 * source.size_x
         width_y = 1e6 * cf.width / 50 if source.size_y == 0 else 1e6 * source.size_y
         x = 1e6 * source.x - width_x / 2

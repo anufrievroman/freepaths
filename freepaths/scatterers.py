@@ -501,7 +501,7 @@ class ParabolaTop(Hole):
         normal_theta = pi * (x < 0) - atan(2 * self.focus / x)
         dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
         angle = acos(dot_product)
-        p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+        p = specularity(angle, cf.side_wall_roughness, ph)
 
         # Specular scattering:
         if random() < p:
@@ -553,7 +553,7 @@ class ParabolaBottom(Hole):
         normal_theta = pi * (x < 0) - atan(-2 * self.focus / x)
         dot_product = cos(ph.phi) * sin(ph.theta - normal_theta)
         angle = acos(dot_product)
-        p = specularity(angle, cf.side_wall_roughness, ph.wavelength)
+        p = specularity(angle, cf.side_wall_roughness, ph)
 
         # Specular scattering:
         if random() < p:

@@ -1,14 +1,35 @@
 """Module that assigns physical properties according to chosen material"""
 
 import numpy as np
+from scipy.constants import electron_volt, electron_mass
+from abc import ABC, abstractmethod
+
+    
+class Material(ABC):
+    
+    @abstractmethod
+    def assign_phonon_dispersion(self, num_points):
+        """Assign phonon dispersion"""
+        pass
+    
+    @abstractmethod
+    def phonon_relaxation_time(self, omega):
+        """Calculate relaxation time at a given frequency and temperature"""
+        pass
+    
+    @abstractmethod
+    def assign_heat_capacity(self):
+        """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
+        pass
 
 
-class Si:
+class Si(Material):
     """
     Physical properties of silicon.
     Dispersion - Ref. APL 95 161901 (2009)
     Relaxation time - Maire et al, Scientific Reports 7, 41794 (2017)
     Heat capacity - Desai P.D. Journal of Physical and Chemical Reference Data 15, 67 (1986)
+    Effective mass - H.D. Barber, Effective mass and intrinsic concentration in silicon, Solid-State Electronics, Volume 10, Issue 11 (1967)
     """
 
     def __init__(self, temp, num_points=1000):
@@ -16,10 +37,13 @@ class Si:
         self.default_speed = 6000   # [m/s]
         self.density = 2330         # [kg/m^3]
         self.temp = temp
-        self.assign_dispersion(num_points)
+        self.effective_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
+        
+        self.fermi_level = -0.56 * electron_volt # [J]
+        self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
 
-    def assign_dispersion(self, num_points):
+    def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
 
         coefficients_LA = [-9.70e-19, -2.405e-8, 1369.42, 0]
@@ -31,7 +55,7 @@ class Si:
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
-    def relaxation_time(self, omega):
+    def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature"""
         deb_temp = 152.0
         tau_impurity = 1 / (2.95e-45 * (omega ** 4))
@@ -50,9 +74,13 @@ class Si:
         else:
             coeffs = above_50K_coeffs
         self.heat_capacity = np.polyval(coeffs, self.temp)
+        
+    def assign_fermi_level(self):
+        """Calculate the fermi-level [J] of the material at a given temperature"""
+        pass
 
 
-class SiC:
+class SiC(Material):
     """
     Physical properties of silicon carbide
     Dispersion - PRB 50 17054 (1994)
@@ -65,10 +93,10 @@ class SiC:
         self.density = 3215         # [kg/m^3]
         self.default_speed = 6500   # [m/s] Need to change this probably...
         self.temp = temp
-        self.assign_dispersion(num_points)
+        self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
 
-    def assign_dispersion(self, num_points):
+    def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
 
         coefficients_LA = [-3.48834e-18, 1.7604452e-08, 1737.36296, 0]
@@ -80,7 +108,7 @@ class SiC:
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
-    def relaxation_time(self, omega):
+    def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature including 4 phonon scattering"""
         deb_temp = 1200
         tau_impurity = 1 / (8.46e-45 * (omega ** 4))
@@ -104,7 +132,7 @@ class SiC:
         self.heat_capacity = np.polyval(coeffs, self.temp)
 
 
-class Graphite:
+class Graphite(Material):
     """
     Physical properties of graphite.
     Dispersion - Carbon 91 266-274 (2015)
@@ -117,10 +145,10 @@ class Graphite:
         self.density = 2230            # [kg/m^3]
         self.default_speed = 12900     # [m/s]
         self.temp = temp
-        self.assign_dispersion(num_points)
+        self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
 
-    def assign_dispersion(self, num_points):
+    def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
 
         coefficients_LA = [-1.24989e-18, -4.11304e-08, 3640.918, 0]
@@ -133,7 +161,7 @@ class Graphite:
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = np.abs(np.polyval(coefficients_ZA, self.dispersion[:, 0]))  # ZA branch
 
-    def relaxation_time(self, omega):
+    def phonon_relaxation_time(self, omega):
         """
         Calculate relaxation time at a given frequency and temperature.
         In graphite, we assume that material is perfect, i.e. without impurity scattering.
@@ -151,7 +179,7 @@ class Graphite:
 
 # Materials below are not fully supported and don't have the relaxation times:
 
-class Diamond:
+class Diamond(Material):
     """
     Physical properties of diamond
     Dispersion - Ref. PRB 58 12899 (1998)
@@ -162,9 +190,9 @@ class Diamond:
         self.density = 3500         # [kg/m^3]
         self.default_speed = 20000  # [m/s]
         self.temp = temp
-        self.assign_dispersion(num_points)
+        self.assign_phonon_dispersion(num_points)
 
-    def assign_dispersion(self, num_points):
+    def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
 
         A1 = 4309.95222
@@ -180,11 +208,11 @@ class Diamond:
         self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
-    def relaxation_time(self, omega):
+    def phonon_relaxation_time(self, omega):
         pass
 
 
-class AlN:
+class AlN(Material):
     """
     Physical properties of AlN.
     Dispersion - Yanagisawa et al, Surface and Interface Analysis 37 133-136 (2005)
@@ -196,9 +224,9 @@ class AlN:
         self.default_speed = 6200     # [m/s]
         self.temp = temp              # [K]
         self.dispersion = np.zeros((self.num_points, 4))
-        self.assign_dispersion(num_points)
+        self.assign_phonon_dispersion(num_points)
 
-    def assign_dispersion(self, num_points):
+    def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
 
         A1 = 946.677
@@ -213,6 +241,15 @@ class AlN:
         self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]    # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
-    def relaxation_time(self, omega):
+    def phonon_relaxation_time(self, omega):
         pass
 
+def get_media_class(material_name: str) -> Material:
+    if material_name == "Si":
+        return Si
+    elif material_name == "SiC":
+        return SiC
+    elif material_name == "Graphite":
+        return Graphite
+    else:
+        raise Exception(f"Material {material_name} is not supported")

@@ -18,13 +18,18 @@ from freepaths.default_config import *
 logging.basicConfig(level=logging.WARNING, format=f"{Fore.RED}%(levelname)s:{Style.RESET_ALL} %(message)s",
                     handlers=[logging.StreamHandler(), ])
 
+
+# FIXME: is this part needed ?
+# --------------------------------
 # Parse user arguments:
 WEBSITE = 'https://anufrievroman.gitbook.io/freepaths'
 parser = argparse.ArgumentParser(prog='FreePATHS', description='Monte Carlo simulator',
                                  epilog=f'For more information, visit: {WEBSITE}')
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
 parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
+parser.add_argument("-e", "--electron", help="Run with electrons", action="store_true")
 args = parser.parse_args()
+# --------------------------------
 
 
 # If a file is provided, overwrite the default values:
@@ -46,19 +51,25 @@ class Config:
 
         # General parameters:
         self.output_folder_name = str(OUTPUT_FOLDER_NAME)
-        self.number_of_phonons = NUMBER_OF_PHONONS
+        self.number_of_particles = NUMBER_OF_PARTICLES
         self.number_of_nodes = NUMBER_OF_NODES
         self.temp = T
         self.output_scattering_map = OUTPUT_SCATTERING_MAP
         self.output_trajectories_of_first = OUTPUT_TRAJECTORIES_OF_FIRST
         self.output_structure_color = OUTPUT_STRUCTURE_COLOR
         self.number_of_length_segments = NUMBER_OF_LENGTH_SEGMENTS
+        self.low_memory_usage = LOW_MEMORY_USAGE
 
         # Time parameters:
         self.timestep = TIMESTEP
         self.number_of_timesteps = NUMBER_OF_TIMESTEPS
         self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
         self.number_of_stabilization_timeframes = NUMBER_OF_STABILIZATION_TIMEFRAMES
+        
+        # Electron parameters:
+        self.energy_upper_bound = ENERGY_UPPER_BOUND
+        self.energy_step = ENERGY_STEP
+        self.electron_mfp = ELECTRON_MFP
 
         # Animation:
         self.output_path_animation = OUTPUT_PATH_ANIMATION
@@ -68,7 +79,7 @@ class Config:
         self.number_of_pixels_x = NUMBER_OF_PIXELS_X
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
-        self.ignore_faulty_phonons = IGNORE_FAULTY_PHONONS
+        self.ignore_faulty_particles = IGNORE_FAULTY_PARTICLES
 
         # Material parameters:
         self.media = MEDIA
@@ -96,7 +107,7 @@ class Config:
         self.rethermalization_on_hot_sides = RETHERMALIZATION_ON_HOT_SIDES
 
         # Sources:
-        self.phonon_sources = PHONON_SOURCES
+        self.particles_sources = PARTICLE_SOURCES
 
         # Cold side positions:
         self.cold_side_position_top = COLD_SIDE_POSITION_TOP
@@ -126,7 +137,7 @@ class Config:
 
         # Distributions:
         valid_distributions =[member.name.lower() for member in Distributions]
-        for source in self.phonon_sources:
+        for source in self.particles_sources:
             if source.angle_distribution in valid_distributions:
                 source.angle_distribution = Distributions[source.angle_distribution.upper()]
             else:
@@ -136,8 +147,8 @@ class Config:
 
     def check_parameter_validity(self):
         """Check if various parameters are valid"""
-        if self.number_of_phonons < self.output_trajectories_of_first:
-            self.output_trajectories_of_first = self.number_of_phonons
+        if self.number_of_particles < self.output_trajectories_of_first:
+            self.output_trajectories_of_first = self.number_of_particles
 
         if self.number_of_timeframes <= self.number_of_stabilization_timeframes:
             logging.error("Parameter NUMBER_OF_STABILIZATION_TIMEFRAMES exceeds or equal to NUMBER_OF_TIMEFRAMES.\n" +
@@ -145,7 +156,7 @@ class Config:
                           f"See the documentation at {WEBSITE}")
             sys.exit()
 
-        for source in self.phonon_sources:
+        for source in self.particles_sources:
             if source.y > self.length:
                 logging.error("Y coordinate of a source exceeded LENGHT")
                 sys.exit()

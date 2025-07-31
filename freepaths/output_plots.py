@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import LogNorm
 from matplotlib import font_manager
+from scipy.constants import electron_volt
 
 from freepaths.config import cf
+from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
 from freepaths.materials import Si, SiC, Graphite
 import matplotlib.pyplot as plt
@@ -99,6 +101,13 @@ def cumulative_conductivity_calculation():
     cumulative_thermal_conductivity = np.cumsum(sorted_kappa)
     return sorted_mfp, cumulative_thermal_conductivity
 
+def interpolate_property(energy_levels: np.ndarray,
+                         property_values: np.ndarray,
+                         fermi_level: float) -> float:
+    """
+    Interpolate the material property at a given Fermi level.
+    """
+    return np.interp(fermi_level, energy_levels, property_values)
 
 def plot_cumulative_thermal_conductivity(mfp_sampling):
     """Plot distribution cumulative thermal conductivity vs mean free path"""
@@ -224,6 +233,145 @@ def plot_velocity_distribution():
     fig.savefig('Group velocities.pdf', format='pdf', bbox_inches="tight")
     plt.close(fig)
 
+def plot_energy_distribution():
+    """Plot distribution of energy"""
+    fig, ax = plt.subplots()
+    energy_distribution = distribution_calculation("Data/All initial energies.csv", None, cf.number_of_nodes)
+    ax.plot(energy_distribution[:, 0] / (electron_volt*1e-3), energy_distribution[:, 1], 'royalblue') # Convert J to meV
+    ax.set_xlabel('Energy (meV)')
+    ax.set_ylabel('Number of particles')
+    fig.savefig("Distribution of energy.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+
+def plot_travel_time_vs_energy():
+    """Plot mean travel time vs energy"""
+    fig, ax = plt.subplots()
+    energy, travel_time = np.genfromtxt("Data/Mean travel time vs energy.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
+    ax.plot(energy * 1e3 / electron_volt, travel_time * 1e9, '-o', markersize=2, c='royalblue')
+    ax.set_xlabel('Energy (meV)')
+    ax.set_ylabel('Mean travel time (ns)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    fig.savefig("Travel time vs energy.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_transport_function():
+    """Plot transport distribution function vs energy"""
+    fig, ax = plt.subplots()
+    energy, transport_function = np.genfromtxt("Data/Transport distribution function.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
+    ax.plot(energy * 1e3 / electron_volt, transport_function * electron_volt * 1e-25, '-o', markersize=2, c='royalblue', label="Computed TDF")
+    ax.set_xlabel('Energy (meV)')
+    ax.set_ylabel('Transport distribution function ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-1}$)')
+    energy, transport_function = np.genfromtxt("Data/True transport distribution function.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
+    ax.plot(energy * 1e3 / electron_volt, transport_function * electron_volt * 1e-25, '-o', markersize=2, c="darkorange", label="Theorical TDF")
+    ax.grid(True, linestyle='--', alpha=0.7)
+    plt.legend()
+    fig.savefig("Transport distribution function.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_electron_conductivity():
+    """Plot electron conductivity with respect to fermi-level"""
+    material = get_media_class(cf.media)(cf.temp)
+    fig, ax = plt.subplots()
+    fermi_levels, conductivity, theorical_conductivity = np.genfromtxt("Data/Electron conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
+    ax.plot(fermi_levels * 1e3 / electron_volt, conductivity, '-o', markersize=2, c='royalblue', label="Computed")
+    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity, '-o', markersize=2, c='darkorange', label="Theorical")
+    ax.set_xlabel('Fermi-level (meV)')
+    ax.set_ylabel('Electron conductivity (S/m)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    material_conductivity = interpolate_property(fermi_levels, conductivity, material.fermi_level)
+    ax.axhline(
+        y=material_conductivity,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+        label=f"y = {material_conductivity:.2e}"
+    )
+    ax.axvline(
+        x=material.fermi_level * 1e3 / electron_volt,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+        label=f"x = {material.fermi_level*1e3 / electron_volt:.2e}"
+    )
+    plt.legend()
+    fig.savefig("Electron conductivity.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_seebeck_coefficient():
+    """Plot the Seebeck coefficient with respect to fermi-level"""
+    material = get_media_class(cf.media)(cf.temp)
+    fig, ax = plt.subplots()
+    fermi_levels, seebeck, theorical_seebeck = np.genfromtxt("Data/Seebeck coefficient.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
+    ax.plot(fermi_levels * 1e3 / electron_volt, seebeck * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
+    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_seebeck * 1e3, '-o', markersize=2, c='darkorange', label="Theorical")
+    ax.set_xlabel('Fermi-level (meV)')
+    ax.set_ylabel('Seebeck coefficient (mV/K)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    material_seebeck = interpolate_property(fermi_levels, seebeck, material.fermi_level) * 1e3
+    ax.axhline(
+        y=material_seebeck,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+        label=f"y = {material_seebeck:.2e}"
+    )
+    plt.legend()
+    fig.savefig("Seebeck coefficient.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_power_factor():
+    """Plot the thermoelectric power factor with respect to fermi-level"""
+    fig, ax = plt.subplots()
+    fermi_levels, power_factor, theorical_power_factor = np.genfromtxt("Data/Power factor.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
+    ax.plot(fermi_levels * 1e3 / electron_volt, power_factor * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
+    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_power_factor * 1e3, '-o', markersize=2, c='darkorange', label="Theorical")
+    ax.set_xlabel('Fermi-level (meV)')
+    ax.set_ylabel('Power factor (mW/m.$K^{2}$)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    plt.legend()
+    fig.savefig("Power factor.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_mapping_constant():
+    """Plot mapping constant with respect to energy"""
+    fig, ax = plt.subplots()
+    energy, mapping_constant, constant_fit = np.genfromtxt("Data/Mapping constant.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
+    mean_constant = mapping_constant.mean()
+    ax.plot(energy * 1e3 / electron_volt, mapping_constant, '-o', markersize=2, c='royalblue', label='Computed')
+    ax.plot(energy * 1e3 / electron_volt, constant_fit, markersize=2, c='darkorange', label=f"Linear fit m={(constant_fit[1]-constant_fit[0])/(energy[1]-energy[0]):.2e}")
+    ax.axhline(mean_constant, c='crimson', linestyle="--", linewidth=1.2, label=f"C = {mean_constant:.4e} m²")
+    ax.set_xlabel('Energy (meV)')
+    ax.set_ylabel('Mapping constant (m^2)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    plt.legend()
+    fig.savefig("Mapping constant.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_electron_thermal_conductivity():
+    """Plot electron thermal conductivity with respect to fermi-level"""
+    fig, ax = plt.subplots()
+    fermi_level, thermal_conductivity, theorical_thermal_conductivity = np.genfromtxt("Data/Electron thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
+    ax.plot(fermi_level * 1e3 / electron_volt, thermal_conductivity, '-o', markersize=2, c='royalblue', label="Computed")
+    ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Theorical")
+    ax.set_xlabel('Fermi-level (meV)')
+    ax.set_ylabel('Thermal conductivity (W/m.K)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    plt.legend()
+    fig.savefig("Electron thermal conductivity.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+def plot_figure_of_merit():
+    """Plot figure of merit with respect to fermi-level"""
+    fig, ax = plt.subplots()
+    fermi_level, figure_of_merit, theorical_figure_of_merit = np.genfromtxt("Data/Figure of merit.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
+    ax.plot(fermi_level * 1e3 / electron_volt, figure_of_merit, '-o', markersize=2, c='royalblue', label="Computed")
+    ax.plot(fermi_level * 1e3 / electron_volt, theorical_figure_of_merit, '-o', markersize=2, c='darkorange', label="Theorical")
+    ax.set_xlabel('Fermi-level (meV)')
+    ax.set_ylabel('Figure of merit (unitless)')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    plt.legend()
+    fig.savefig("Figure of merit.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
 
 def plot_time_in_segments():
     """Plot time spent in segments"""
@@ -528,6 +676,15 @@ def plot_data(mfp_sampling=False):
         plot_travel_time_distribution,
         plot_mean_free_path_distribution,
         plot_velocity_distribution,
+        plot_energy_distribution,
+        plot_travel_time_vs_energy,
+        plot_transport_function,
+        plot_electron_conductivity,
+        plot_seebeck_coefficient,
+        plot_power_factor,
+        plot_mapping_constant,
+        plot_electron_thermal_conductivity,
+        plot_figure_of_merit,
         plot_time_in_segments,
         plot_thermal_conductivity,
         plot_temperature_profile,

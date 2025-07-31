@@ -22,7 +22,7 @@ def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z, c
             a = acos(
                 cos(ph.phi) * sin(abs(ph.theta))
             )  # Angle to the normal to the surface
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -48,7 +48,7 @@ def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z, c
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
             a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -115,7 +115,7 @@ def scattering_on_arccircular_v_holes(
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -140,7 +140,7 @@ def scattering_on_arccircular_v_holes(
 
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -158,7 +158,7 @@ def scattering_on_arccircular_v_holes(
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
             a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -187,7 +187,7 @@ def scattering_on_arccircular_v_holes(
                 tan((pi / 2 - ph.theta) + tangent_theta)
                 * cos(ph.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph.wavelength)
+            p = specularity(a, cf.pillar_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -269,7 +269,7 @@ def scattering_on_arccircular_v_demi_down_holes(
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta2)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -297,7 +297,7 @@ def scattering_on_arccircular_v_demi_down_holes(
 
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -321,7 +321,7 @@ def scattering_on_arccircular_v_demi_down_holes(
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
             a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -350,7 +350,7 @@ def scattering_on_arccircular_v_demi_down_holes(
                 tan((pi / 2 - ph.theta) + tangent_theta)
                 * cos(ph.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph.wavelength)
+            p = specularity(a, cf.pillar_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -428,7 +428,7 @@ def scattering_on_arccircular_v_demi_up_holes(
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -453,7 +453,7 @@ def scattering_on_arccircular_v_demi_up_holes(
 
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta2)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -477,7 +477,7 @@ def scattering_on_arccircular_v_demi_up_holes(
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
             a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -506,7 +506,7 @@ def scattering_on_arccircular_v_demi_up_holes(
                 tan((pi / 2 - ph.theta) + tangent_theta)
                 * cos(ph.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph.wavelength)
+            p = specularity(a, cf.pillar_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -580,7 +580,7 @@ def scattering_on_arccircular_h_holes(
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -605,7 +605,7 @@ def scattering_on_arccircular_h_holes(
 
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -629,7 +629,7 @@ def scattering_on_arccircular_h_holes(
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
             a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -658,7 +658,7 @@ def scattering_on_arccircular_h_holes(
                 tan((pi / 2 - ph.theta) + tangent_theta)
                 * cos(ph.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph.wavelength)
+            p = specularity(a, cf.pillar_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -731,7 +731,7 @@ def scattering_on_arccircular_h_reverse_holes(
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -756,7 +756,7 @@ def scattering_on_arccircular_h_reverse_holes(
 
             # Calculate angle to the surface and specular scattering probability:
             a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -781,7 +781,7 @@ def scattering_on_arccircular_h_reverse_holes(
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
             a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph.wavelength)
+            p = specularity(a, cf.hole_roughness, ph)
 
             # Specular scattering:
             if random() < p:
@@ -810,7 +810,7 @@ def scattering_on_arccircular_h_reverse_holes(
                 tan((pi / 2 - ph.theta) + tangent_theta)
                 * cos(ph.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph.wavelength)
+            p = specularity(a, cf.pillar_roughness, ph)
 
             # Specular scattering:
             if random() < p:

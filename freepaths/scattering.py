@@ -6,6 +6,8 @@ call corresponding function for scattering on corresponding primitive.
 
 from math import sqrt
 
+import sys
+
 from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_primitives import *
@@ -19,20 +21,26 @@ def internal_scattering(ph, flight, scattering_types):
 
 
 def reinitialization(ph, scattering_types):
-    """Re-thermalize (diffusely) phonon when it comes back to one of the hot sides"""
+    """Re-thermalize (diffusely) phonon when it comes back to one of the hot sides. Return true of particle was reinitialized"""
     x, y, _ = move(ph, cf.timestep)
 
     if cf.hot_side_position_bottom and y < 0:
         scattering_types.hot_side = horizontal_surface_up_scattering(ph, cf.side_wall_roughness, is_diffuse=True)
+        return True
 
     if cf.hot_side_position_top and y > cf.length:
         scattering_types.hot_side = horizontal_surface_down_scattering(ph, cf.side_wall_roughness, is_diffuse=True)
+        return True
 
     if cf.hot_side_position_right and x > cf.width / 2:
         scattering_types.hot_side = vertical_surface_left_scattering(ph, cf.side_wall_roughness, cf, is_diffuse=True)
+        return True
 
     if cf.hot_side_position_left and x < -cf.width / 2:
         scattering_types.hot_side = vertical_surface_right_scattering(ph, cf.side_wall_roughness, cf, is_diffuse=True)
+        return True
+    
+    return False
 
 
 def scattering_on_right_sidewall(ph, scattering_types, x, y, z):

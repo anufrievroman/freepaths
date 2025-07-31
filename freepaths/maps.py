@@ -99,14 +99,14 @@ class ThermalMaps(Maps):
         self.heat_flux_map_x_weighted = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_y_weighted = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.number_phonons_in_pixel = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.timepteps_per_timeframe = cf.number_of_timesteps // cf.number_of_timeframes
+        self.timesteps_per_timeframe = cf.number_of_timesteps // cf.number_of_timeframes
         self.effective_thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
         self.material_thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
 
         # Initialize array for thermal conductivity in each time interval
         self.effective_thermal_conductivity[:, 0] = range(cf.number_of_timeframes)
         self.effective_thermal_conductivity[:, 0] += 0.5
-        self.effective_thermal_conductivity[:, 0] *= self.timepteps_per_timeframe * cf.timestep * 1e9
+        self.effective_thermal_conductivity[:, 0] *= self.timesteps_per_timeframe * cf.timestep * 1e9
         self.material_thermal_conductivity[:, 0] = self.effective_thermal_conductivity[:, 0]
 
         # Calculate the volumes [m^3] and other parameters (need to be corrected with volume of the holes):
@@ -156,7 +156,7 @@ class ThermalMaps(Maps):
             vol_pixel_correction_y = np.mean(self.vol_pixel_ratio[index_y, :])
 
             # Do not record data if the pixel is an empty one:
-            if vol_pixel_correction == 0 and cf.ignore_faulty_phonons:
+            if vol_pixel_correction == 0 and cf.ignore_faulty_particles:
                 return
 
             # Record energy h*w [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map:
@@ -167,7 +167,7 @@ class ThermalMaps(Maps):
             self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
 
             # Calculate to which timeframe this timestep belongs:
-            timeframe_number = (ph.first_timestep + timestep_number) // self.timepteps_per_timeframe
+            timeframe_number = (ph.first_timestep + timestep_number) // self.timesteps_per_timeframe
 
             # Record temperature and energy into the corresponding time segment:
             if timeframe_number < cf.number_of_timeframes and vol_pixel_correction_x != 0 and vol_pixel_correction_y != 0:
@@ -245,8 +245,8 @@ class ThermalMaps(Maps):
 
         # Saving the thermal conductivity data:
         data_tc = np.vstack((self.effective_thermal_conductivity.T, self.material_thermal_conductivity[:, 1])).T
-        av_start = cf.number_of_stabilization_timeframes * self.timepteps_per_timeframe * cf.timestep * 1e9
-        av_end = cf.number_of_timeframes * self.timepteps_per_timeframe * cf.timestep * 1e9
+        av_start = cf.number_of_stabilization_timeframes * self.timesteps_per_timeframe * cf.timestep * 1e9
+        av_end = cf.number_of_timeframes * self.timesteps_per_timeframe * cf.timestep * 1e9
         data_av_tc = np.vstack((self.av_effective_thermal_conductivity, self.av_material_thermal_conductivity,
                                 self.std_effective_thermal_conductivity, self.std_material_thermal_conductivity, av_start, av_end)).T
 

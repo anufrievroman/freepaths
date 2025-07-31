@@ -148,8 +148,8 @@ def main(input_file):
     finished_workers = manager.Value('i', 0)
 
     # Divide all the phonons among the workers:
-    workload_per_worker = cf.number_of_phonons // cf.num_workers
-    remaining_phonons = cf.number_of_phonons % cf.num_workers
+    workload_per_worker = cf.number_of_particles // cf.num_workers
+    remaining_phonons = cf.number_of_particles % cf.num_workers
 
     # Divide number of output trajectories to save among workers:
     output_trajectories_per_worker = cf.output_trajectories_of_first // cf.num_workers
@@ -217,8 +217,8 @@ def main(input_file):
         sys.stdout.write(f'Longest process execution time: {round(max(execution_time_list))}s\n')
 
     # Check if the total number of returned phonons from the workers corresponds with the number of phonons to be simulated:
-    if len(general_stats.initial_angles) != cf.number_of_phonons:
-        sys.stdout.write(f'WARNING: {cf.number_of_phonons} were meant to be simulated but only {len(general_stats.initial_angles)} phonons were collected from the workers\n')
+    if len(general_stats.initial_angles) != cf.number_of_particles:
+        sys.stdout.write(f'WARNING: {cf.number_of_particles} were meant to be simulated but only {len(general_stats.initial_angles)} phonons were collected from the workers\n')
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()
