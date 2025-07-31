@@ -31,7 +31,9 @@ class ElectronPostComputation:
         self.mapping_constant = None
         
         material_class = get_media_class(cf.media)
-        self.material = material_class(cf.temp)
+        self.material = material_class(cf.temp, fermi_level=cf.media_fermi_level)
+        self.effective_dos_mass = None
+        self.effective_conduction_mass = None
         
         self.fermi_levels = None
         self.fermi_dist = None
@@ -57,12 +59,20 @@ class ElectronPostComputation:
     def compute_physical_functions(self):
         """Compute physical functions used for others calculations"""
         self.fermi_levels = np.linspace(self.material.fermi_level - 0.1*electron_volt, self.material.fermi_level + 0.1*electron_volt, 200)
+        # self.fermi_levels = np.linspace(-0.2 * electron_volt, 0.2*electron_volt, 200)
         # Suppose energy null at minimum of conduction band
         self.eta = np.subtract.outer(self.energies_unique, self.fermi_levels) / (k*cf.temp) # shape = (energies_unique, fermi_levels)
         self.fermi_dist = 1.0/(1.0 + np.exp(self.eta))
         self.fermi_prime_dist = (- self.fermi_dist * (1-self.fermi_dist) / (k*cf.temp))
         
-        self.density_of_states = (1/(2*(np.pi**2))) * ((2*self.material.effective_dos_mass/(hbar**2))**(3/2)) * np.sqrt(self.energies_unique)
+        if cf.is_carrier_electron:
+            self.effective_dos_mass = self.material.effective_electron_dos_mass
+            self.effective_conduction_mass = self.material.effective_electron_mass
+        else:
+            self.effective_dos_mass = self.material.effective_hole_dos_mass
+            self.effective_conduction_mass = self.material.effective_hole_mass
+        
+        self.density_of_states = (1/(2*(np.pi**2))) * ((2*self.effective_dos_mass/(hbar**2))**(3/2)) * np.sqrt(self.energies_unique)
     
     def compute_mean_travel_times(self):
         """Compute mean travel times with respect to initial energy"""
@@ -77,8 +87,11 @@ class ElectronPostComputation:
     
     def compute_transport_function(self):
         """Compute the transport distribution function with respect to initial energy"""
-        area_constant = self.mapping_constant[:,2] # in m^2
-        self.transport_function = np.column_stack((self.energies_unique, area_constant * (1/self.mean_travel_times[:,1]) * self.density_of_states))
+        if cf.mean_mapping_constant is not None:
+            area_constant = cf.mean_mapping_constant # in m^2
+        else:
+            area_constant = self.mean_mapping_constant
+        self.transport_function = np.column_stack((self.energies_unique, area_constant * (1/self.mean_travel_times[:,1])**(0.25) * self.density_of_states))
         
         self.Sigma = self.transport_function[:, 1][:, None] # Shape = (energies_unique, 1)
     
@@ -126,38 +139,29 @@ class ElectronPostComputation:
     def compute_true_tdf(self):
         """Compute true tdf for a pristine material, not correct in most other cases"""
         mfp = cf.electron_mfp
-        self.true_tdf = np.column_stack((self.energies_unique, mfp * (2*self.energies_unique/(self.material.effective_dos_mass))**0.5 * self.density_of_states))
+        self.true_tdf = np.column_stack((self.energies_unique, mfp * (2*self.energies_unique/(self.effective_conduction_mass))**0.5 * self.density_of_states))
       
 
-    def compute_mapping_constant(self, threshold=100):
-        """
-        Compute the mapping function C(E) by linear regression on the raw ratio
-        true_tdf/raw_tdf vs energy, then apply it to calibrate the MC TDF.
-        """
-        # 1) raw and true TDF vectors
-        raw_tdf  = (1.0 / self.mean_travel_times[:,1]) * self.density_of_states  # Σ_MC,raw(E)
-        true_tdf = self.true_tdf[:,1]                                           # Σ_th(E)
-        E        = self.energies_unique
+    def compute_mapping_constant(self):
+        raw_tdf  = (1.0 / self.mean_travel_times[:,1]) ** (0.25) * self.density_of_states
 
-        # 2) ratio C_i = Σ_th / Σ_MC,raw
-        C        = true_tdf / raw_tdf
-
-        mask = (E >= threshold*electron_volt*1e-3)
-        E_fit = E[mask]
-        C_fit_data = C[mask]
-
-        # 3) linear regression C(E) = m*E + b
-        #    np.polyfit renvoie [m, b]
-        m, b = np.polyfit(E_fit, C_fit_data, deg=1)
-
-        # 4) mapping function et TDF calibrée
-        C_fit           = m * E + b
-        C_fit = np.clip(C_fit, 0, None)
+        integrand = self.true_tdf[:,1][:,None] * (-self.fermi_prime_dist)
+        true_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
         
-        # 5) stockage dans l'objet pour diagnostics
-        #   - colonnes : [E, C_mesure, C_fit]
-        self.mapping_constant = np.column_stack((E, C, C_fit))
+        integrand = raw_tdf[:,None] * (-self.fermi_prime_dist)
+        electron_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
+        
+        C = true_conductivity / electron_conductivity
+        C_fit = np.ones_like(C) * C.mean()
+        
+        self.mapping_constant = np.column_stack((self.fermi_levels, C, C_fit))
         self.mean_mapping_constant = self.mapping_constant[:,1].mean()
+        self.mean_mapping_constant = np.interp(self.material.fermi_level, self.mapping_constant[:,0], self.mapping_constant[:,1])
+
+    def compute_scattering_rate(self):
+        self.speeds = ((2 * self.energies_unique) / (self.effective_conduction_mass)) ** 0.5
+        self.scattering_rates = cf.electron_mfp / self.speeds
+        self.scattering_rates = np.column_stack((self.energies_unique, self.scattering_rates))
     
     
     def write_into_file(self):
@@ -167,9 +171,10 @@ class ElectronPostComputation:
         np.savetxt("Data/Seebeck coefficient.csv", np.column_stack((self.seebeck_coeff, self.true_seebeck[:,1])), fmt='%2.4e', header="Fermi-level [J], Seebeck coefficient [V/K], Theorical Seebeck coefficient [V/K]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Power factor.csv", np.column_stack((self.power_factor, self.true_power_factor[:,1])), fmt='%2.4e', header="Fermi-level [J], Power factor [W/m/K^2], Theorical Power factor [W/m/K^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/True transport distribution function.csv", self.true_tdf, fmt='%2.4e', header="Energy [J], True TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Energy [J], Mapping constant [m^2], Constant fit [m^2]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2], Constant fit [m^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Electron thermal conductivity.csv", np.column_stack((self.electron_thermal_conductivity, self.true_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], Electron thermal conductivity [W/m/K], Theorical Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Figure of merit.csv", np.column_stack((self.figure_of_merit, self.true_figure_of_merit[:,1])), fmt='%2.4e', header="Fermi-level [J], Figure of merit [unitless], Theorical Figure of merit [unitless]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Scattering rate vs energy.csv", self.scattering_rates, fmt='%2.4e', header="Energy [J], Scattering rate [s]", encoding='utf-8', delimiter=',')
     
     def compute(self):
         self.compute_unique_values()
@@ -183,3 +188,4 @@ class ElectronPostComputation:
         self.compute_power_factor()
         self.compute_electronic_thermal_conductivity()
         self.compute_figure_of_merit()
+        self.compute_scattering_rate()

@@ -4,7 +4,7 @@ from freepaths.scattering_types import ScatteringTypes, ScatteringPlaces
 
 from freepaths.particle_types import ParticleType
 
-def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material):
+def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, charge_maps, scatter_maps, material):
     """Run one particle through the system and record parameters of this run"""
 
     # Initialize object that will store scattering types:
@@ -74,6 +74,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         
         # Record presence of the particle at this timestep and move on:
         thermal_maps.add_energy_to_maps(particle, step_number, material)
+        charge_maps.add_electron_to_maps(particle, step_number, material)
         segment_stats.record_time_in_segment(particle.y)
         scattering_types.reset()
         triangle_scattering_places.reset()

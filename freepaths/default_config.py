@@ -25,8 +25,14 @@ NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
 
 # Electron parameters [eV]
 ENERGY_UPPER_BOUND               = 3*k*T / electron_volt
+ENERGY_LOWER_BOUND               = 0
 ENERGY_STEP                      = 5e-3
 ELECTRON_MFP                     = 15e-9
+ENERGY_MEASUREMENT_THRESHOLD     = 10e-3
+ENERGY_DISTRIBUTION_UNIFORM      = True
+ENERGY_CONSTANT                  = None
+MEAN_MAPPING_CONSTANT            = 5e-6
+IS_CARRIER_ELECTRON              = True
 
 # Animation:
 OUTPUT_PATH_ANIMATION            = False
@@ -39,6 +45,7 @@ IGNORE_FAULTY_PARTICLES          = False
 
 # Material parameters:
 MEDIA                            = "Si"
+MEDIA_FERMI_LEVEL                = None
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING      = True

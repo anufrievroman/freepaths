@@ -1,24 +1,26 @@
 """Config file to simulate a Si nanowire at 300 K"""
-from scipy.constants import electron_volt, k
 
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Si nanowire at 300 K'
-NUMBER_OF_PARTICLES            = 1020
+NUMBER_OF_PARTICLES            = 1000 * 4
 T                              = 300.0
 OUTPUT_SCATTERING_MAP          = False
 
+
 # Simulation time parameters:
-TIMESTEP                       = 1.0e-14
-NUMBER_OF_TIMESTEPS            = 100000
+TIMESTEP                       = 3.0e-14
+NUMBER_OF_TIMESTEPS            = 500000
 NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*4
 NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
 NUMBER_OF_TIMEFRAMES = 8
 LOW_MEMORY_USAGE               = True
 
-ENERGY_UPPER_BOUND             = 20 * k * 300.0 / electron_volt
-ENERGY_STEP                    = 15e-3
-ELECTRON_MFP                   = 15e-9
+# Electron parameters: [eV], [m]
+ENERGY_UPPER_BOUND             = 160e-3 # [eV]
+ENERGY_STEP                    = 10e-3 # [eV]
+ELECTRON_MFP                   = 15e-9 # [m]
+
 
 # Multiprocessing
 NUMBER_OF_PROCESSES = 15
@@ -29,7 +31,7 @@ MEDIA                          = 'Si'
 # System dimensions [m]:
 THICKNESS                      = 150e-9
 WIDTH                          = 200e-9
-LENGTH                         = 2000e-9
+LENGTH                         = 200e-9
 
 # Map & profiles parameters:
 pixel_size = 30e-9

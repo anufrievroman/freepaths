@@ -1,27 +1,30 @@
 """Config file to simulate a membrane with array of trenches"""
 
 # General parameters:
-OUTPUT_FOLDER_NAME             = 'Membrane with trenches'
-NUMBER_OF_PHONONS              = 30
+OUTPUT_FOLDER_NAME             = 'Holey'
+NUMBER_OF_PARTICLES            = 1000 * 8 
 T                              = 300
 
 # Simulation time parameters:
-TIMESTEP                       = 0.5e-13
+TIMESTEP                       = 1e-14
 NUMBER_OF_TIMESTEPS            = 300000
 NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*4
-NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
+NUMBER_OF_STABILIZATION_TIMEFRAMES = 6
 NUMBER_OF_TIMEFRAMES = 8
 
 # Electron parameters: [eV]
-ENERGY_UPPER_BOUND               = 100e-3
-ENERGY_STEP                      = 15e-3
+ENERGY_UPPER_BOUND               = 160e-3
+ENERGY_STEP                      = 10e-3
 ELECTRON_MFP                     = 15e-9
+MEAN_MAPPING_CONSTANT            = 1.9e-5
 
 # Multiprocessing:
 NUMBER_OF_PROCESSES = 15
 
 # Material parameters:
+from scipy.constants import electron_volt
 MEDIA                          = 'Si'
+MEDIA_FERMI_LEVEL              = -0.5* electron_volt
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
@@ -29,12 +32,14 @@ USE_GRAY_APPROXIMATION_MFP     = False
 GRAY_APPROXIMATION_MFP         = None
 
 # System dimensions [m]:
-THICKNESS                      = 300e-9
-WIDTH                          = 3000e-9
-LENGTH                         = 3000e-9
+period = 60e-9
+neck = 30e-9
+THICKNESS                      = 1e-6
+WIDTH                          = period * 4 
+LENGTH                         = period * 4
 
 # Map & profiles parameters:
-pixel_size = 15e-9
+pixel_size = 3e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
 IGNORE_FAULTY_PHONONS          = False
@@ -42,13 +47,15 @@ IGNORE_FAULTY_PHONONS          = False
 # Phonon source at the bottom:
 PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
-# Lattice of trenches (i.e. holes with finite depth):
+# Hexagonal lattice of circular holes:
 HOLES = []
-period = 500e-9
-for row in range(5):
-
-    # Perpendicular trenches:
-    HOLES.append(RectangularHole(x=0, y=period+row*period, size_x=WIDTH, size_y=250e-9, depth=150e-9))
-
-    # Parallel trenches:
-    # HOLES.append(RectangularHole(x=-WIDTH/2+period+row*period, y=LENGTH/2, size_x=250e-9, size_y=LENGTH, depth=150e-9))
+rows, cols = 8,5
+for row in range(rows):
+    for col in range(cols):
+        x = (col+(1/2)*(row%2==0)) * period - (cols-cols//2 - 1/2) * period
+        y = (row+1) * period / 2
+        if row%2==1 and col==0:
+            continue
+        diam = ((2**0.5)/2) * period - neck
+        # diam = 0
+        HOLES.append(CircularHole(x=x, y=y, diameter=diam))

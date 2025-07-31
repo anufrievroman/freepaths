@@ -21,7 +21,7 @@ from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, T
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
 from freepaths.materials import Si, SiC, Graphite
-from freepaths.maps import ScatteringMap, ThermalMaps
+from freepaths.maps import ScatteringMap, ThermalMaps, ElectricalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.animation import create_animation
 from freepaths.output_plots import plot_data
@@ -52,7 +52,7 @@ class ElectronSimulator:
         self.result_queue = shared_list
         self.creation_time = time.time()
         self.output_trajectories_of = output_trajectories_of
-        self.number_of_energy_levels = int(cf.energy_upper_bound/cf.energy_step)
+        self.number_of_energy_levels = int((cf.energy_upper_bound-cf.energy_lower_bound)/cf.energy_step)
 
         # Initiate data structures:
         self.scatter_stats = ScatteringData()
@@ -62,9 +62,20 @@ class ElectronSimulator:
         self.places_stats = TriangleScatteringData()
         self.scatter_maps = ScatteringMap()
         self.thermal_maps = ThermalMaps()
+        self.charge_maps = ElectricalMaps()
 
         self.total_thermal_conductivity = 0.0
-        self.set_energy_repartition_linear()
+        
+        if cf.energy_constant:
+            self.set_energy_constant()
+        elif cf.energy_distribution_is_uniform:
+            self.set_energy_repartition_uniform()
+        else:
+            self.set_energy_repartition_linear()
+
+    def set_energy_constant(self):
+        energy = cf.energy_constant * electron_volt
+        self.energy_levels = [energy] * self.total_electrons
 
     def set_energy_repartition_uniform(self):
         base = self.total_electrons // self.number_of_energy_levels
@@ -73,7 +84,8 @@ class ElectronSimulator:
         self.energy_levels = []
         
         for level, count in enumerate(distribution):
-            self.energy_levels.extend([level]*count)
+            energy = cf.energy_step * electron_volt * (1 + level) + cf.energy_lower_bound * electron_volt
+            self.energy_levels.extend([energy]*count)
 
     def set_energy_repartition_linear(self):
         """
@@ -108,18 +120,19 @@ class ElectronSimulator:
 
         self.energy_levels = []
         for level, count in enumerate(distribution):
-            self.energy_levels.extend([level] * count)
+            energy = cf.energy_step * electron_volt * (1 + level) + cf.energy_lower_bound * electron_volt
+            self.energy_levels.extend([energy] * count)
 
 
 
     def simulate_electron(self, index):
         # Initiate an electron and its flight:
-        electron_energy = cf.energy_step * electron_volt * (1+self.energy_levels[index])
+        electron_energy = self.energy_levels[index]
         electron = Electron(self.material, electron_energy)
         flight = Flight(electron)
 
         # Run this electron through the structure:
-        run_particle(electron, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+        run_particle(electron, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.charge_maps, self.scatter_maps, self.material)
 
         # Record the properties returned for this electron:
         self.general_stats.save_phonon_data(electron) # FIXME: change method's name
@@ -156,6 +169,7 @@ class ElectronSimulator:
             'path_stats': self.path_stats.dump_data(),
             'scatter_maps': self.scatter_maps.dump_data(),
             'thermal_maps': self.thermal_maps.dump_data(),
+            'charge_maps' : self.charge_maps.dump_data(),
             'execution_time': time.time() - self.creation_time,
         }
 
@@ -251,6 +265,7 @@ def main(input_file):
     path_stats = PathData()
     scatter_maps = ScatteringMap()
     thermal_maps = ThermalMaps()
+    charge_maps = ElectricalMaps()
 
     # Collect the results:
     sys.stdout.write('\nCollecting data from workers...\r')
@@ -272,6 +287,7 @@ def main(input_file):
         path_stats.read_data(collected_data['path_stats'])
         scatter_maps.read_data(collected_data['scatter_maps'])
         thermal_maps.read_data(collected_data['thermal_maps'])
+        charge_maps.read_data(collected_data['charge_maps'])
         execution_time_list.append(collected_data['execution_time'])
 
     # Give some info about the variability in the worker calculation time:
@@ -283,10 +299,14 @@ def main(input_file):
     if len(general_stats.initial_angles) != cf.number_of_particles:
         sys.stdout.write(f'WARNING: {cf.number_of_particles} were meant to be simulated but only {len(general_stats.initial_angles)} electrons were collected from the workers\n')
 
-    # Run additional calculations:
+    # Run thermal calculations:
     thermal_maps.calculate_thermal_conductivity()
     thermal_maps.calculate_weighted_flux()
     thermal_maps.calculate_heat_flux_modulus()
+    
+    # Run electrical calculations:
+    charge_maps.calculate_current_density_magnitude()
+    charge_maps.calculate_conductivity_from_density_gradient()
     
     # Run calculations on electrons:
     electron_computations = ElectronPostComputation(general_stats)
@@ -309,6 +329,7 @@ def main(input_file):
     places_stats.write_into_files()
     segment_stats.write_into_files()
     thermal_maps.write_into_files()
+    charge_maps.write_into_files()
     scatter_maps.write_into_files()
     path_stats.write_into_files()
     electron_computations.write_into_file()

@@ -1,7 +1,9 @@
 """This module provides electron class which generates and moves an electron"""
 
-from random import choice
-from scipy.constants import h, electron_volt
+from random import choice, random
+from scipy.constants import h, hbar, electron_volt, elementary_charge, epsilon_0
+from scipy.integrate import quad
+from scipy.special import j0, j1, jv
 from freepaths.config import cf
 from freepaths.particle import Particle
 from freepaths.particle_types import ParticleType
@@ -16,6 +18,7 @@ class Electron(Particle):
         
         # Assign particle type
         self.type = ParticleType.ELECTRON 
+        self.is_electron_carrier = cf.is_carrier_electron # assign electron or hole behavior
         
         source = choice(cf.particles_sources)
         while True:
@@ -32,7 +35,7 @@ class Electron(Particle):
             
         # Assign energy if specified
         self.energy = energy
-        if self.energy == None: 
+        if self.energy is None: 
             self.assign_energy()
         self.assign_frequency(material)
         self.assign_speed(material)
@@ -43,9 +46,9 @@ class Electron(Particle):
         Assign energy uniformly to an electron based on temperature.
         Conduction minimum is considered at 0 energy by convention.
         """
-        num_energy_points = int(cf.energy_upper_bound/cf.energy_step)
+        num_energy_points = int((cf.energy_upper_bound-cf.energy_lower_bound)/cf.energy_step)
         # Keep energy in J for other computations
-        self.energy = np.random.choice(np.linspace(cf.energy_step, cf.energy_upper_bound, num_energy_points)) * electron_volt 
+        self.energy = np.random.choice(np.linspace(cf.energy_lower_bound, cf.energy_upper_bound, num_energy_points)) * electron_volt 
         
     
     @property
@@ -63,7 +66,11 @@ class Electron(Particle):
         """
         Assign speed to an electron using group velocity and considering parabolic energy-k relation and conduction minimum at 0
         """
-        self.speed = (2*self.energy/(material.effective_dos_mass))**(0.5)
+        if self.is_electron_carrier:
+            effective_mass = material.effective_electron_dos_mass
+        else:
+            effective_mass = material.effective_hole_dos_mass
+        self.speed = (2*self.energy/(effective_mass))**(0.5)
     
     def assign_internal_scattering_time(self, material):
         """
@@ -72,3 +79,5 @@ class Electron(Particle):
         """
         mfp = cf.electron_mfp
         self.time_of_internal_scattering = mfp / self.speed
+        
+        # self.time_of_internal_scattering = -np.log(random()) * (mfp/self.speed)

@@ -68,8 +68,13 @@ class Config:
         
         # Electron parameters:
         self.energy_upper_bound = ENERGY_UPPER_BOUND
+        self.energy_lower_bound = ENERGY_LOWER_BOUND
         self.energy_step = ENERGY_STEP
         self.electron_mfp = ELECTRON_MFP
+        self.energy_distribution_is_uniform = ENERGY_DISTRIBUTION_UNIFORM
+        self.energy_constant = ENERGY_CONSTANT
+        self.mean_mapping_constant = MEAN_MAPPING_CONSTANT
+        self.is_carrier_electron = IS_CARRIER_ELECTRON
 
         # Animation:
         self.output_path_animation = OUTPUT_PATH_ANIMATION
@@ -83,6 +88,7 @@ class Config:
 
         # Material parameters:
         self.media = MEDIA
+        self.media_fermi_level = MEDIA_FERMI_LEVEL
 
         # Internal scattering:
         self.include_internal_scattering = INCLUDE_INTERNAL_SCATTERING

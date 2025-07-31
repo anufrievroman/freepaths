@@ -6,7 +6,6 @@ call corresponding function for scattering on corresponding primitive.
 
 from math import sqrt
 
-import sys
 
 from freepaths.config import cf
 from freepaths.move import move

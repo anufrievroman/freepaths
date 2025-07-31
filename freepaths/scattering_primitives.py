@@ -11,8 +11,8 @@ from freepaths.scattering_types import Scattering
 
 def specularity(angle, roughness, particle):
     """Calculate probability of specular scattering with Soffer's equation"""
-    if particle.type is ParticleType.ELECTRON: # No Soffer's equation for electrons
-        return 1
+    if particle.type is ParticleType.ELECTRON: # No Soffer's equation for electrons, scattering is always diffusive
+        return 0
     return exp(-16 * pi**2 * roughness**2 * ((cos(angle))**2) / particle.wavelength**2)
 
 
