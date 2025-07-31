@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.constants import k, electron_volt, elementary_charge, electron_mass, hbar
+from scipy.constants import k, electron_volt, elementary_charge, hbar
 from scipy.integrate import simpson
 
 from freepaths.data import GeneralData
@@ -59,7 +59,6 @@ class ElectronPostComputation:
     def compute_physical_functions(self):
         """Compute physical functions used for others calculations"""
         self.fermi_levels = np.linspace(self.material.fermi_level - 0.1*electron_volt, self.material.fermi_level + 0.1*electron_volt, 200)
-        # self.fermi_levels = np.linspace(-0.2 * electron_volt, 0.2*electron_volt, 200)
         # Suppose energy null at minimum of conduction band
         self.eta = np.subtract.outer(self.energies_unique, self.fermi_levels) / (k*cf.temp) # shape = (energies_unique, fermi_levels)
         self.fermi_dist = 1.0/(1.0 + np.exp(self.eta))

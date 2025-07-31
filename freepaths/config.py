@@ -19,7 +19,6 @@ logging.basicConfig(level=logging.WARNING, format=f"{Fore.RED}%(levelname)s:{Sty
                     handlers=[logging.StreamHandler(), ])
 
 
-# FIXME: is this part needed ?
 # --------------------------------
 # Parse user arguments:
 WEBSITE = 'https://anufrievroman.gitbook.io/freepaths'

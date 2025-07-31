@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import shutil
-import colorama
 import multiprocessing
 import logging
 from colorama import Fore, Style

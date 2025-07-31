@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import shutil
-import colorama
 import multiprocessing
 import traceback
 import logging
@@ -89,33 +88,33 @@ class ElectronSimulator:
 
     def set_energy_repartition_linear(self):
         """
-        Répartit self.total_electrons sur self.number_of_energy_levels
-        avec un minimum de 1 électron par niveau et une pondération linéaire.
+        Distribute self.total_electrons on self.number_of_energy_levels
+        with a minimum of one electron per level and with linear weights.
         """
         N = self.number_of_energy_levels
         T = self.total_electrons
 
         if T < N:
-            raise ValueError("Il n'y a pas assez d'électrons pour en donner au moins un par niveau.")
+            raise ValueError("Not enough electrons to have one for each energy level")
 
-        # 1) On réserve 1 électron pour chaque niveau
+        # One electron for each level
         baseline = [1] * N
         T_remain = T - N
 
-        # 2) Poids linéaires : niveau 0 → poids 1, …, niveau N-1 → poids N
+        # Lineear weights
         weights = [i + 1 for i in range(N)]
         total_weight = sum(weights)
 
-        # 3) Répartition initiale du reste
+        # Initialize distribution
         distro_remain = [(T_remain * w) // total_weight for w in weights]
 
-        # 4) On répartit le reste du reste aux niveaux les plus élevés
+        # Distribute the rest
         remainder = T_remain - sum(distro_remain)
         for i in range(remainder):
             idx = N - 1 - (i % N)
             distro_remain[idx] += 1
 
-        # 5) On ajoute la baseline et on construit la liste finale
+        # Final list
         distribution = [baseline[i] + distro_remain[i] for i in range(N)]
 
         self.energy_levels = []

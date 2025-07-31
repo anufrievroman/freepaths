@@ -53,7 +53,6 @@ class Electron(Particle):
     
     @property
     def wavelength(self):
-        # FIXME: ADD EFFECTIVE MASS ? maybe based on energy-k relation
         raise Exception("Electron wavelength undefined")
     
     def assign_frequency(self, material):
