@@ -246,7 +246,16 @@ class Config:
             logging.error("Parameters related to HOT_SIDE_... or PHONON_SOURCE_... were deprecated.\n" +
                           "Phonon source should be defined through the PHONON_SOURCES variable.\n" +
                           f"See the documentation at {WEBSITE}")
-            sys.exit()
+        
+        if any([
+            'NUMBER_OF_PHONONS' in globals(),
+            'IGNORE_FAULTY_PHONONS' in globals(),
+            'PHONON_SOURCES' in globals(),
+        ]):
+            logging.error("Parameters NUMBER_OF_PHONONS, PHONON_SOURCES and IGNORE_FAULTY_PHONONS were deprecated.\n" +
+                          "They are replaced with PARTICLES parameters.\n" + 
+                          f"See the documentation at {WEBSITE}")    
+        sys.exit()
 
 cf = Config()
 cf.convert_to_enums()
