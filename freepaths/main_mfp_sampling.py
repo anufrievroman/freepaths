@@ -32,11 +32,11 @@ def main(input_file):
 
     # Initialize the material:
     if cf.media == "Si":
-        material = Si(cf.temp, num_points=cf.number_of_phonons +1)
+        material = Si(cf.temp, num_points=cf.number_of_particles +1)
     elif cf.media == "SiC":
-        material = SiC(cf.temp, num_points=cf.number_of_phonons+1)
+        material = SiC(cf.temp, num_points=cf.number_of_particles+1)
     elif cf.media == "Graphite":
-        material = Graphite(cf.temp, num_points=cf.number_of_phonons+1)
+        material = Graphite(cf.temp, num_points=cf.number_of_particles+1)
     else:
         logging.error(f"Material {cf.media} is not supported")
         sys.exit()
@@ -57,7 +57,7 @@ def main(input_file):
         sys.stdout.write(f"\rIntegrating branch number {branch_number+1}.\n")
 
         # For each phonon:
-        for index in range(cf.number_of_phonons):
+        for index in range(cf.number_of_particles):
 
             # Wave vector:
             k_vector = (material.dispersion[index+1, 0] + material.dispersion[index, 0]) / 2

@@ -13,12 +13,12 @@ def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_phonons)
+    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
 
     info = [
             f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
             f'\nIt took about {int((time.time()-start_time)//60)} min to run.\n',
-            f'\nNumber of phonons = {cf.number_of_phonons}',
+            f'\nNumber of phonons = {cf.number_of_particles}',
             f'\nNumber of timesteps = {cf.number_of_timesteps}',
             f'\nLength of a timestep = {cf.timestep} s',
             f'\nTemperature = {cf.temp} K\n',
@@ -137,6 +137,6 @@ def output_parameter_warnings():
         logging.warning("Pixels in x direction are smaller than length of one step")
 
     # Check how many phonons reached the cold side during simulation:
-    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_phonons)
+    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
     if percentage < 95:
         logging.warning(f"Only {percentage}% of phonons reached the cold side. Increase number of timesteps.")

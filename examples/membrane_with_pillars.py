@@ -2,18 +2,18 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Membrane with pillars'
-NUMBER_OF_PHONONS              = 500
-T                              = 4.0
+NUMBER_OF_PARTICLES            = 1020
+T                              = 300
 
 # Simulation time parameters:
-TIMESTEP                       = 1.0e-12
-NUMBER_OF_TIMESTEPS            = 30000
+TIMESTEP                       = 1.0e-13
+NUMBER_OF_TIMESTEPS            = 500000
 NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*4
 NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
 NUMBER_OF_TIMEFRAMES = 8
 
 # Multiprocessing
-NUMBER_OF_PROCESSES = 10
+NUMBER_OF_PROCESSES = 15
 
 # System dimensions [m]:
 THICKNESS                      = 150e-9
@@ -24,7 +24,7 @@ LENGTH                         = 1200e-9
 pixel_size = 30e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES        = False
 
 # Material parameters:
 MEDIA                          = 'Si'
@@ -34,8 +34,8 @@ INCLUDE_INTERNAL_SCATTERING    = True
 USE_GRAY_APPROXIMATION_MFP     = False
 GRAY_APPROXIMATION_MFP         = None
 
-# Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
+# Particle source:
+PARTICLE_SOURCES               = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
@@ -50,4 +50,4 @@ for row in range(3):
     for column in range(3):
         x = - 2 * period / 2 + column * period
         y = (row + 1) * period
-        PILLARS.append(CircularPillar(x=x, y=y, diameter=200e-9, height=200e-9))
+        PILLARS.append(CircularPillar(x=x, y=y, diameter=150e-9, height=200e-9))

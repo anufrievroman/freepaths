@@ -3,11 +3,12 @@
 from math import pi, asin, exp, log
 from random import random, choice, randint
 from numpy import sign
-from scipy.constants import k, hbar
+from scipy.constants import k, hbar, h
 import numpy as np
 import enum
 
 from freepaths.config import cf
+from freepaths.particle_types import ParticleType
 import freepaths.move
 
 
@@ -16,6 +17,9 @@ class Phonon:
 
     def __init__(self, material, branch_number=None, phonon_number=None):
         """Initialize a phonon by assigning initial properties"""
+        # Assign particle type
+        self.type = ParticleType.PHONON
+        
         self.branch_number = branch_number
         self.phonon_number = phonon_number
         self.x = None
@@ -33,7 +37,7 @@ class Phonon:
         self.f_max = max(material.dispersion[:, self.branch_number + 1])
 
         # Assign initial coordinates but ensure that it's not inside a hole:
-        source = choice(cf.phonon_sources)
+        source = choice(cf.particles_sources)
         while True:
             self.x, self.y, self.z = source.generate_coordinates()
             is_in_hole = any(hole.is_inside(self.x, self.y, None, cf) for hole in cf.holes)
@@ -65,6 +69,11 @@ class Phonon:
         """Calculate wavelength of the phonon"""
         return self.speed / self.f
 
+    @property
+    def energy(self):
+        """Calculate energy of the phonon"""
+        return self.f * h
+    
     @property
     def has_crossed_cold_side(self):
         """
@@ -138,7 +147,7 @@ class Phonon:
         else:
             # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
             omega = 2 * pi * self.f
-            self.time_of_internal_scattering = -log(random()) * material.relaxation_time(omega)
+            self.time_of_internal_scattering = -log(random()) * material.phonon_relaxation_time(omega)
 
     def move(self):
         """Move a phonon in one timestep and return new coordinates"""

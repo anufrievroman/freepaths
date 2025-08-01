@@ -4,13 +4,16 @@ from math import pi, cos, sin, tan, exp, sqrt, atan, asin, acos
 from random import random
 from numpy import sign
 
+from freepaths.particle_types import ParticleType
 from freepaths.move import move
 from freepaths.scattering_types import Scattering
 
 
-def specularity(angle, roughness, wavelength):
+def specularity(angle, roughness, particle):
     """Calculate probability of specular scattering with Soffer's equation"""
-    return exp(-16 * pi**2 * roughness**2 * ((cos(angle))**2) / wavelength**2)
+    if particle.type is ParticleType.ELECTRON: # No Soffer's equation for electrons, scattering is always diffusive
+        return 0
+    return exp(-16 * pi**2 * roughness**2 * ((cos(angle))**2) / particle.wavelength**2)
 
 
 def no_new_scattering(ph, cf):
@@ -35,7 +38,7 @@ def vertical_surface_left_scattering(ph, roughness, cf, is_diffuse=False):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*sin(abs(ph.theta)))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p and (not is_diffuse):
@@ -59,7 +62,7 @@ def vertical_surface_right_scattering(ph, roughness, cf, is_diffuse=False):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*sin(abs(ph.theta))) # Angle to the surface
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p and (not is_diffuse):
@@ -83,7 +86,7 @@ def horizontal_surface_down_scattering(ph, roughness, is_diffuse=False):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*cos(ph.theta))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p and (not is_diffuse):
@@ -103,7 +106,7 @@ def horizontal_surface_up_scattering(ph, roughness, is_diffuse=False):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*cos(ph.theta))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p and not is_diffuse:
@@ -122,7 +125,7 @@ def inclined_surfaces_down_scattering(ph, beta, x, x0, roughness):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*cos(pi/2 - abs(ph.theta) - beta))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p:
@@ -142,7 +145,7 @@ def inclined_surfaces_up_scattering(ph, beta, x, x0, roughness):
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*cos(pi/2 - abs(ph.theta) + beta))
     # a = acos(cos(ph.phi)*cos(abs(ph.theta) - pi/2 + beta))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p:
@@ -160,7 +163,7 @@ def in_plane_surface_scattering(ph, roughness):
 
     # Calculate angle to the surface and specular scattering probability:
     a = pi/2 - abs(ph.phi)
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p:
@@ -183,7 +186,7 @@ def circle_outer_scattering(ph, tangent_theta, y, y0, roughness, cf):
 
     # Calculate angle to the surface and specular scattering probability:
     a = acos(cos(ph.phi)*cos(ph.theta - tangent_theta))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p:
@@ -210,7 +213,7 @@ def circle_inner_scattering(ph, tangent_theta, y, y0, roughness):
     """Scattering from the inner surface of the circle"""
 
     a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p:
@@ -231,7 +234,7 @@ def circle_inclined_inner_scattering(ph, tangent_theta, y, y0, roughness):
     """
 
     a = atan(tan((pi/2 - ph.theta) + tangent_theta) * cos(ph.phi)) # - (pi / 2 - pillar.wall_angle)))
-    p = specularity(a, roughness, ph.wavelength)
+    p = specularity(a, roughness, ph)
 
     # Specular scattering:
     if random() < p:

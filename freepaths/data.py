@@ -23,6 +23,8 @@ class PathData(Data):
 
     def save_phonon_path(self, flight):
         """Save the path to list of all paths"""
+        if cf.low_memory_usage:
+            return
         self.phonon_paths.append(flight.path)
 
     @property
@@ -32,6 +34,8 @@ class PathData(Data):
 
     def write_into_files(self):
         """Write all the path coordinates into a file"""
+        if cf.low_memory_usage:
+            return
         filename = "Data/Phonon paths.csv"
         data = np.zeros((self.length_of_longest_path, 3*len(self.phonon_paths)))
         for index, path in enumerate(self.phonon_paths):
@@ -58,6 +62,7 @@ class GeneralData(Data):
         self.free_paths = []
         self.free_paths_along_y = []
         self.frequencies = []
+        self.initial_energies = []
         self.group_velocities = []
         self.travel_times = []
         self.mean_free_paths = []
@@ -67,23 +72,26 @@ class GeneralData(Data):
         """Add information about the phonon to the dataset"""
         self.frequencies.append(ph.f)
         self.group_velocities.append(ph.speed)
+        self.initial_energies.append(ph.energy)
 
     def save_flight_data(self, flight):
         """Add information about the phonon flight to the dataset"""
+        if not cf.low_memory_usage:
+            self.free_paths.extend(flight.free_paths)
+            self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.initial_angles.append(flight.initial_theta)
         self.exit_angles.append(flight.exit_theta)
-        self.free_paths.extend(flight.free_paths)
         self.hole_diff_scattering_angles.extend(flight.hole_diff_scattering_angles)
         self.hole_spec_scattering_angles.extend(flight.hole_spec_scattering_angles)
-        self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.travel_times.append(flight.travel_time)
         self.mean_free_paths.append(flight.mean_free_path)
         self.thermal_conductivity.append(flight.thermal_conductivity)
 
     def write_into_files(self):
         """Write all the data into files"""
-        np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', header="L [m]", encoding='utf-8')
-        np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', header="Ly [m]", encoding='utf-8')
+        if not cf.low_memory_usage:
+            np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', header="L [m]", encoding='utf-8')
+            np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', header="Ly [m]", encoding='utf-8')
         np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
         np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
@@ -93,6 +101,8 @@ class GeneralData(Data):
         np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', header="Travel time [s]", encoding='utf-8')
         np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', header="MFPs [m]", encoding='utf-8')
         np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
+        np.savetxt("Data/All initial energies.csv", self.initial_energies, fmt='%2.4e', header="Energy [J]", encoding='utf-8')
+        
 
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
@@ -108,6 +118,7 @@ class GeneralData(Data):
             'travel_times': self.travel_times,
             'mean_free_paths': self.mean_free_paths,
             'thermal_conductivity': self.thermal_conductivity,
+            'initial_energies': self.initial_energies,
         }
 
 

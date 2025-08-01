@@ -3,7 +3,7 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'All shapes'
-NUMBER_OF_PHONONS              = 1000
+NUMBER_OF_PARTICLE             = 1000
 T                              = 4.0
 
 # Multiprocessing
@@ -25,7 +25,7 @@ LENGTH                         = 1500e-9
 pixel_size = 30e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES          = False
 
 # Material parameters:
 MEDIA                          = 'Si'
@@ -35,8 +35,8 @@ INCLUDE_INTERNAL_SCATTERING    = True
 USE_GRAY_APPROXIMATION_MFP     = False
 GRAY_APPROXIMATION_MFP         = None
 
-# Phonon source:
-PHONON_SOURCES                 = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
+# Particle source:
+PARTICLE_SOURCES               = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
 
 # Walls:
 INCLUDE_RIGHT_SIDEWALL           = False
