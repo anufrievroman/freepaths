@@ -3,7 +3,7 @@ which acts like a collimator for phonon flux emitted from the hot spot of 10x10n
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Parabolic lens collimation'
-NUMBER_OF_PHONONS              = 2000
+NUMBER_OF_PARTICLES            = 2000
 NUMBER_OF_TIMESTEPS            = 30000
 T                              = 4.0
 
@@ -21,7 +21,7 @@ LENGTH                         = 2000e-9
 pixel_size = 30e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES        = False
 
 
 # Material parameters:
@@ -55,8 +55,8 @@ INCLUDE_RIGHT_SIDEWALL         = False
 INCLUDE_LEFT_SIDEWALL          = False
 
 
-# Phonon source:
-PHONON_SOURCES = [Source(x=0, y=300e-9, z=0, size_x=100e-9,  size_y=100e-9, size_z=THICKNESS, angle_distribution="uniform")]
+# Particle source:
+PARTICLE_SOURCES = [Source(x=0, y=300e-9, z=0, size_x=100e-9,  size_y=100e-9, size_z=THICKNESS, angle_distribution="uniform")]
 
 
 # Parabolic mirror:

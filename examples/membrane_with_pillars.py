@@ -2,7 +2,7 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Membrane with pillars'
-NUMBER_OF_PHONONS              = 1020
+NUMBER_OF_PARTICLES            = 1020
 T                              = 300
 
 # Simulation time parameters:
@@ -24,7 +24,7 @@ LENGTH                         = 1200e-9
 pixel_size = 30e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES        = False
 
 # Material parameters:
 MEDIA                          = 'Si'
@@ -34,8 +34,8 @@ INCLUDE_INTERNAL_SCATTERING    = True
 USE_GRAY_APPROXIMATION_MFP     = False
 GRAY_APPROXIMATION_MFP         = None
 
-# Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
+# Particle source:
+PARTICLE_SOURCES               = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9

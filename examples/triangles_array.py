@@ -5,7 +5,7 @@ import numpy as np
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Array of triangles'
-NUMBER_OF_PHONONS              = 2000
+NUMBER_OF_PARTICLES            = 2000
 TIMESTEP                       = 0.5e-12
 NUMBER_OF_TIMESTEPS            = 30000
 T                              = 4.0
@@ -21,14 +21,14 @@ THICKNESS                      = 150e-9
 WIDTH                          = 1200e-9
 LENGTH                         = 2200e-9
 
-# Phonon source:
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
+# Particle source:
+PARTICLE_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
 # Map & profiles parameters:
 pixel_size = 15e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES        = False
 
 # Staggered lattice of triangular holes:
 HOLES = []

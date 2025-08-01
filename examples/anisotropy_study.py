@@ -8,7 +8,7 @@ import numpy as np
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Anisotropy study'
-NUMBER_OF_PHONONS              = 2000
+NUMBER_OF_PARTICLES            = 2000
 MEDIA                          = 'Si'
 T                              = 300.0
 
@@ -31,7 +31,7 @@ LENGTH                         = 1300e-9
 pixel_size = 20e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES        = False
 
 
 # VERTICAL GRADIENT:
@@ -48,8 +48,8 @@ COLD_SIDE_POSITION_TOP         = True
 HOT_SIDE_POSITION_LEFT         = False
 HOT_SIDE_POSITION_BOTTOM       = True
 
-# Phonon source:
-PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
+# Particle source:
+PARTICLE_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
 
 # HORIZONTAL GRADIENT:
@@ -65,8 +65,8 @@ PHONON_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNES
 # HOT_SIDE_POSITION_LEFT              = True
 # HOT_SIDE_POSITION_BOTTOM            = False
 
-# Phonon source:
-PHONON_SOURCES = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=LENGTH, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
+# Particle source:
+PARTICLE_SOURCES = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=LENGTH, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
 
 
 

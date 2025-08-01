@@ -6,7 +6,7 @@ import numpy as np
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Point line example'
-NUMBER_OF_PHONONS              = 100
+NUMBER_OF_PARTICLES            = 100
 NUMBER_OF_TIMESTEPS            = 30000
 T                              = 50
 TIMESTEP                       = 1e-12
@@ -23,10 +23,10 @@ LENGTH                         = 300e-9
 pixel_size = 5e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
 NUMBER_OF_PIXELS_Y             = int(LENGTH / pixel_size)
-IGNORE_FAULTY_PHONONS          = False
+IGNORE_FAULTY_PARTICLES        = False
 
 # Sources
-PHONON_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
+PARTICLE_SOURCES               = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
 # Holes
 
