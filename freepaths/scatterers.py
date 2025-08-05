@@ -11,7 +11,6 @@ from matplotlib.patches import Rectangle, Circle, Polygon
 from scipy.spatial import cKDTree
 
 from freepaths.scattering_primitives import *
-from freepaths.scattering_types import ScatteringTypes
 
 
 class Hole:

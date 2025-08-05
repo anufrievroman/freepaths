@@ -5,15 +5,19 @@ import sys
 import time
 import shutil
 import multiprocessing
+import traceback
 import logging
 from colorama import Fore, Style
 
 # Modules:
 from freepaths.config import cf
-from freepaths.run_phonon import run_phonon
+from freepaths.run_particle import run_particle
+from freepaths.electron import Electron
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
+from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
+from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
 from freepaths.materials import Si, SiC, Graphite
 from freepaths.maps import ScatteringMap, ThermalMaps
@@ -22,13 +26,13 @@ from freepaths.animation import create_animation
 from freepaths.output_plots import plot_data
 
 
-class PhononSimulator:
+class ParticleSimulator:
     """
-    This class can simulate a number of phonons and save all their data and then return it all
+    This class can simulate a number of particles and save all their data and then return it all
     It is meant to be used as a worker for multiprocessing
     """
 
-    def __init__(self, worker_id, total_phonons, shared_list, output_trajectories_of):
+    def __init__(self, worker_id, particle_type: ParticleType, total_particles, shared_list, output_trajectories_of):
 
         # Initialize the material:
         if cf.media == "Si":
@@ -43,10 +47,12 @@ class PhononSimulator:
 
         # Save some general information about the process:
         self.worker_id = worker_id
-        self.total_phonons = total_phonons
+        self.total_particles = total_particles
+        self.particle_type = particle_type
         self.result_queue = shared_list
         self.creation_time = time.time()
         self.output_trajectories_of = output_trajectories_of
+        self.number_of_electron_energy_levels = int((cf.energy_upper_bound-cf.energy_lower_bound)/cf.energy_step)
 
         # Initiate data structures:
         self.scatter_stats = ScatteringData()
@@ -59,39 +65,43 @@ class PhononSimulator:
 
         self.total_thermal_conductivity = 0.0
 
-    def simulate_phonon(self, index):
-        # Initiate a phonon and its flight:
-        phonon = Phonon(self.material)
-        flight = Flight(phonon)
 
-        # Run this phonon through the structure:
-        run_phonon(phonon, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+    def simulate_particle(self, index):
+        # Initiate a particle and its flight:
+        if self.particle_type is ParticleType.PHONON:
+            particle = Phonon(self.material)
+        else:
+            particle = Electron(self.material)
+        flight = Flight(particle)
 
-        # Record the properties returned for this phonon:
-        self.general_stats.save_phonon_data(phonon)
+        # Run this particle through the structure:
+        run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+
+        # Record the properties returned for this particle:
+        self.general_stats.save_phonon_data(particle) # FIXME: change method's name
         self.general_stats.save_flight_data(flight)
 
-        # Record trajectories of the first N phonons:
+        # Record trajectories of the first N particles:
         if index < self.output_trajectories_of:
-            self.path_stats.save_phonon_path(flight)
+            self.path_stats.save_phonon_path(flight) # FIXME: change method's name
 
-    def simulate_phonons(self, render_progress=False):
-        """Simulate a number of phonons and save data to shared datastructure"""
+    def simulate_particles(self, render_progress=False):
+        """Simulate a number of particles and save data to shared datastructure"""
 
         # Only one of the workers will display its progress as it is similar over all workers:
         if render_progress:
             progress = Progress()
 
-        # Run simulation for each phonon:
-        for index in range(self.total_phonons):
+        # Run simulation for each particle:
+        for index in range(self.total_particles):
             # render progress
             if render_progress:
-                progress.render(index, self.total_phonons)
+                progress.render(index, self.total_particles)
 
-            self.simulate_phonon(index)
+            self.simulate_particle(index)
 
         if render_progress:
-            progress.render(index+1, self.total_phonons)
+            progress.render(index+1, self.total_particles)
 
         # Collect relevant data:
         collected_data = {
@@ -109,15 +119,23 @@ class PhononSimulator:
         self.result_queue.append(collected_data)
 
 
-def worker_process(worker_id, total_phonons, shared_list, output_trajectories_of, finished_workers):
+def worker_process(worker_id, particle_type: ParticleType,total_particles, shared_list, output_trajectories_of, finished_workers):
     try:
-        # Create a phononsimulator and run the simulation:
-        simulator = PhononSimulator(worker_id, total_phonons, shared_list, output_trajectories_of)
-        simulator.simulate_phonons(render_progress=1 if worker_id == 0 else 0)
+        # Create a particle simulator and run the simulation:
+        simulator = ParticleSimulator(worker_id, particle_type, total_particles, shared_list, output_trajectories_of)
+        simulator.simulate_particles(render_progress=1 if worker_id == 0 else 0)
 
         # Declare that the calculation is finished:
         finished_workers.value += 1
     except Exception as e:
+        logging.exception("Worker %d crashed", worker_id)
+        # Remonter l’info côté parent
+        shared_list.append({
+            "worker_id": worker_id,
+            "error": traceback.format_exc(),
+        })
+        # Optionnel : re‑lever pour un exitcode ≠ 0
+        sys.exit(1)
         sys.stdout.write(f'\rworker {worker_id} had error {e}\n')
 
 
@@ -132,9 +150,11 @@ def display_workers_finished(finished_workers):
         time.sleep(0.3)
 
 
-def main(input_file):
-    """This is the main function, which works under Debye approximation.
-    It should be used to simulate phonon paths at low temperatures"""
+def main(input_file, particle_type):
+    """
+    This is the main function.
+    It should be used to simulate electron paths or phonon paths at low temperatures.
+    """
 
     sys.stdout.write(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}\n')
     start_time = time.time()
@@ -146,9 +166,9 @@ def main(input_file):
     shared_list = manager.list()
     finished_workers = manager.Value('i', 0)
 
-    # Divide all the phonons among the workers:
+    # Divide all the particles among the workers:
     workload_per_worker = cf.number_of_particles // cf.num_workers
-    remaining_phonons = cf.number_of_particles % cf.num_workers
+    remaining_particles = cf.number_of_particles % cf.num_workers
 
     # Divide number of output trajectories to save among workers:
     output_trajectories_per_worker = cf.output_trajectories_of_first // cf.num_workers
@@ -159,9 +179,9 @@ def main(input_file):
     sys.stdout.flush()
     processes = []
     for i in range(cf.num_workers):
-        worker_phonons = workload_per_worker + (1 if i < remaining_phonons else 0)
+        worker_particles = workload_per_worker + (1 if i < remaining_particles else 0)
         output_trajectory_of = output_trajectories_per_worker + (1 if i < remaining_output_trajectories else 0)
-        process = multiprocessing.Process(target=worker_process, args=(i, worker_phonons, shared_list, output_trajectory_of, finished_workers))
+        process = multiprocessing.Process(target=worker_process, args=(i, particle_type, worker_particles, shared_list, output_trajectory_of, finished_workers))
         processes.append(process)
         process.start()
 
@@ -215,14 +235,20 @@ def main(input_file):
         sys.stdout.write(f'Shortest process execution time: {round(min(execution_time_list))}s\n')
         sys.stdout.write(f'Longest process execution time: {round(max(execution_time_list))}s\n')
 
-    # Check if the total number of returned phonons from the workers corresponds with the number of phonons to be simulated:
+    # Check if the total number of returned particles from the workers corresponds with the number of particles to be simulated:
     if len(general_stats.initial_angles) != cf.number_of_particles:
-        sys.stdout.write(f'WARNING: {cf.number_of_particles} were meant to be simulated but only {len(general_stats.initial_angles)} phonons were collected from the workers\n')
+        sys.stdout.write(f'WARNING: {cf.number_of_particles} were meant to be simulated but only {len(general_stats.initial_angles)} particles were collected from the workers\n')
 
-    # Run additional calculations:
+    # Run thermal calculations:
     thermal_maps.calculate_thermal_conductivity()
     thermal_maps.calculate_weighted_flux()
     thermal_maps.calculate_heat_flux_modulus()
+   
+    # Run calculations on electrons if needed: 
+    if particle_type is ParticleType.ELECTRON:
+
+        electron_computations = ElectronPostComputation(general_stats)
+        electron_computations.compute()
 
     # Create the folder if it does not exist and copy input file there:
     if not os.path.exists(f"Results/{cf.output_folder_name}"):
@@ -243,8 +269,10 @@ def main(input_file):
     thermal_maps.write_into_files()
     scatter_maps.write_into_files()
     path_stats.write_into_files()
+    if particle_type is ParticleType.ELECTRON:
+        electron_computations.write_into_file()
 
-    # Generate animation of phonon paths:
+    # Generate animation of particle paths:
     if cf.output_path_animation:
         create_animation()
 

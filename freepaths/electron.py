@@ -2,7 +2,6 @@
 
 from random import choice
 from scipy.constants import h, electron_volt
-from scipy.integrate import quad
 from freepaths.config import cf
 from freepaths.particle import Particle
 from freepaths.particle_types import ParticleType

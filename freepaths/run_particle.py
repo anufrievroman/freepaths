@@ -1,3 +1,7 @@
+"""
+Module that runs one particle through the structure, from particle source to a cold side.
+After the run, we record various parameters of this run into flight object.
+"""
 from freepaths.config import cf
 from freepaths.scattering import internal_scattering, surface_scattering, reinitialization
 from freepaths.scattering_types import ScatteringTypes, ScatteringPlaces
@@ -33,7 +37,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if cf.rethermalization_on_hot_sides:
             reinitialized = reinitialization(particle, scattering_types)
             if reinitialized:
-                flight.reset()
+                flight.reset_travel_time()
 
         # If any scattering has occurred, record it:
         if scattering_types.is_scattered:

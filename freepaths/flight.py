@@ -1,11 +1,11 @@
-"""Module that provides phonon flight characteristics"""
+"""Module that provides particle flight characteristics"""
 
 from math import cos
 import numpy as np
 
 
 class Path:
-    """Phonon path coordinates"""
+    """Particle path coordinates"""
 
     def __init__(self, x_init, y_init, z_init):
         """Initialize a path"""
@@ -14,7 +14,7 @@ class Path:
         self.z = np.array([z_init])
 
     def add_point(self, x_new, y_new, z_new):
-        """Add a point to the phonon path"""
+        """Add a point to the particle path"""
         self.x = np.append(self.x, x_new)
         self.y = np.append(self.y, y_new)
         self.z = np.append(self.z, z_new)
@@ -26,14 +26,15 @@ class Path:
 
 
 class Flight:
-    """Phonon flight characteristics"""
+    """Particle flight characteristics"""
 
-    def __init__(self, phonon):
-        """Initialize a phonon flight"""
-        self.phonon = phonon
-        self.initial_frequency = self.phonon.f
-        self.initial_theta = self.phonon.theta
-        self.path = Path(self.phonon.x, self.phonon.y, self.phonon.z)
+    def __init__(self, particle):
+        """Initialize a particle
+        flight"""
+        self.particle = particle
+        self.initial_frequency = self.particle.f
+        self.initial_theta = self.particle.theta
+        self.path = Path(self.particle.x, self.particle.y, self.particle.z)
         self.exit_theta = 0.0
         self.free_path = 0.0
         self.free_path_along_y = 0.0
@@ -56,7 +57,7 @@ class Flight:
 
     def add_point_to_path(self):
         """Add a scattering point to the path"""
-        self.path.add_point(self.phonon.x, self.phonon.y, self.phonon.z)
+        self.path.add_point(self.particle.x, self.particle.y, self.particle.z)
 
     def save_free_paths(self):
         """Save current free path to the list of free paths"""
@@ -79,16 +80,16 @@ class Flight:
 
     def finish(self, step, timestep):
         """Finish the flight and record final state"""
-        self.exit_theta = self.phonon.theta
+        self.exit_theta = self.particle.theta
         self.travel_time = step * timestep
 
     def add_step(self, timestep):
         """Increase parameters of the flight by length of one step"""
-        step_length = self.phonon.speed * timestep
+        step_length = self.particle.speed * timestep
         self.free_path += step_length
-        self.free_path_along_y += step_length * abs(cos(self.phonon.phi)) * abs(cos(self.phonon.theta))
+        self.free_path_along_y += step_length * abs(cos(self.particle.phi)) * abs(cos(self.particle.theta))
         self.time_since_previous_scattering += timestep
 
-    def reset(self):
-        """Reset the flight of a particle"""
-        self.__init__(self.phonon)
+    def reset_travel_time(self):
+        """Reset the travel time of a particle"""
+        self.travel_time = 0.0

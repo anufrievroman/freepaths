@@ -1,6 +1,6 @@
 """Module that provides scattering functions on basic objects like various walls"""
 
-from math import pi, cos, sin, tan, exp, sqrt, atan, asin, acos
+from math import pi, cos, sin, tan, exp, atan, asin, acos
 from random import random
 from numpy import sign
 

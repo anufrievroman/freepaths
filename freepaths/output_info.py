@@ -4,8 +4,6 @@ import time
 import logging
 import numpy as np
 
-from colorama import Fore, Style
-
 from freepaths.config import cf
 
 
