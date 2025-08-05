@@ -335,7 +335,7 @@ def plot_electron_conductivity():
     fig, ax = plt.subplots()
     fermi_levels, conductivity, theorical_conductivity = np.genfromtxt("Data/Electron conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, conductivity, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Electron conductivity (S/m)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -364,7 +364,7 @@ def plot_seebeck_coefficient():
     fig, ax = plt.subplots()
     fermi_levels, seebeck, theorical_seebeck = np.genfromtxt("Data/Seebeck coefficient.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, seebeck * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_seebeck * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_seebeck * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Seebeck coefficient (mV/K)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -385,7 +385,7 @@ def plot_power_factor():
     fig, ax = plt.subplots()
     fermi_levels, power_factor, theorical_power_factor = np.genfromtxt("Data/Power factor.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, power_factor * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_power_factor * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_power_factor * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Power factor (mW/m.$K^{2}$)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -413,25 +413,12 @@ def plot_electron_thermal_conductivity():
     fig, ax = plt.subplots()
     fermi_level, thermal_conductivity, theorical_thermal_conductivity = np.genfromtxt("Data/Electron thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_level * 1e3 / electron_volt, thermal_conductivity, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Thermal conductivity (W/m.K)')
     ax.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     fig.savefig("Electron thermal conductivity.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_figure_of_merit():
-    """Plot figure of merit with respect to fermi-level"""
-    fig, ax = plt.subplots()
-    fermi_level, figure_of_merit, theorical_figure_of_merit = np.genfromtxt("Data/Figure of merit.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_level * 1e3 / electron_volt, figure_of_merit, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_level * 1e3 / electron_volt, theorical_figure_of_merit, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Figure of merit (unitless)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
-    fig.savefig("Figure of merit.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)
 
 def plot_time_in_segments():
@@ -779,7 +766,6 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
         plot_power_factor,
         plot_mapping_constant,
         plot_electron_thermal_conductivity,
-        plot_figure_of_merit,
         plot_scattering_rate_vs_energy,
         plot_time_in_segments,
         plot_thermal_conductivity,
