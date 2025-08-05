@@ -1,7 +1,7 @@
 """Module that controls recording, calculation, and saving thermal and scattering maps"""
 
 from math import cos
-from scipy.constants import hbar, pi, elementary_charge
+from scipy.constants import hbar, pi
 import numpy as np
 from math import cos , sin
 from freepaths.config import cf
@@ -27,23 +27,23 @@ class ScatteringMap(Maps):
         self.internal_scattering_map_x = []
         self.internal_scattering_map_y = []
 
-    def add_scattering_to_map(self, ph, scattering_types):
+    def add_scattering_to_map(self, pt, scattering_types):
         """Record the place where a scattering event occurred according to the event type"""
 
         # Diffuse surface scattering:
         if scattering_types.is_diffuse:
-            self.diffuse_scattering_map_x.append(ph.x)
-            self.diffuse_scattering_map_y.append(ph.y)
+            self.diffuse_scattering_map_x.append(pt.x)
+            self.diffuse_scattering_map_y.append(pt.y)
 
         # Internal scattering:
         elif scattering_types.is_internal:
-            self.internal_scattering_map_x.append(ph.x)
-            self.internal_scattering_map_y.append(ph.y)
+            self.internal_scattering_map_x.append(pt.x)
+            self.internal_scattering_map_y.append(pt.y)
 
         # Specular surface scattering:
         else:
-            self.specular_scattering_map_x.append(ph.x)
-            self.specular_scattering_map_y.append(ph.y)
+            self.specular_scattering_map_x.append(pt.x)
+            self.specular_scattering_map_y.append(pt.y)
 
     def write_into_files(self):
         """Write scattering map into file"""
@@ -131,7 +131,7 @@ class ThermalMaps(Maps):
 
         return pixel_volume_ratios
 
-    def add_energy_to_maps(self, ph, timestep_number, material):
+    def add_energy_to_maps(self, pt, timestep_number, material):
         """
         Register the phonon in the pixel corresponding to its current position at certain timestep
         and adds it to thermal maps and profiles.
@@ -141,7 +141,7 @@ class ThermalMaps(Maps):
         """
 
         # Move the recording point forwards half a timestep as to remove asymetric boundary fluxes (doesn't work)
-        ph_x, ph_y, _ = move(ph, cf.timestep/2)
+        ph_x, ph_y, _ = move(pt, cf.timestep/2)
 
         # Calculate the index of the pixel in which we record this phonon:
         index_x = int(((ph_x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
@@ -160,22 +160,22 @@ class ThermalMaps(Maps):
                 return
 
             # Record energy h*w [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map:
-            energy = hbar * 2 * pi * ph.f
+            energy = hbar * 2 * pi * pt.f
             self.number_phonons_in_pixel[index_y, index_x] += 1
             self.thermal_map[index_y, index_x] += energy
-            self.heat_flux_map_x[index_y, index_x] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
-            self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
+            self.heat_flux_map_x[index_y, index_x] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
+            self.heat_flux_map_y[index_y, index_x] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
 
             # Calculate to which timeframe this timestep belongs:
-            timeframe_number = (ph.first_timestep + timestep_number) // self.timesteps_per_timeframe
+            timeframe_number = (pt.first_timestep + timestep_number) // self.timesteps_per_timeframe
 
             # Record temperature and energy into the corresponding time segment:
             if timeframe_number < cf.number_of_timeframes and vol_pixel_correction_x != 0 and vol_pixel_correction_y != 0:
-                self.effective_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_x
-                self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y
+                self.effective_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_x
+                self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y
                 # the material heat_flux_profile could also be calculated afterwards by dividing the effective profile with the volume ratio
-                self.material_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_x / vol_pixel_correction_x
-                self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y / vol_pixel_correction_y
+                self.material_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_x / vol_pixel_correction_x
+                self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y / vol_pixel_correction_y
 
                 self.temperature_profile_x[index_x, timeframe_number] += energy / (material.heat_capacity * material.density) / self.vol_cell_x / vol_pixel_correction_x
                 self.temperature_profile_y[index_y, timeframe_number] += energy / (material.heat_capacity * material.density) / self.vol_cell_y / vol_pixel_correction_y
@@ -285,144 +285,4 @@ class ThermalMaps(Maps):
             'material_heat_flux_profile_y': self.material_heat_flux_profile_y,
             'temperature_profile_x': self.temperature_profile_x,
             'temperature_profile_y': self.temperature_profile_y,
-        }
-
-class ElectricalMaps(Maps):
-    """Maps and profiles of current density and conductivity via carrier injection"""
-
-    def __init__(self):
-        self.current_density_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.current_density_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.current_density_profile_x = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
-        self.current_density_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
-        self.density_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))  # [1/m³]
-        self.timesteps_per_timeframe = cf.number_of_timesteps // cf.number_of_timeframes
-        self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
-        self.electron_count_map = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.current_density_magnitude = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.conductivity_from_gradient = np.zeros((cf.number_of_timeframes, 2))
-        self.avg_sigma_from_gradient = 0
-        self.std_sigma_from_gradient = 0
-
-    def calculate_pixel_volumes(self, number_of_pixels_x, number_of_pixels_y):
-        pixel_volume_ratios = np.zeros((number_of_pixels_y, number_of_pixels_x))
-        for x in range(number_of_pixels_x):
-            for y in range(number_of_pixels_y):
-                y_coord = cf.length / number_of_pixels_y * (y + 0.5)
-                x_coord = -cf.width / 2 + cf.width / number_of_pixels_x * (x + 0.5)
-                pixel_volume_ratios[y, x] = not any(hole.is_inside(x_coord, y_coord, None, cf) for hole in cf.holes)
-        return pixel_volume_ratios
-
-    def add_electron_to_maps(self, electron, timestep_number, material):
-        if electron.vx is None or electron.vy is None:
-            return
-        
-        # Move midpoint to reduce border bias
-        x_mid, y_mid, _ = move(electron, cf.timestep/2)
-
-        Nx, Ny = cf.number_of_pixels_x, cf.number_of_pixels_y
-        ix = int(((x_mid + cf.width/2) * Nx) // cf.width)
-        iy = int(y_mid // (cf.length / Ny))
-        if not (0 <= ix < Nx and 0 <= iy < Ny):
-            return
-        if self.vol_pixel_ratio[iy, ix] == 0 and cf.ignore_faulty_particles:
-            return
-
-        # Charge and pixel volume
-        q = -elementary_charge
-        Vpix = (cf.length * cf.width * cf.thickness) / (Nx * Ny)
-
-        # Velocity components (assumes vx/vy exist)
-        vx, vy = electron.vx, electron.vy
-
-        # Current densities
-        Jx = q * vx / Vpix
-        Jy = q * vy / Vpix
-
-        # Accumulate spatial maps
-        self.current_density_map_x[iy, ix] += Jx
-        self.current_density_map_y[iy, ix] += Jy
-        self.electron_count_map[iy, ix] += 1
-
-        # Continuous injection: offset the timeframe index
-        frame = (electron.first_timestep + timestep_number) // self.timesteps_per_timeframe
-        if frame < cf.number_of_timeframes:
-            self.current_density_profile_x[ix, frame] += Jx
-            self.current_density_profile_y[iy, frame] += Jy / cf.number_of_particles
-            self.density_profile_y[iy, frame] += 1 / (Vpix*cf.number_of_particles)
-
-    def calculate_current_density_magnitude(self):
-        self.current_density_magnitude = np.sqrt(
-            self.current_density_map_x**2 + self.current_density_map_y**2
-        )
-
-    def calculate_conductivity_from_density_gradient(self):
-        e = elementary_charge
-        dy = cf.length / cf.number_of_pixels_y
-        self.conductivity_from_gradient[:, 0] = (
-            np.arange(cf.number_of_timeframes) + 0.5
-        ) * self.timesteps_per_timeframe * cf.timestep * 1e9  # t [ns]
-
-        for t in range(cf.number_of_timeframes):
-            dt_frame = self.timesteps_per_timeframe * cf.timestep
-            J_avg = np.mean(self.current_density_profile_y[:, t]) / dt_frame
-            y_coords = np.arange(cf.number_of_pixels_y) * dy
-            n_profile = self.density_profile_y[:, t] / cf.number_of_particles
-
-            if np.all(n_profile == 0):
-                continue
-
-            slope, _ = np.polyfit(y_coords, n_profile, 1)
-            grad_n = slope
-
-            if grad_n != 0:
-                sigma = -J_avg / (e * grad_n)
-                self.conductivity_from_gradient[t, 1] = sigma
-
-        stable = self.conductivity_from_gradient[cf.number_of_stabilization_timeframes:, 1]
-        self.avg_sigma_from_gradient = np.mean(stable)
-        self.std_sigma_from_gradient = np.std(stable)
-
-    def write_into_files(self):
-        coords_x = np.arange(cf.number_of_pixels_x) * 1e6 * cf.width / cf.number_of_pixels_x
-        coords_y = np.arange(cf.number_of_pixels_y) * 1e6 * cf.length / cf.number_of_pixels_y
-
-        data_Jx = np.vstack((coords_x, self.current_density_profile_x.T)).T
-        data_Jy = np.vstack((coords_y, self.current_density_profile_y.T)).T
-        data_ny = np.vstack((coords_y, self.density_profile_y.T)).T
-        
-        # Headers for profiles
-        hdr_Jx = 'x (m-6),' + ','.join(f'Jx_frame{t+1}' for t in range(cf.number_of_timeframes))
-        hdr_Jy = 'y (m-6),' + ','.join(f'Jy_frame{t+1}' for t in range(cf.number_of_timeframes))
-        hdr_ny = 'y (m-6),' + ','.join(f'n_frame{t+1}' for t in range(cf.number_of_timeframes))
-        hdr_map = ','.join(f'{x:.3f}' for x in coords_x)
-
-        np.savetxt("Data/Current density profile x.csv", data_Jx, fmt='%1.3e', delimiter=",", header=hdr_Jx)
-        np.savetxt("Data/Current density profile y.csv", data_Jy, fmt='%1.3e', delimiter=",", header=hdr_Jy)
-        np.savetxt("Data/Density profile y.csv", data_ny, fmt='%1.3e', delimiter=",", header=hdr_ny)
-        np.savetxt("Data/Current density x.csv", self.current_density_map_x, fmt='%1.2e', delimiter=",", header=hdr_map)
-        np.savetxt("Data/Current density y.csv", self.current_density_map_y, fmt='%1.2e', delimiter=",", header=hdr_map)
-        np.savetxt("Data/Current density magnitude.csv", self.current_density_magnitude, fmt='%1.2e', delimiter=",", header=hdr_map)
-        np.savetxt("Data/Electron count map.csv", self.electron_count_map, fmt='%1.0f', delimiter=",", header=hdr_map)
-        np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1i', delimiter=",", header=hdr_map)
-
-        data_sigma_grad = np.vstack((
-            self.conductivity_from_gradient.T,
-            np.full(cf.number_of_timeframes, self.avg_sigma_from_gradient),
-            np.full(cf.number_of_timeframes, self.std_sigma_from_gradient)
-        )).T
-        np.savetxt("Data/Conductivity from gradient.csv", data_sigma_grad, fmt='%1.3e', delimiter=",",
-                   header="t (ns), sigma (S/m), avg sigma (S/m), std sigma (S/m)", encoding='utf-8')
-
-    def dump_data(self):
-        return {
-            'current_density_map_x': self.current_density_map_x,
-            'current_density_map_y': self.current_density_map_y,
-            'current_density_magnitude': self.current_density_magnitude,
-            'current_density_profile_x': self.current_density_profile_x,
-            'current_density_profile_y': self.current_density_profile_y,
-            'density_profile_y': self.density_profile_y,
-            'conductivity_from_gradient': self.conductivity_from_gradient,
-            'avg_sigma_from_gradient': self.avg_sigma_from_gradient,
-            'std_sigma_from_gradient': self.std_sigma_from_gradient,
         }

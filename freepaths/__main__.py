@@ -29,12 +29,14 @@ def run():
         freepaths.main_mfp_sampling.main(args.input_file)
         
     elif args.electron:
-        import freepaths.main_electron
-        freepaths.main_electron.main(args.input_file)
+        import freepaths.main_tracing
+        from freepaths.particle_types import ParticleType
+        freepaths.main_tracing.main(args.input_file, ParticleType.ELECTRON)
         
     else:
         import freepaths.main_tracing
-        freepaths.main_tracing.main(args.input_file)
+        from freepaths.particle_types import ParticleType
+        freepaths.main_tracing.main(args.input_file, ParticleType.PHONON)
 
 
 if __name__ == "__main__":

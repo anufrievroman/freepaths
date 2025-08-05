@@ -1,15 +1,18 @@
+"""
+Module that runs one particle through the structure, from particle source to a cold side.
+After the run, we record various parameters of this run into flight object.
+"""
 from freepaths.config import cf
 from freepaths.scattering import internal_scattering, surface_scattering, reinitialization
 from freepaths.scattering_types import ScatteringTypes, ScatteringPlaces
 from freepaths.particle_types import ParticleType
 
-def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, charge_maps, scatter_maps, material):
+def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material):
     """Run one particle through the system and record parameters of this run"""
 
     # Initialize object that will store scattering types:
     scattering_types = ScatteringTypes()
     triangle_scattering_places = ScatteringPlaces()
-    
 
     # Run the particle step-by-step:
     for step_number in range(cf.number_of_timesteps):
@@ -34,7 +37,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if cf.rethermalization_on_hot_sides:
             reinitialized = reinitialization(particle, scattering_types)
             if reinitialized:
-                flight.reset()
+                flight.reset_travel_time()
 
         # If any scattering has occurred, record it:
         if scattering_types.is_scattered:
@@ -69,8 +72,6 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         
         # Record presence of the particle at this timestep and move on:
         thermal_maps.add_energy_to_maps(particle, step_number, material)
-        if particle.type == ParticleType.ELECTRON:
-            charge_maps.add_electron_to_maps(particle, step_number, material)
         segment_stats.record_time_in_segment(particle.y)
         scattering_types.reset()
         triangle_scattering_places.reset()

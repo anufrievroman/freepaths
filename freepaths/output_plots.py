@@ -10,6 +10,7 @@ from matplotlib import font_manager
 from scipy.constants import electron_volt
 
 from freepaths.config import cf
+from freepaths.particle_types import ParticleType
 from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
 from freepaths.materials import Si, SiC, Graphite
@@ -54,7 +55,7 @@ def distribution_calculation(filename, data_range, number_of_nodes):
 
 
 def angle_distribution_calculation():
-    """Analyse measured phonon angles and create their distribution"""
+    """Analyse measured particle angles and create their distribution"""
     all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
     initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
     hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
@@ -68,7 +69,7 @@ def angle_distribution_calculation():
 
 
 def scattering_angle_distribution_calculation():
-    """Analyse scattering phonon angles and create their distribution"""
+    """Analyse scattering particle angles and create their distribution"""
     hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
     hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
     distribution = np.zeros((360, 3))
@@ -79,7 +80,7 @@ def scattering_angle_distribution_calculation():
 
 
 def wavelength_distribution_calculation(number_of_nodes):
-    """Calculate phonon wavelength distribution from their frequencies and velocities"""
+    """Calculate particle wavelength distribution from their frequencies and velocities"""
     frequencies = np.loadtxt("Data/All initial frequencies.csv", encoding='utf-8')
     speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
     wavelengths = np.zeros((len(speeds)))
@@ -131,7 +132,7 @@ def plot_angle_distribution():
     ax.plot(angle_distributions[:, 0], angle_distributions[:, 1], 'royalblue')
     ax.plot(angle_distributions[:, 0], angle_distributions[:, 2], 'deeppink')
     ax.set_xlabel('Angle (degree)')
-    ax.set_ylabel('Number of phonons')
+    ax.set_ylabel('Number of particles')
     ax.set_ylim(bottom=0)
     ax.legend(["At cold side", "At hot side"])
     fig.savefig("Distribution of angles.pdf", format='pdf', bbox_inches="tight")
@@ -151,7 +152,7 @@ def plot_scattering_angle_distribution():
     ax.set_theta_zero_location('N')
     ax.set_theta_direction(-1)
     ax.legend(facecolor='white', framealpha=1, ncols=2, loc="lower center", bbox_to_anchor=(0.5, -0.17))
-    ax.set_title('Number of scattered phonons per angle')
+    ax.set_title('Number of scattered particles per angle')
     fig.savefig("Distribution of hole scattering angles.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of hole scattering angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
@@ -178,7 +179,7 @@ def plot_frequency_distribution():
     fig, ax = plt.subplots()
     ax.plot(frequency_distribution[:, 0] * 1e-12, frequency_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Frequency (THz)')
-    ax.set_ylabel('Number of phonons')
+    ax.set_ylabel('Number of particles')
     fig.savefig("Distribution of initial frequencies.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of initial frequencies.csv', frequency_distribution, fmt='%1.3e', delimiter=",")
@@ -190,7 +191,7 @@ def plot_wavelength_distribution():
     fig, ax = plt.subplots()
     ax.plot(wavelength_distribution[:, 0] * 1e9, wavelength_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Number of phonons')
+    ax.set_ylabel('Number of particles')
     fig.savefig("Distribution of wavelengths.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of wavelengths.csv', wavelength_distribution, fmt='%1.3e', delimiter=",")
@@ -203,20 +204,20 @@ def plot_travel_time_distribution():
     ax.plot(travel_time_distribution[:, 0] * 1e9, travel_time_distribution[:, 1], 'royalblue')
     ax.set_xscale('log')
     ax.set_xlabel('Travel time (ns)')
-    ax.set_ylabel('Number of phonons')
+    ax.set_ylabel('Number of particles')
     fig.savefig("Distribution of travel times.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
 
 
 def plot_mean_free_path_distribution():
-    """Plot distribution of MFP per phonon"""
+    """Plot distribution of MFP per particle"""
     mean_free_path_distribution = distribution_calculation("Data/All mean free paths.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(mean_free_path_distribution[:, 0] * 1e9, mean_free_path_distribution[:, 1], 'royalblue')
     ax.set_xscale('log')
     ax.set_xlabel('Mean free path (nm)')
-    ax.set_ylabel('Number of phonons')
+    ax.set_ylabel('Number of particles')
     fig.savefig("Distribution of MFPs.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
@@ -334,7 +335,7 @@ def plot_electron_conductivity():
     fig, ax = plt.subplots()
     fermi_levels, conductivity, theorical_conductivity = np.genfromtxt("Data/Electron conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, conductivity, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Electron conductivity (S/m)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -363,7 +364,7 @@ def plot_seebeck_coefficient():
     fig, ax = plt.subplots()
     fermi_levels, seebeck, theorical_seebeck = np.genfromtxt("Data/Seebeck coefficient.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, seebeck * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_seebeck * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_seebeck * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Seebeck coefficient (mV/K)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -384,7 +385,7 @@ def plot_power_factor():
     fig, ax = plt.subplots()
     fermi_levels, power_factor, theorical_power_factor = np.genfromtxt("Data/Power factor.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, power_factor * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_levels * 1e3 / electron_volt, theorical_power_factor * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_power_factor * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Power factor (mW/m.$K^{2}$)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -396,12 +397,10 @@ def plot_mapping_constant():
     """Plot mapping constant with respect to fermi level"""
     material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
     fig, ax = plt.subplots()
-    fermi_level, mapping_constant, constant_fit = np.genfromtxt("Data/Mapping constant.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    mean_constant = mapping_constant.mean()
-    mean_constant = interpolate_property(fermi_level, mapping_constant, material.fermi_level)
+    fermi_level, mapping_constant = np.genfromtxt("Data/Mapping constant.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
+    material_constant = interpolate_property(fermi_level, mapping_constant, material.fermi_level) * np.ones_like(fermi_level)
     ax.plot(fermi_level * 1e3 / electron_volt, mapping_constant, '-o', markersize=2, c='royalblue', label='Computed')
-    ax.plot(fermi_level * 1e3 / electron_volt, constant_fit, markersize=2, c='darkorange', label=f"Linear fit m={(constant_fit[1]-constant_fit[0])/(fermi_level[1]-fermi_level[0]):.2e}")
-    ax.axhline(mean_constant, c='crimson', linestyle="--", linewidth=1.2, label=f"C = {mean_constant:.4e} m²")
+    ax.plot(fermi_level * 1e3 / electron_volt, material_constant, markersize=2, c='darkorange', label=f"C={material_constant[0]:.4e}")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Mapping constant (m^2)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -414,25 +413,12 @@ def plot_electron_thermal_conductivity():
     fig, ax = plt.subplots()
     fermi_level, thermal_conductivity, theorical_thermal_conductivity = np.genfromtxt("Data/Electron thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_level * 1e3 / electron_volt, thermal_conductivity, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    # ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
     ax.set_ylabel('Thermal conductivity (W/m.K)')
     ax.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     fig.savefig("Electron thermal conductivity.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_figure_of_merit():
-    """Plot figure of merit with respect to fermi-level"""
-    fig, ax = plt.subplots()
-    fermi_level, figure_of_merit, theorical_figure_of_merit = np.genfromtxt("Data/Figure of merit.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_level * 1e3 / electron_volt, figure_of_merit, '-o', markersize=2, c='royalblue', label="Computed")
-    ax.plot(fermi_level * 1e3 / electron_volt, theorical_figure_of_merit, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Figure of merit (unitless)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
-    fig.savefig("Figure of merit.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)
 
 def plot_time_in_segments():
@@ -496,30 +482,6 @@ def plot_temperature_profile():
     ax.set_ylabel('Temperature (K)')
     ax.legend()
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-    
-def plot_charge_profile():
-    """Plot profile of charge for each time segment"""
-    fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Density profile y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe_num in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
-    ax.set_xlabel('Y (μm)')
-    ax.set_ylabel('Density (m-3)')
-    ax.legend()
-    fig.savefig("Density profile.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-
-def plot_charge_flux_profile():
-    """Plot profile of heat flux for each time segment"""
-    fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Current density profile y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe_num in range((len(data) - 1) // 2):
-        ax.plot(data[0], data[timeframe_num + 1], linewidth=1, label=f'Time frame {timeframe_num+1}')
-    ax.set_xlabel('Y (μm)')
-    ax.set_ylabel('Current density (C/m²)')
-    ax.legend()
-    fig.savefig("Current density profile effective.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
 def plot_heat_flux_profile():
@@ -610,9 +572,9 @@ def plot_scattering_map():
 
 
 def plot_trajectories():
-    """Plot the phonon trajectories"""
+    """Plot the particle trajectories"""
 
-    data = np.genfromtxt("Data/Phonon paths.csv", unpack=False, delimiter=',', skip_header=1, encoding='utf-8')
+    data = np.genfromtxt("Data/Particle paths.csv", unpack=False, delimiter=',', skip_header=1, encoding='utf-8')
 
     # Create XY plot:
     fig, ax = plt.subplots()
@@ -633,7 +595,7 @@ def plot_trajectories():
     ax.set_xlabel('X (μm)')
     ax.set_ylabel('Y (μm)')
     ax.set_aspect('equal', 'datalim')
-    fig.savefig("Phonon paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
+    fig.savefig("Particle paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
 
     # Create YZ plot:
@@ -653,7 +615,7 @@ def plot_trajectories():
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Z (μm)')
     ax.set_aspect('equal', 'datalim')
-    fig.savefig("Phonon paths YZ.pdf", format='pdf', bbox_inches="tight")
+    fig.savefig("Particle paths YZ.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
 
@@ -760,9 +722,32 @@ def plot_material_properties():
     plt.close(fig)
 
 
-def plot_data(mfp_sampling=False):
+def plot_data(particle_type: ParticleType, mfp_sampling=False):
     """Create plots of various distributions, maps, profiles, and other quantities"""
-    function_list = [
+    phonon_function_list = [
+        plot_structure,
+        plot_trajectories,
+        plot_angle_distribution,
+        plot_scattering_angle_distribution,
+        plot_free_path_distribution,
+        plot_frequency_distribution,
+        plot_wavelength_distribution,
+        plot_travel_time_distribution,
+        plot_mean_free_path_distribution,
+        plot_velocity_distribution,
+        plot_energy_distribution,
+        plot_time_in_segments,
+        plot_thermal_conductivity,
+        plot_temperature_profile,
+        plot_heat_flux_profile,
+        plot_thermal_map,
+        plot_pixel_volumes,
+        plot_scattering_statistics,
+        plot_scattering_map,
+        plot_material_properties,
+    ]
+    
+    electron_function_list = [
         plot_structure,
         plot_trajectories,
         plot_angle_distribution,
@@ -781,20 +766,20 @@ def plot_data(mfp_sampling=False):
         plot_power_factor,
         plot_mapping_constant,
         plot_electron_thermal_conductivity,
-        plot_figure_of_merit,
         plot_scattering_rate_vs_energy,
         plot_time_in_segments,
         plot_thermal_conductivity,
         plot_temperature_profile,
-        plot_charge_profile,
         plot_heat_flux_profile,
-        plot_charge_flux_profile,
         plot_thermal_map,
         plot_pixel_volumes,
         plot_scattering_statistics,
         plot_scattering_map,
-        plot_material_properties,
     ]
+    if particle_type is ParticleType.PHONON:
+        function_list = phonon_function_list
+    else:
+        function_list = electron_function_list
 
     # Run main functions and handle exceptions:
     for func in function_list:

@@ -37,15 +37,7 @@ class Si(Material):
         self.default_speed = 6000   # [m/s]
         self.density = 2330         # [kg/m^3]
         self.temp = temp
-        self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
-        self.effective_electron_susceptibility_mass = 0.54 * electron_mass
-        self.effective_hole_dos_mass = 0.81 * electron_mass
-        self.effective_electron_mass = 0.26 * electron_mass
-        self.effective_hole_mass = 0.23 * electron_mass # light hole
-        if fermi_level:
-            self.fermi_level = fermi_level
-        else:
-            self.fermi_level = -0.037 * electron_volt # [J]
+        self.assign_electrical_properties(fermi_level)
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
 
@@ -80,6 +72,19 @@ class Si(Material):
         else:
             coeffs = above_50K_coeffs
         self.heat_capacity = np.polyval(coeffs, self.temp)
+    
+    def assign_electrical_properties(self, fermi_level):
+        """Assign differents electrical properties to the material."""
+        self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
+        self.effective_electron_susceptibility_mass = 0.54 * electron_mass
+        self.effective_hole_dos_mass = 0.81 * electron_mass
+        self.effective_electron_mass = 0.26 * electron_mass
+        self.effective_hole_mass = 0.23 * electron_mass # light hole
+        
+        if fermi_level:
+            self.fermi_level = fermi_level
+        else:
+            self.fermi_level = -0.037 * electron_volt # [J]
         
 
 class SiC(Material):

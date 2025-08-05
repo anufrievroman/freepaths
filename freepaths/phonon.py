@@ -1,35 +1,28 @@
 """This module provides phonon class which generates and moves a phonon"""
 
-from math import pi, asin, exp, log
-from random import random, choice, randint
+from math import pi, exp, log
+from random import random, choice
 from numpy import sign
 from scipy.constants import k, hbar, h
 import numpy as np
-import enum
 
 from freepaths.config import cf
 from freepaths.particle_types import ParticleType
+from freepaths.particle import Particle
 import freepaths.move
 
 
-class Phonon:
+class Phonon(Particle):
     """A phonon particle with various physical properties"""
 
     def __init__(self, material, branch_number=None, phonon_number=None):
         """Initialize a phonon by assigning initial properties"""
+        super().__init__()
         # Assign particle type
         self.type = ParticleType.PHONON
         
         self.branch_number = branch_number
         self.phonon_number = phonon_number
-        self.x = None
-        self.y = None
-        self.z = None
-        self.f = None
-        self.phi = None
-        self.theta = None
-        self.speed = None
-        self.first_timestep = randint(0, cf.number_of_virtual_timesteps)
 
         # Assign initial properties of the phonon:
         if self.branch_number is None:
@@ -73,38 +66,6 @@ class Phonon:
     def energy(self):
         """Calculate energy of the phonon"""
         return self.f * h
-    
-    @property
-    def has_crossed_cold_side(self):
-        """
-        Checks if the phonon at this timestep crossed the cold side.
-        Depending on where user set cold sides, we check if phonon crossed that line.
-        Return boolean of wheather any of the cold sides has been crossed.
-        """
-        has_crossed_top = self.y > cf.length
-        has_crossed_bottom = self.y < 0
-        has_crossed_right = self.x > cf.width / 2.0
-        has_crossed_left = self.x < - cf.width / 2.0
-        return ((cf.cold_side_position_top and has_crossed_top) or
-                (cf.cold_side_position_bottom and has_crossed_bottom) or
-                (cf.cold_side_position_right and has_crossed_right) or
-                (cf.cold_side_position_left and has_crossed_left))
-
-    @property
-    def has_crossed_hot_side(self):
-        """
-        Checks if the phonon at this timestep crossed the hot side.
-        Depending on where user set hot sides, we check if phonon crossed that line.
-        Return boolean of wheather any of the hot sides has been crossed.
-        """
-        has_crossed_top = self.y > cf.length
-        has_crossed_bottom = self.y < 0
-        has_crossed_right = self.x > cf.width / 2.0
-        has_crossed_left = self.x < - cf.width / 2.0
-        return ((cf.hot_side_position_top and has_crossed_top) or
-                (cf.hot_side_position_bottom and has_crossed_bottom) or
-                (cf.hot_side_position_right and has_crossed_right) or
-                (cf.hot_side_position_left and has_crossed_left))
 
     def assign_frequency(self, material):
         """Assigning frequency with probability according to Planckian distribution"""

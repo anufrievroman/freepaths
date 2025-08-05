@@ -1,5 +1,5 @@
 from enum import Enum
 
-class ParticleType(str, Enum):
-    ELECTRON = "electron"
-    PHONON   = "phonon"
+class ParticleType(Enum):
+    PHONON   = 0
+    ELECTRON = 1

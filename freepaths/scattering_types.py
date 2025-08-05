@@ -1,5 +1,5 @@
 """
-Module that provides types of phonon scattering that might occur.
+Module that provides types of particle scattering that might occur.
 These scattering types are returned on each step
 so that higher level modules know what has happened.
 """
@@ -14,7 +14,7 @@ class Scattering(enum.Enum):
 
 
 class ScatteringTypes:
-    """Phonon scattering types"""
+    """particle scattering types"""
 
     def __init__(self):
         """Initialize possible scattering type"""
@@ -74,7 +74,7 @@ class ScatteringTypes:
 
 
 class ScatteringPlaces:
-    """Phonon scattering places on a triangle"""
+    """particle scattering places on a triangle"""
 
     def __init__(self):
         """Initialize possible scattering places"""

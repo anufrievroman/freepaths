@@ -7,7 +7,6 @@ from random import randint
 
 from freepaths.config import cf
 import freepaths.move
-import numpy as np
 
 
 class Particle(ABC):
@@ -21,9 +20,6 @@ class Particle(ABC):
         self.x = None
         self.y = None
         self.z = None
-        self.vx = None
-        self.vy = None
-        self.vz = None
         self.phi = None
         self.theta = None
         
@@ -34,17 +30,7 @@ class Particle(ABC):
         
         # Assign random first timestep
         self.first_timestep = randint(0, cf.number_of_virtual_timesteps)
-    
-    def update_speed_component(self):
-        """Projette la vitesse scalaire sur vx, vy, vz selon theta/phi."""
-        # Composantes sphériques
-        sin_t = np.sin(self.theta)
-        self.vx = self.speed * sin_t * np.cos(self.phi)
-        self.vy = self.speed * sin_t * np.sin(self.phi)
-        # En 2D, phi=0 → vz = 0
-        self.vz = self.speed * np.cos(self.theta) if not cf.is_two_dimensional_material else 0.0
-    
-    
+   
     @property
     @abstractmethod
     def wavelength(self):
@@ -106,4 +92,3 @@ class Particle(ABC):
     def move(self):
         """Move the particle in one timestep and return new coordinates"""
         self.x, self.y, self.z = freepaths.move.move(self, cf.timestep)
-        self.update_speed_component()

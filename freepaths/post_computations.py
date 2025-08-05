@@ -130,11 +130,6 @@ class ElectronPostComputation:
         self.electron_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.power_factor[:,1]*cf.temp
         self.electron_thermal_conductivity = np.column_stack((self.fermi_levels, self.electron_thermal_conductivity))
     
-    def compute_figure_of_merit(self):
-        """Compute the figure of merit with respect to fermi-level"""
-        self.true_figure_of_merit = np.column_stack((self.fermi_levels, self.true_power_factor[:,1] * cf.temp / self.true_thermal_conductivity[:,1]))
-        self.figure_of_merit = np.column_stack((self.fermi_levels, self.power_factor[:,1] * cf.temp / self.electron_thermal_conductivity[:,1]))
-    
     def compute_true_tdf(self):
         """Compute true tdf for a pristine material, not correct in most other cases"""
         mfp = cf.electron_mfp
@@ -151,10 +146,8 @@ class ElectronPostComputation:
         electron_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
         
         C = true_conductivity / electron_conductivity
-        C_fit = np.ones_like(C) * C.mean()
         
-        self.mapping_constant = np.column_stack((self.fermi_levels, C, C_fit))
-        self.mean_mapping_constant = self.mapping_constant[:,1].mean()
+        self.mapping_constant = np.column_stack((self.fermi_levels, C))
         self.mean_mapping_constant = np.interp(self.material.fermi_level, self.mapping_constant[:,0], self.mapping_constant[:,1])
 
     def compute_scattering_rate(self):
@@ -170,9 +163,8 @@ class ElectronPostComputation:
         np.savetxt("Data/Seebeck coefficient.csv", np.column_stack((self.seebeck_coeff, self.true_seebeck[:,1])), fmt='%2.4e', header="Fermi-level [J], Seebeck coefficient [V/K], Theorical Seebeck coefficient [V/K]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Power factor.csv", np.column_stack((self.power_factor, self.true_power_factor[:,1])), fmt='%2.4e', header="Fermi-level [J], Power factor [W/m/K^2], Theorical Power factor [W/m/K^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/True transport distribution function.csv", self.true_tdf, fmt='%2.4e', header="Energy [J], True TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2], Constant fit [m^2]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Electron thermal conductivity.csv", np.column_stack((self.electron_thermal_conductivity, self.true_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], Electron thermal conductivity [W/m/K], Theorical Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Figure of merit.csv", np.column_stack((self.figure_of_merit, self.true_figure_of_merit[:,1])), fmt='%2.4e', header="Fermi-level [J], Figure of merit [unitless], Theorical Figure of merit [unitless]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Scattering rate vs energy.csv", self.scattering_rates, fmt='%2.4e', header="Energy [J], Scattering rate [s]", encoding='utf-8', delimiter=',')
     
     def compute(self):
@@ -186,5 +178,4 @@ class ElectronPostComputation:
         self.compute_seebeck()
         self.compute_power_factor()
         self.compute_electronic_thermal_conductivity()
-        self.compute_figure_of_merit()
         self.compute_scattering_rate()

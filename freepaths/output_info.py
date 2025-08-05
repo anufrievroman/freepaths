@@ -4,8 +4,6 @@ import time
 import logging
 import numpy as np
 
-from colorama import Fore, Style
-
 from freepaths.config import cf
 
 
@@ -18,7 +16,7 @@ def output_general_information(start_time):
     info = [
             f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
             f'\nIt took about {int((time.time()-start_time)//60)} min to run.\n',
-            f'\nNumber of phonons = {cf.number_of_particles}',
+            f'\nNumber of particles = {cf.number_of_particles}',
             f'\nNumber of timesteps = {cf.number_of_timesteps}',
             f'\nLength of a timestep = {cf.timestep} s',
             f'\nTemperature = {cf.temp} K\n',
@@ -31,7 +29,7 @@ def output_general_information(start_time):
             f'\nTop roughness = {cf.top_roughness * 1e9:.1f} nm',
             f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm',
             f'\nInterface roughness = {cf.interface_roughness * 1e9:.1f} nm\n',
-            f'\n{percentage:.0f}% of phonons reached the cold side\n'
+            f'\n{percentage:.0f}% of particles reached the cold side\n'
             ]
     with open("Information.txt", "w+", encoding="utf-8") as file:
         file.writelines(info)
@@ -119,14 +117,14 @@ def output_scattering_information(scatter_stats):
 def output_parameter_warnings():
     """Check if parameters used for this simulation made sense considering the simulation results"""
 
-    # Check if some phonons had longer travel times than stabilization period:
+    # Check if some particles had longer travel times than stabilization period:
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
     total_time = cf.timestep * cf.number_of_timesteps
     time_of_stabilization = cf.number_of_stabilization_timeframes * total_time / cf. number_of_timeframes
     long_travel_times = travel_times[travel_times > time_of_stabilization]
     percentage = (len(long_travel_times) / len(travel_times)) * 100
     if percentage > 10:
-        logging.warning(f"Travel time of {percentage}% of phonons was longer than the stabilization period.\n" +
+        logging.warning(f"Travel time of {percentage}% of particles was longer than the stabilization period.\n" +
                           "Increase stabilization period as the thermal conductivity might be incorrect.")
 
     # Check if pixel size is too small:
@@ -136,7 +134,7 @@ def output_parameter_warnings():
     if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
         logging.warning("Pixels in x direction are smaller than length of one step")
 
-    # Check how many phonons reached the cold side during simulation:
+    # Check how many particles reached the cold side during simulation:
     percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
     if percentage < 95:
-        logging.warning(f"Only {percentage}% of phonons reached the cold side. Increase number of timesteps.")
+        logging.warning(f"Only {percentage}% of particles reached the cold side. Increase number of timesteps.")

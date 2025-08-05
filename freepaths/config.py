@@ -70,8 +70,6 @@ class Config:
         self.energy_lower_bound = ENERGY_LOWER_BOUND
         self.energy_step = ENERGY_STEP
         self.electron_mfp = ELECTRON_MFP
-        self.energy_distribution_is_uniform = ENERGY_DISTRIBUTION_UNIFORM
-        self.energy_constant = ENERGY_CONSTANT
         self.mean_mapping_constant = MEAN_MAPPING_CONSTANT
         self.is_carrier_electron = IS_CARRIER_ELECTRON
 

@@ -1,9 +1,7 @@
 """This module provides electron class which generates and moves an electron"""
 
-from random import choice, random
-from scipy.constants import h, hbar, electron_volt, elementary_charge, epsilon_0
-from scipy.integrate import quad
-from scipy.special import j0, j1, jv
+from random import choice
+from scipy.constants import h, electron_volt
 from freepaths.config import cf
 from freepaths.particle import Particle
 from freepaths.particle_types import ParticleType
@@ -13,7 +11,7 @@ import numpy as np
 class Electron(Particle):
     """An electron particle"""
     
-    def __init__(self, material, energy=None):
+    def __init__(self, material):
         super().__init__()
         
         # Assign particle type
@@ -33,10 +31,7 @@ class Electron(Particle):
         if cf.is_two_dimensional_material:
             self.phi, self.z = 0.0, 0.0
             
-        # Assign energy if specified
-        self.energy = energy
-        if self.energy is None: 
-            self.assign_energy()
+        self.assign_energy()
         self.assign_frequency(material)
         self.assign_speed(material)
         self.assign_internal_scattering_time(material)
@@ -48,7 +43,7 @@ class Electron(Particle):
         """
         num_energy_points = int((cf.energy_upper_bound-cf.energy_lower_bound)/cf.energy_step)
         # Keep energy in J for other computations
-        self.energy = np.random.choice(np.linspace(cf.energy_lower_bound, cf.energy_upper_bound, num_energy_points)) * electron_volt 
+        self.energy = np.random.choice(np.linspace(cf.energy_lower_bound, cf.energy_upper_bound - cf.energy_step, num_energy_points)) * electron_volt + cf.energy_step * electron_volt
         
     
     @property
