@@ -10,6 +10,7 @@ from matplotlib import font_manager
 from scipy.constants import electron_volt
 
 from freepaths.config import cf
+from freepaths.particle_types import ParticleType
 from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
 from freepaths.materials import Si, SiC, Graphite
@@ -734,9 +735,32 @@ def plot_material_properties():
     plt.close(fig)
 
 
-def plot_data(mfp_sampling=False):
+def plot_data(particle_type: ParticleType, mfp_sampling=False):
     """Create plots of various distributions, maps, profiles, and other quantities"""
-    function_list = [
+    phonon_function_list = [
+        plot_structure,
+        plot_trajectories,
+        plot_angle_distribution,
+        plot_scattering_angle_distribution,
+        plot_free_path_distribution,
+        plot_frequency_distribution,
+        plot_wavelength_distribution,
+        plot_travel_time_distribution,
+        plot_mean_free_path_distribution,
+        plot_velocity_distribution,
+        plot_energy_distribution,
+        plot_time_in_segments,
+        plot_thermal_conductivity,
+        plot_temperature_profile,
+        plot_heat_flux_profile,
+        plot_thermal_map,
+        plot_pixel_volumes,
+        plot_scattering_statistics,
+        plot_scattering_map,
+        plot_material_properties,
+    ]
+    
+    electron_function_list = [
         plot_structure,
         plot_trajectories,
         plot_angle_distribution,
@@ -765,8 +789,11 @@ def plot_data(mfp_sampling=False):
         plot_pixel_volumes,
         plot_scattering_statistics,
         plot_scattering_map,
-        plot_material_properties,
     ]
+    if particle_type is ParticleType.PHONON:
+        function_list = phonon_function_list
+    else:
+        function_list = electron_function_list
 
     # Run main functions and handle exceptions:
     for func in function_list:

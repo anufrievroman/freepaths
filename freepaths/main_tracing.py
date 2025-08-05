@@ -278,7 +278,7 @@ def main(input_file, particle_type):
 
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")
-    plot_data()
+    plot_data(particle_type)
 
     # Output general information:
     output_general_information(start_time)
