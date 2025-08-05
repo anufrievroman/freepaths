@@ -1,4 +1,4 @@
-"""Module provides the phonon source object"""
+"""Module provides the particle source object"""
 
 import enum
 
@@ -15,7 +15,7 @@ class Distributions(enum.Enum):
 
 
 class Source:
-    """Phonon source as rectangular are where phonons are initiated"""
+    """particle source as rectangular are where particles are initiated"""
     def __init__(self, x=0, y=0, z=0, size_x=0, size_y=0, size_z=0, angle_distribution="random_up", angle=0):
         self.x = x
         self.y = y
@@ -27,14 +27,14 @@ class Source:
         self.angle = angle
 
     def generate_coordinates(self):
-        """Generate coordinates of the phonon inside the source"""
-        phonon_x = self.x + 0.49 * self.size_x * (2 * random() - 1)
-        phonon_y = self.y + 0.49 * self.size_y * (2 * random() - 1)
-        phonon_z = self.z + 0.49 * self.size_z * (2 * random() - 1)
-        return phonon_x, phonon_y, phonon_z
+        """Generate coordinates of the particle inside the source"""
+        particle_x = self.x + 0.49 * self.size_x * (2 * random() - 1)
+        particle_y = self.y + 0.49 * self.size_y * (2 * random() - 1)
+        particle_z = self.z + 0.49 * self.size_z * (2 * random() - 1)
+        return particle_x, particle_y, particle_z
 
     def generate_angles(self):
-        """Generate angles of the phonon inside the source"""
+        """Generate angles of the particle inside the source"""
         if self.angle_distribution == Distributions.RANDOM:
             theta = -pi/2 + pi*random() + self.angle
             phi = asin(2*random() - 1)

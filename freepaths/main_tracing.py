@@ -78,12 +78,12 @@ class ParticleSimulator:
         run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
 
         # Record the properties returned for this particle:
-        self.general_stats.save_phonon_data(particle) # FIXME: change method's name
+        self.general_stats.save_particle_data(particle) # FIXME: change method's name
         self.general_stats.save_flight_data(flight)
 
         # Record trajectories of the first N particles:
         if index < self.output_trajectories_of:
-            self.path_stats.save_phonon_path(flight) # FIXME: change method's name
+            self.path_stats.save_particle_path(flight) # FIXME: change method's name
 
     def simulate_particles(self, render_progress=False):
         """Simulate a number of particles and save data to shared datastructure"""

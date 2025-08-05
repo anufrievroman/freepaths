@@ -33,16 +33,16 @@ def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
             patch = interface.get_patch(color_holes, cf)
             patches.extend(patch if isinstance(patch, list) else [patch])
 
-    # Phonon source areas as red patches:
+    # Particle source areas as red patches:
     for source in cf.particles_sources:
         width_x = 1e6 * cf.width / 49 if source.size_x == 0 else 1e6 * source.size_x
         width_y = 1e6 * cf.width / 50 if source.size_y == 0 else 1e6 * source.size_y
         x = 1e6 * source.x - width_x / 2
         y = 1e6 * source.y - width_y / 2
-        phonon_source_patch = Rectangle(
+        particle_source_patch = Rectangle(
             (x, y), width_x, width_y, facecolor='red', alpha=0.5
         )
-        patches.append(phonon_source_patch)
+        patches.append(particle_source_patch)
 
     return patches
 

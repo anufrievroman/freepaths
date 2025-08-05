@@ -27,23 +27,23 @@ class ScatteringMap(Maps):
         self.internal_scattering_map_x = []
         self.internal_scattering_map_y = []
 
-    def add_scattering_to_map(self, ph, scattering_types):
+    def add_scattering_to_map(self, pt, scattering_types):
         """Record the place where a scattering event occurred according to the event type"""
 
         # Diffuse surface scattering:
         if scattering_types.is_diffuse:
-            self.diffuse_scattering_map_x.append(ph.x)
-            self.diffuse_scattering_map_y.append(ph.y)
+            self.diffuse_scattering_map_x.append(pt.x)
+            self.diffuse_scattering_map_y.append(pt.y)
 
         # Internal scattering:
         elif scattering_types.is_internal:
-            self.internal_scattering_map_x.append(ph.x)
-            self.internal_scattering_map_y.append(ph.y)
+            self.internal_scattering_map_x.append(pt.x)
+            self.internal_scattering_map_y.append(pt.y)
 
         # Specular surface scattering:
         else:
-            self.specular_scattering_map_x.append(ph.x)
-            self.specular_scattering_map_y.append(ph.y)
+            self.specular_scattering_map_x.append(pt.x)
+            self.specular_scattering_map_y.append(pt.y)
 
     def write_into_files(self):
         """Write scattering map into file"""
@@ -131,7 +131,7 @@ class ThermalMaps(Maps):
 
         return pixel_volume_ratios
 
-    def add_energy_to_maps(self, ph, timestep_number, material):
+    def add_energy_to_maps(self, pt, timestep_number, material):
         """
         Register the phonon in the pixel corresponding to its current position at certain timestep
         and adds it to thermal maps and profiles.
@@ -141,7 +141,7 @@ class ThermalMaps(Maps):
         """
 
         # Move the recording point forwards half a timestep as to remove asymetric boundary fluxes (doesn't work)
-        ph_x, ph_y, _ = move(ph, cf.timestep/2)
+        ph_x, ph_y, _ = move(pt, cf.timestep/2)
 
         # Calculate the index of the pixel in which we record this phonon:
         index_x = int(((ph_x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
@@ -160,22 +160,22 @@ class ThermalMaps(Maps):
                 return
 
             # Record energy h*w [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map:
-            energy = hbar * 2 * pi * ph.f
+            energy = hbar * 2 * pi * pt.f
             self.number_phonons_in_pixel[index_y, index_x] += 1
             self.thermal_map[index_y, index_x] += energy
-            self.heat_flux_map_x[index_y, index_x] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
-            self.heat_flux_map_y[index_y, index_x] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_pixel
+            self.heat_flux_map_x[index_y, index_x] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
+            self.heat_flux_map_y[index_y, index_x] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
 
             # Calculate to which timeframe this timestep belongs:
-            timeframe_number = (ph.first_timestep + timestep_number) // self.timesteps_per_timeframe
+            timeframe_number = (pt.first_timestep + timestep_number) // self.timesteps_per_timeframe
 
             # Record temperature and energy into the corresponding time segment:
             if timeframe_number < cf.number_of_timeframes and vol_pixel_correction_x != 0 and vol_pixel_correction_y != 0:
-                self.effective_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_x
-                self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y
+                self.effective_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_x
+                self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y
                 # the material heat_flux_profile could also be calculated afterwards by dividing the effective profile with the volume ratio
-                self.material_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_x / vol_pixel_correction_x
-                self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(ph.theta) * abs(cos(ph.phi)) * ph.speed / self.vol_cell_y / vol_pixel_correction_y
+                self.material_heat_flux_profile_x[index_x, timeframe_number] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_x / vol_pixel_correction_x
+                self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y / vol_pixel_correction_y
 
                 self.temperature_profile_x[index_x, timeframe_number] += energy / (material.heat_capacity * material.density) / self.vol_cell_x / vol_pixel_correction_x
                 self.temperature_profile_y[index_y, timeframe_number] += energy / (material.heat_capacity * material.density) / self.vol_cell_y / vol_pixel_correction_y

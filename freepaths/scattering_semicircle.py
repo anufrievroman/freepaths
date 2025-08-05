@@ -11,23 +11,23 @@ from freepaths.scattering_types import Scattering
 from freepaths.scattering_primitives import *
 
 
-def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z, cf):
-    """Check if a phonon strikes a circular hole and calculate the new direction"""
+def scattering_on_semicircular_holes(pt, x0, y0, R, scattering_types, x, y, z, cf):
+    """Check if a particle strikes a circular hole and calculate the new direction"""
 
-    # If phonon is inside the circle with radius R:
+    # If particle is inside the circle with radius R:
     if (x - x0) ** 2 + (y - y0) ** 2 <= R**2 and x >= x0:
-        r1 = abs(y0 - y + (x - x0) * cos(ph.theta) / abs(sin(ph.theta)))
+        r1 = abs(y0 - y + (x - x0) * cos(pt.theta) / abs(sin(pt.theta)))
         if R > r1:
             # Calculate angle to the surface and specular scattering probability:
             a = acos(
-                cos(ph.phi) * sin(abs(ph.theta))
+                cos(pt.phi) * sin(abs(pt.theta))
             )  # Angle to the normal to the surface
-            p = specularity(a, cf.hole_roughness, ph)
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
                 scattering_types.holes = Scattering.SPECULAR
-                ph.theta = -ph.theta
+                pt.theta = -pt.theta
 
             # Diffuse scattering:
             else:
@@ -36,23 +36,23 @@ def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z, c
                 while attempt < 10:
                     attempt += 1
                     # Lambert cosine distribution:
-                    ph.theta = -sign(sin(ph.theta)) * pi / 2 + asin(2 * random() - 1)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = -sign(sin(pt.theta)) * pi / 2 + asin(2 * random() - 1)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not lead to new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
         else:
             # Calculate angle to the surface and specular scattering probability:
             if y == y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
-            a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + sign(y - y0) * tangent_theta))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - pi + 2 * tangent_theta
+                pt.theta = -pt.theta - pi + 2 * tangent_theta
                 scattering_types.holes = Scattering.SPECULAR
 
             # Diffuse scattering:
@@ -67,18 +67,18 @@ def scattering_on_semicircular_holes(ph, x0, y0, R, scattering_types, x, y, z, c
                     # phi = asin(2*random() - 1)
 
                     # Lambert cosine distribution:
-                    ph.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
 
 
 def scattering_on_arccircular_v_holes(
-    ph, x0, y0, R, Rinner, alphap, scattering_types, x, y, z, cf
+    pt, x0, y0, R, Rinner, alphap, scattering_types, x, y, z, cf
 ):
-    """Check if a phonon strikes a circular hole and calculate the new direction"""
+    """Check if a particle strikes a circular hole and calculate the new direction"""
     if x == x0:  # to prevent division by 0
         x = x + 1e-12
     theta0 = atan((y - y0) / (x - x0))
@@ -94,8 +94,8 @@ def scattering_on_arccircular_v_holes(
         and x >= x0
         and -alphap / 2 <= theta0 <= alphap / 2
     ):
-        xp = ph.x - x0
-        yp = ph.y - y0
+        xp = pt.x - x0
+        yp = pt.y - y0
         thetapre = atan((yp) / (xp))  # angle of previous point
 
         # Parameter
@@ -114,17 +114,17 @@ def scattering_on_arccircular_v_holes(
         ):
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta - (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta + 2 * beta
+                pt.theta = -pt.theta + 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                ph.theta = asin(2 * random() - 1) - 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = asin(2 * random() - 1) - 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if (
@@ -139,17 +139,17 @@ def scattering_on_arccircular_v_holes(
             continu = 1
 
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - 2 * beta
+                pt.theta = -pt.theta - 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 # rand_sign = sign((2*random() - 1))
-                ph.theta = pi - asin(random()) + 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = pi - asin(random()) + 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if R**2 <= xp**2 + yp**2 and continu == 0:
@@ -157,12 +157,12 @@ def scattering_on_arccircular_v_holes(
             if y == y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
-            a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + sign(y - y0) * tangent_theta))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - pi + 2 * tangent_theta
+                pt.theta = -pt.theta - pi + 2 * tangent_theta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 scattering_types.holes = Scattering.DIFFUSE
@@ -174,60 +174,48 @@ def scattering_on_arccircular_v_holes(
                     # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
                     # phi = asin(2*random() - 1)
                     # #Lambert cosine distribution:
-                    ph.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
 
         if continu == 0:
             tangent_theta = atan((x - x0) / (y - y0))
             a = atan(
-                tan((pi / 2 - ph.theta) + tangent_theta)
-                * cos(ph.phi - (pi / 2 - pillar_wall_angle))
+                tan((pi / 2 - pt.theta) + tangent_theta)
+                * cos(pt.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph)
+            p = specularity(a, cf.pillar_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                # If phonon moves from the center of the pillar to the wall:
+                # If particle moves from the center of the pillar to the wall:
                 if sqrt((abs(x) - abs(x0)) ** 2 + (abs(y) - abs(y0)) ** 2) >= sqrt(
-                    (abs(ph.x) - abs(x0)) ** 2 + (abs(ph.y) - abs(y0)) ** 2
+                    (abs(pt.x) - abs(x0)) ** 2 + (abs(pt.y) - abs(y0)) ** 2
                 ):
-                    # If theta does not reflect back:
-                    # if ph.phi < pi/2 - 2 * pillar_wall_angle:
-                    # ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = pt.phi - (pi / 2 - pillar_wall_angle)
 
-                    # Regular reflection:
-                    # else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
-
-                # If phonon strikes the wall as it goes towards the center:
+                # If particle strikes the wall as it goes towards the center:
                 else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = -sign(ph.phi) * ph.phi - 2 * pillar_wall_angle
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = -sign(pt.phi) * pt.phi - 2 * pillar_wall_angle
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                # attempt = 0
-                # while attempt < 10:
-                # attempt += 1
-
-                ph.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
+                pt.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
                     pi / 2 - cf.pillar_wall_angle
                 )
                 scattering_types.pillars = Scattering.DIFFUSE
-                # if no_new_scattering(ph, cf):
-                # break
 
 
 def scattering_on_arccircular_v_demi_down_holes(
-    ph, x0, y0, R, Rinner, alphap, alphap2, scattering_types, x, y, z, cf
+    pt, x0, y0, R, Rinner, alphap, alphap2, scattering_types, x, y, z, cf
 ):
-    """Check if a phonon strikes a circular hole and calculate the new direction"""
+    """Check if a particle strikes a circular hole and calculate the new direction"""
     if x == x0:  # to prevent division by 0
         x = x + 1e-12
     theta0 = atan((y - y0) / (x - x0))
@@ -243,8 +231,8 @@ def scattering_on_arccircular_v_demi_down_holes(
         and x >= x0
         and -alphap / 2 <= theta0 <= -alphap2 / 2
     ):
-        xp = ph.x - x0
-        yp = ph.y - y0
+        xp = pt.x - x0
+        yp = pt.y - y0
         thetapre = atan((yp) / (xp))  # angle of previous point
 
         # Parameter
@@ -268,17 +256,17 @@ def scattering_on_arccircular_v_demi_down_holes(
         ):
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta2)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + (pi / 2 - beta2)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - 2 * beta2
+                pt.theta = -pt.theta - 2 * beta2
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                ph.theta = asin(2 * random() - 1) + 1 * (pi / 2 - beta2)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = asin(2 * random() - 1) + 1 * (pi / 2 - beta2)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if (
@@ -296,17 +284,17 @@ def scattering_on_arccircular_v_demi_down_holes(
             continu = 1
 
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - 2 * beta
+                pt.theta = -pt.theta - 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 # rand_sign = sign((2*random() - 1))
-                ph.theta = pi - asin(random()) + 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = pi - asin(random()) + 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if R**2 <= xp**2 + yp**2 and continu == 0:
@@ -320,12 +308,12 @@ def scattering_on_arccircular_v_demi_down_holes(
             if y == y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
-            a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + sign(y - y0) * tangent_theta))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - pi + 2 * tangent_theta
+                pt.theta = -pt.theta - pi + 2 * tangent_theta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 scattering_types.holes = Scattering.DIFFUSE
@@ -337,59 +325,48 @@ def scattering_on_arccircular_v_demi_down_holes(
                     # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
                     # phi = asin(2*random() - 1)
                     # #Lambert cosine distribution:
-                    ph.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
 
         if continu == 0:
             tangent_theta = atan((x - x0) / (y - y0))
             a = atan(
-                tan((pi / 2 - ph.theta) + tangent_theta)
-                * cos(ph.phi - (pi / 2 - pillar_wall_angle))
+                tan((pi / 2 - pt.theta) + tangent_theta)
+                * cos(pt.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph)
+            p = specularity(a, cf.pillar_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                # If phonon moves from the center of the pillar to the wall:
+                # If particle moves from the center of the pillar to the wall:
                 if sqrt((abs(x) - abs(x0)) ** 2 + (abs(y) - abs(y0)) ** 2) >= sqrt(
-                    (abs(ph.x) - abs(x0)) ** 2 + (abs(ph.y) - abs(y0)) ** 2
+                    (abs(pt.x) - abs(x0)) ** 2 + (abs(pt.y) - abs(y0)) ** 2
                 ):
-                    # If theta does not reflect back:
-                    # if ph.phi < pi/2 - 2 * pillar_wall_angle:
-                    # ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = pt.phi - (pi / 2 - pillar_wall_angle)
 
-                    # Regular reflection:
-                    # else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
-
-                # If phonon strikes the wall as it goes towards the center:
+                # If particle strikes the wall as it goes towards the center:
                 else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = -sign(ph.phi) * ph.phi - 2 * pillar_wall_angle
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = -sign(pt.phi) * pt.phi - 2 * pillar_wall_angle
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                # attempt = 0
-                # while attempt < 10:
-                # attempt += 1
-
-                ph.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
+                pt.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
                     pi / 2 - cf.pillar_wall_angle
                 )
                 scattering_types.pillars = Scattering.DIFFUSE
-                # if no_new_scattering(ph, cf):
 
 
 def scattering_on_arccircular_v_demi_up_holes(
-    ph, x0, y0, R, Rinner, alphap, alphap2, scattering_types, x, y, z, cf
+    pt, x0, y0, R, Rinner, alphap, alphap2, scattering_types, x, y, z, cf
 ):
-    """Check if a phonon strikes a circular hole and calculate the new direction"""
+    """Check if a particle strikes a circular hole and calculate the new direction"""
     if x == x0:  # to prevent division by 0
         x = x + 1e-12
     theta0 = atan((y - y0) / (x - x0))
@@ -405,8 +382,8 @@ def scattering_on_arccircular_v_demi_up_holes(
         and x >= x0
         and alphap2 / 2 <= theta0 <= alphap / 2
     ):
-        xp = ph.x - x0
-        yp = ph.y - y0
+        xp = pt.x - x0
+        yp = pt.y - y0
         thetapre = atan((yp) / (xp))  # angle of previous point
 
         # Parameter
@@ -427,17 +404,17 @@ def scattering_on_arccircular_v_demi_up_holes(
         ):
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta - (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta + 2 * beta
+                pt.theta = -pt.theta + 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                ph.theta = asin(2 * random() - 1) - 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = asin(2 * random() - 1) - 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if (
@@ -452,17 +429,17 @@ def scattering_on_arccircular_v_demi_up_holes(
             continu = 1
 
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta2)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta - (pi / 2 - beta2)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta + 2 * beta2
+                pt.theta = -pt.theta + 2 * beta2
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 # rand_sign = sign((2*random() - 1))
-                ph.theta = pi - asin(random()) - 1 * (pi / 2 - beta2)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = pi - asin(random()) - 1 * (pi / 2 - beta2)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if R**2 <= xp**2 + yp**2 and continu == 0:
@@ -476,12 +453,12 @@ def scattering_on_arccircular_v_demi_up_holes(
             if y == y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
-            a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + sign(y - y0) * tangent_theta))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - pi + 2 * tangent_theta
+                pt.theta = -pt.theta - pi + 2 * tangent_theta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 scattering_types.holes = Scattering.DIFFUSE
@@ -493,60 +470,48 @@ def scattering_on_arccircular_v_demi_up_holes(
                     # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
                     # phi = asin(2*random() - 1)
                     # #Lambert cosine distribution:
-                    ph.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
 
         if continu == 0:
             tangent_theta = atan((x - x0) / (y - y0))
             a = atan(
-                tan((pi / 2 - ph.theta) + tangent_theta)
-                * cos(ph.phi - (pi / 2 - pillar_wall_angle))
+                tan((pi / 2 - pt.theta) + tangent_theta)
+                * cos(pt.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph)
+            p = specularity(a, cf.pillar_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                # If phonon moves from the center of the pillar to the wall:
+                # If particle moves from the center of the pillar to the wall:
                 if sqrt((abs(x) - abs(x0)) ** 2 + (abs(y) - abs(y0)) ** 2) >= sqrt(
-                    (abs(ph.x) - abs(x0)) ** 2 + (abs(ph.y) - abs(y0)) ** 2
+                    (abs(pt.x) - abs(x0)) ** 2 + (abs(pt.y) - abs(y0)) ** 2
                 ):
-                    # If theta does not reflect back:
-                    # if ph.phi < pi/2 - 2 * pillar_wall_angle:
-                    # ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = pt.phi - (pi / 2 - pillar_wall_angle)
 
-                    # Regular reflection:
-                    # else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
-
-                # If phonon strikes the wall as it goes towards the center:
+                # If particle strikes the wall as it goes towards the center:
                 else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = -sign(ph.phi) * ph.phi - 2 * pillar_wall_angle
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = -sign(pt.phi) * pt.phi - 2 * pillar_wall_angle
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                # attempt = 0
-                # while attempt < 10:
-                # attempt += 1
-
-                ph.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
+                pt.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
                     pi / 2 - cf.pillar_wall_angle
                 )
                 scattering_types.pillars = Scattering.DIFFUSE
-                # if no_new_scattering(ph, cf):
-                # break                                 #break
 
 
 def scattering_on_arccircular_h_holes(
-    ph, x0, y0, R, Rinner, alphap, scattering_types, x, y, z, cf
+    pt, x0, y0, R, Rinner, alphap, scattering_types, x, y, z, cf
 ):
-    """Check if a phonon strikes a circular hole and calculate the new direction"""
+    """Check if a particle strikes a circular hole and calculate the new direction"""
     if x == x0:  # to prevent division by 0
         x = x + 1e-12
     theta0 = atan((x - x0) / (y - y0))
@@ -560,8 +525,8 @@ def scattering_on_arccircular_h_holes(
         and y >= y0
         and -alphap / 2 <= theta0 <= alphap / 2
     ):
-        xp = ph.x - x0
-        yp = ph.y - y0
+        xp = pt.x - x0
+        yp = pt.y - y0
         thetapre = atan((xp) / (yp))
 
         continu = 0
@@ -579,17 +544,17 @@ def scattering_on_arccircular_h_holes(
         ):
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta - (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta + 2 * beta
+                pt.theta = -pt.theta + 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                ph.theta = pi - (asin(2 * random() - 1) + 1 * (pi / 2 - beta))
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = pi - (asin(2 * random() - 1) + 1 * (pi / 2 - beta))
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if (
@@ -604,17 +569,17 @@ def scattering_on_arccircular_h_holes(
             continu = 1
 
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - 2 * beta
+                pt.theta = -pt.theta - 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 # rand_sign = sign((2*random() - 1))
-                ph.theta = pi - asin(random()) + 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = pi - asin(random()) + 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if R**2 <= xp**2 + yp**2 and continu == 0:
@@ -628,12 +593,12 @@ def scattering_on_arccircular_h_holes(
             if y == y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
-            a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + sign(y - y0) * tangent_theta))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - pi + 2 * tangent_theta
+                pt.theta = -pt.theta - pi + 2 * tangent_theta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 scattering_types.holes = Scattering.DIFFUSE
@@ -645,59 +610,48 @@ def scattering_on_arccircular_h_holes(
                     # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
                     # phi = asin(2*random() - 1)
                     # #Lambert cosine distribution:
-                    ph.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
 
         if continu == 0:
             tangent_theta = atan((x - x0) / (y - y0))
             a = atan(
-                tan((pi / 2 - ph.theta) + tangent_theta)
-                * cos(ph.phi - (pi / 2 - pillar_wall_angle))
+                tan((pi / 2 - pt.theta) + tangent_theta)
+                * cos(pt.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph)
+            p = specularity(a, cf.pillar_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                # If phonon moves from the center of the pillar to the wall:
+                # If particle moves from the center of the pillar to the wall:
                 if sqrt((abs(x) - abs(x0)) ** 2 + (abs(y) - abs(y0)) ** 2) >= sqrt(
-                    (abs(ph.x) - abs(x0)) ** 2 + (abs(ph.y) - abs(y0)) ** 2
+                    (abs(pt.x) - abs(x0)) ** 2 + (abs(pt.y) - abs(y0)) ** 2
                 ):
-                    # If theta does not reflect back:
-                    # if ph.phi < pi/2 - 2 * pillar_wall_angle:
-                    # ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = pt.phi - (pi / 2 - pillar_wall_angle)
 
-                    # Regular reflection:
-                    # else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
-
-                # If phonon strikes the wall as it goes towards the center:
+                # If particle strikes the wall as it goes towards the center:
                 else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = -sign(ph.phi) * ph.phi - 2 * pillar_wall_angle
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = -sign(pt.phi) * pt.phi - 2 * pillar_wall_angle
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                # attempt = 0
-                # while attempt < 10:
-                # attempt += 1
-
-                ph.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
+                pt.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
                     pi / 2 - cf.pillar_wall_angle
                 )
                 scattering_types.pillars = Scattering.DIFFUSE
-                # if no_new_scattering(ph, cf):
 
 
 def scattering_on_arccircular_h_reverse_holes(
-    ph, x0, y0, R, Rinner, alphap, scattering_types, x, y, z, cf
+    pt, x0, y0, R, Rinner, alphap, scattering_types, x, y, z, cf
 ):
-    """Check if a phonon strikes a circular hole and calculate the new direction"""
+    """Check if a particle strikes a circular hole and calculate the new direction"""
     if x == x0:  # to prevent division by 0
         x = x + 1e-12
     theta0 = atan((x - x0) / (y - y0))
@@ -711,8 +665,8 @@ def scattering_on_arccircular_h_reverse_holes(
         and y <= y0
         and -alphap / 2 <= theta0 <= alphap / 2
     ):
-        xp = ph.x - x0
-        yp = ph.y - y0
+        xp = pt.x - x0
+        yp = pt.y - y0
         thetapre = atan((xp) / (yp))
 
         continu = 0
@@ -730,17 +684,17 @@ def scattering_on_arccircular_h_reverse_holes(
         ):
             continu = 1
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta + (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - 2 * beta
+                pt.theta = -pt.theta - 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                ph.theta = asin(2 * random() - 1) + 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = asin(2 * random() - 1) + 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if (
@@ -755,18 +709,18 @@ def scattering_on_arccircular_h_reverse_holes(
             continu = 1
 
             # Calculate angle to the surface and specular scattering probability:
-            a = acos(cos(ph.phi) * cos(ph.theta - (pi / 2 - beta)))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta - (pi / 2 - beta)))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta + 2 * beta
+                pt.theta = -pt.theta + 2 * beta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 # rand_sign = sign((2*random() - 1))
 
-                ph.theta = asin(2 * random() - 1) - 1 * (pi / 2 - beta)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta = asin(2 * random() - 1) - 1 * (pi / 2 - beta)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
                 scattering_types.holes = Scattering.DIFFUSE
 
         if R**2 <= xp**2 + yp**2 and continu == 0:
@@ -780,12 +734,12 @@ def scattering_on_arccircular_h_reverse_holes(
             if y == y0:
                 y += 1e-9  # Prevent division by zero
             tangent_theta = atan((x - x0) / (y - y0))
-            a = acos(cos(ph.phi) * cos(ph.theta + sign(y - y0) * tangent_theta))
-            p = specularity(a, cf.hole_roughness, ph)
+            a = acos(cos(pt.phi) * cos(pt.theta + sign(y - y0) * tangent_theta))
+            p = specularity(a, cf.hole_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                ph.theta = -ph.theta - pi + 2 * tangent_theta
+                pt.theta = -pt.theta - pi + 2 * tangent_theta
                 scattering_types.holes = Scattering.SPECULAR
             else:
                 scattering_types.holes = Scattering.DIFFUSE
@@ -797,51 +751,39 @@ def scattering_on_arccircular_h_reverse_holes(
                     # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
                     # phi = asin(2*random() - 1)
                     # #Lambert cosine distribution:
-                    ph.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
-                    ph.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                    pt.theta = tangent_theta - (asin(2 * random() - 1)) - pi * (y < y0)
+                    pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
 
                     # Accept the angles only if they do not immediately cause new scattering:
-                    if no_new_scattering(ph, cf):
+                    if no_new_scattering(pt, cf):
                         break
 
         if continu == 0:
             tangent_theta = atan((x - x0) / (y - y0))
             a = atan(
-                tan((pi / 2 - ph.theta) + tangent_theta)
-                * cos(ph.phi - (pi / 2 - pillar_wall_angle))
+                tan((pi / 2 - pt.theta) + tangent_theta)
+                * cos(pt.phi - (pi / 2 - pillar_wall_angle))
             )
-            p = specularity(a, cf.pillar_roughness, ph)
+            p = specularity(a, cf.pillar_roughness, pt)
 
             # Specular scattering:
             if random() < p:
-                # If phonon moves from the center of the pillar to the wall:
+                # If particle moves from the center of the pillar to the wall:
                 if sqrt((abs(x) - abs(x0)) ** 2 + (abs(y) - abs(y0)) ** 2) >= sqrt(
-                    (abs(ph.x) - abs(x0)) ** 2 + (abs(ph.y) - abs(y0)) ** 2
+                    (abs(pt.x) - abs(x0)) ** 2 + (abs(pt.y) - abs(y0)) ** 2
                 ):
-                    # If theta does not reflect back:
-                    # if ph.phi < pi/2 - 2 * pillar_wall_angle:
-                    # ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = pt.phi - (pi / 2 - pillar_wall_angle)
 
-                    # Regular reflection:
-                    # else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = ph.phi - (pi / 2 - pillar_wall_angle)
-
-                # If phonon strikes the wall as it goes towards the center:
+                # If particle strikes the wall as it goes towards the center:
                 else:
-                    ph.theta = -ph.theta - pi + 2 * tangent_theta
-                    ph.phi = -sign(ph.phi) * ph.phi - 2 * pillar_wall_angle
+                    pt.theta = -pt.theta - pi + 2 * tangent_theta
+                    pt.phi = -sign(pt.phi) * pt.phi - 2 * pillar_wall_angle
                 scattering_types.holes = Scattering.SPECULAR
 
             else:
-                # attempt = 0
-                # while attempt < 10:
-                # attempt += 1
-
-                ph.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
-                ph.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
+                pt.theta = tangent_theta - asin(2 * random() - 1) + pi * (y >= y0)
+                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2)) - (
                     pi / 2 - cf.pillar_wall_angle
                 )
                 scattering_types.pillars = Scattering.DIFFUSE
-                # if no_new_scattering(ph, cf):
-                # break

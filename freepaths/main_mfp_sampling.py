@@ -81,12 +81,12 @@ def main(input_file):
             total_thermal_conductivity += flight.thermal_conductivity
 
             # Record the properties returned for this phonon:
-            general_stats.save_phonon_data(phonon)
+            general_stats.save_particle_data(phonon)
             general_stats.save_flight_data(flight)
 
             # Record trajectories of the first N phonons:
             if index < cf.output_trajectories_of_first:
-                path_stats.save_phonon_path(flight)
+                path_stats.save_particle_path(flight)
 
     # Run additional calculations:
     thermal_maps.calculate_thermal_conductivity()

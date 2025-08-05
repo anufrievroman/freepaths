@@ -15,30 +15,30 @@ class Data:
 
 
 class PathData(Data):
-    """Paths of phonons in space"""
+    """Paths of particles in space"""
 
     def __init__(self):
-        """Initialize arrays to save phonon paths"""
-        self.phonon_paths = []
+        """Initialize arrays to save particle paths"""
+        self.particle_paths = []
 
-    def save_phonon_path(self, flight):
+    def save_particle_path(self, flight):
         """Save the path to list of all paths"""
         if cf.low_memory_usage:
             return
-        self.phonon_paths.append(flight.path)
+        self.particle_paths.append(flight.path)
 
     @property
     def length_of_longest_path(self):
         """Calculate the number of points in the longest path"""
-        return max([path.number_of_path_points for path in self.phonon_paths])
+        return max([path.number_of_path_points for path in self.particle_paths])
 
     def write_into_files(self):
         """Write all the path coordinates into a file"""
         if cf.low_memory_usage:
             return
-        filename = "Data/Phonon paths.csv"
-        data = np.zeros((self.length_of_longest_path, 3*len(self.phonon_paths)))
-        for index, path in enumerate(self.phonon_paths):
+        filename = "Data/Particle paths.csv"
+        data = np.zeros((self.length_of_longest_path, 3*len(self.particle_paths)))
+        for index, path in enumerate(self.particle_paths):
             for point_n, (x, y, z) in enumerate(zip(path.x, path.y, path.z)):
                 data[point_n, 0 + index*3] = x*1e6
                 data[point_n, 1 + index*3] = y*1e6
@@ -47,11 +47,11 @@ class PathData(Data):
 
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
-        return {'phonon_paths': self.phonon_paths}
+        return {'particle_paths': self.particle_paths}
 
 
 class GeneralData(Data):
-    """General statistics of various phonon properties"""
+    """General statistics of various particle properties"""
 
     def __init__(self):
         """Initialize arrays for writing various properties"""
@@ -68,14 +68,14 @@ class GeneralData(Data):
         self.mean_free_paths = []
         self.thermal_conductivity = []
 
-    def save_phonon_data(self, ph):
-        """Add information about the phonon to the dataset"""
-        self.frequencies.append(ph.f)
-        self.group_velocities.append(ph.speed)
-        self.initial_energies.append(ph.energy)
+    def save_particle_data(self, pt):
+        """Add information about the particle to the dataset"""
+        self.frequencies.append(pt.f)
+        self.group_velocities.append(pt.speed)
+        self.initial_energies.append(pt.energy)
 
     def save_flight_data(self, flight):
-        """Add information about the phonon flight to the dataset"""
+        """Add information about the particle flight to the dataset"""
         if not cf.low_memory_usage:
             self.free_paths.extend(flight.free_paths)
             self.free_paths_along_y.extend(flight.free_paths_along_y)
@@ -123,7 +123,7 @@ class GeneralData(Data):
 
 
 class ScatteringData(Data):
-    """Statistics of phonon scattering events"""
+    """Statistics of particle scattering events"""
 
     def __init__(self):
         """Initialize arrays according to the number of segments"""
@@ -205,7 +205,7 @@ class ScatteringData(Data):
 
 
 class TriangleScatteringData(Data):
-    """Statistics of phonon scattering events on triangular holes"""
+    """Statistics of particle scattering events on triangular holes"""
 
     def __init__(self):
         """Initialize arrays according to the number of segments"""
@@ -266,7 +266,7 @@ class SegmentData(Data):
         return segments
 
     def record_time_in_segment(self, coordinate):
-        """Record how long phonon stays in different segments"""
+        """Record how long particle stays in different segments"""
         for segment_number in range(cf.number_of_length_segments):
             segment_beginning = segment_number * (cf.length / cf.number_of_length_segments)
             segment_end = (segment_number + 1)*(cf.length / cf.number_of_length_segments)
