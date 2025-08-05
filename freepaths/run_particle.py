@@ -9,10 +9,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
     # Initialize object that will store scattering types:
     scattering_types = ScatteringTypes()
     triangle_scattering_places = ScatteringPlaces()
-    
 
-    adaptative_timestep = cf.timestep
-    
     # Run the particle step-by-step:
     for step_number in range(cf.number_of_timesteps):
 
@@ -20,7 +17,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if particle.has_crossed_cold_side:
             flight.add_point_to_path()
             flight.save_free_paths()
-            flight.finish(step_number, adaptative_timestep)
+            flight.finish(step_number, cf.timestep)
             break
 
         # If the particle reached a hot side, record it and break the loop:
@@ -67,7 +64,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             flight.save_hole_spec_scattering_angle(particle.theta)
 
         else:
-            flight.add_step(adaptative_timestep)
+            flight.add_step(cf.timestep)
         
         # Record presence of the particle at this timestep and move on:
         thermal_maps.add_energy_to_maps(particle, step_number, material)
