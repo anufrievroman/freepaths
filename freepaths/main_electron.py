@@ -63,70 +63,11 @@ class ElectronSimulator:
         self.thermal_maps = ThermalMaps()
 
         self.total_thermal_conductivity = 0.0
-        
-        if cf.energy_constant:
-            self.set_energy_constant()
-        elif cf.energy_distribution_is_uniform:
-            self.set_energy_repartition_uniform()
-        else:
-            self.set_energy_repartition_linear()
-
-    def set_energy_constant(self):
-        energy = cf.energy_constant * electron_volt
-        self.energy_levels = [energy] * self.total_electrons
-
-    def set_energy_repartition_uniform(self):
-        base = self.total_electrons // self.number_of_energy_levels
-        remainder = self.total_electrons % self.number_of_energy_levels
-        distribution = [base + 1 if i < remainder else base for i in range(self.number_of_energy_levels)]
-        self.energy_levels = []
-        
-        for level, count in enumerate(distribution):
-            energy = cf.energy_step * electron_volt * (1 + level) + cf.energy_lower_bound * electron_volt
-            self.energy_levels.extend([energy]*count)
-
-    def set_energy_repartition_linear(self):
-        """
-        Distribute self.total_electrons on self.number_of_energy_levels
-        with a minimum of one electron per level and with linear weights.
-        """
-        N = self.number_of_energy_levels
-        T = self.total_electrons
-
-        if T < N:
-            raise ValueError("Not enough electrons to have one for each energy level")
-
-        # One electron for each level
-        baseline = [1] * N
-        T_remain = T - N
-
-        # Lineear weights
-        weights = [i + 1 for i in range(N)]
-        total_weight = sum(weights)
-
-        # Initialize distribution
-        distro_remain = [(T_remain * w) // total_weight for w in weights]
-
-        # Distribute the rest
-        remainder = T_remain - sum(distro_remain)
-        for i in range(remainder):
-            idx = N - 1 - (i % N)
-            distro_remain[idx] += 1
-
-        # Final list
-        distribution = [baseline[i] + distro_remain[i] for i in range(N)]
-
-        self.energy_levels = []
-        for level, count in enumerate(distribution):
-            energy = cf.energy_step * electron_volt * (1 + level) + cf.energy_lower_bound * electron_volt
-            self.energy_levels.extend([energy] * count)
-
 
 
     def simulate_electron(self, index):
         # Initiate an electron and its flight:
-        electron_energy = self.energy_levels[index]
-        electron = Electron(self.material, electron_energy)
+        electron = Electron(self.material)
         flight = Flight(electron)
 
         # Run this electron through the structure:
