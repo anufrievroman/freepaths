@@ -497,30 +497,6 @@ def plot_temperature_profile():
     ax.legend()
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
-    
-def plot_charge_profile():
-    """Plot profile of charge for each time segment"""
-    fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Density profile y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe_num in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
-    ax.set_xlabel('Y (μm)')
-    ax.set_ylabel('Density (m-3)')
-    ax.legend()
-    fig.savefig("Density profile.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-
-def plot_charge_flux_profile():
-    """Plot profile of heat flux for each time segment"""
-    fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Current density profile y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe_num in range((len(data) - 1) // 2):
-        ax.plot(data[0], data[timeframe_num + 1], linewidth=1, label=f'Time frame {timeframe_num+1}')
-    ax.set_xlabel('Y (μm)')
-    ax.set_ylabel('Current density (C/m²)')
-    ax.legend()
-    fig.savefig("Current density profile effective.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
 
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
@@ -786,9 +762,7 @@ def plot_data(mfp_sampling=False):
         plot_time_in_segments,
         plot_thermal_conductivity,
         plot_temperature_profile,
-        plot_charge_profile,
         plot_heat_flux_profile,
-        plot_charge_flux_profile,
         plot_thermal_map,
         plot_pixel_volumes,
         plot_scattering_statistics,
