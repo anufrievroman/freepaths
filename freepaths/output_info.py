@@ -45,6 +45,7 @@ def output_scattering_information(scatter_stats):
     total_hole = np.sum(scatter_stats.hole_diffuse) + np.sum(scatter_stats.hole_specular)
     total_pill = np.sum(scatter_stats.pillar_diffuse) + np.sum(scatter_stats.pillar_specular)
     total_interf = np.sum(scatter_stats.interfaces_diffuse) + np.sum(scatter_stats.interfaces_specular)
+    total_transmission = np.sum(scatter_stats.interfaces_transmission_specular) + np.sum(scatter_stats.interfaces_transmission_diffuse)
 
     sc_on_walls = 100*(np.sum(scatter_stats.wall_diffuse) +
                          np.sum(scatter_stats.wall_specular)) / total
@@ -98,20 +99,34 @@ def output_scattering_information(scatter_stats):
                     f'{sc_on_pill_spec:.2f}% - specular)']
                     )
 
-    if cf. interfaces:
-        sc_on_interf = 100*(np.sum(scatter_stats.interfaces_diffuse) +
-                             np.sum(scatter_stats.interfaces_specular)) / total
-        sc_on_interf_diff = 100*np.sum(scatter_stats.interfaces_diffuse) / total_interf
-        sc_on_interf_spec = 100*np.sum(scatter_stats.interfaces_specular) / total_interf
-        info.extend([
-                    f'\n{sc_on_interf:.2f}% - scattering on interfaces ',
-                    f'({sc_on_interf_diff:.2f}% - diffuse, ',
-                    f'{sc_on_interf_spec:.2f}% - specular)']
-                    )
+    # if cf.interfaces:
+    sc_on_interf = 100*(np.sum(scatter_stats.interfaces_diffuse) +
+                            np.sum(scatter_stats.interfaces_specular)) / total
+    sc_on_interf_diff = 100*np.sum(scatter_stats.interfaces_diffuse) / total_interf
+    sc_on_interf_spec = 100*np.sum(scatter_stats.interfaces_specular) / total_interf
+    info.extend([
+                f'\n{sc_on_interf:.2f}% - scattering on interfaces ',
+                f'({sc_on_interf_diff:.2f}% - diffuse, ',
+                f'{sc_on_interf_spec:.2f}% - specular)']
+                )
 
-    # Write the file:
+    trans_on_interf = 100 * (np.sum(scatter_stats.interfaces_transmission_diffuse) +
+                            np.sum(scatter_stats.interfaces_transmission_specular)) / total_interf 
+    trans_on_interf_diff = 100*np.sum(scatter_stats.interfaces_transmission_diffuse)/ total_transmission 
+    trans_on_interf_spec = 100*np.sum(scatter_stats.interfaces_transmission_specular)/ total_transmission 
+
+
+    info.extend([
+                f'\n{trans_on_interf:.2f}% - transmission through interfaces ', 
+                f'({trans_on_interf_diff:.2f}% - diffuse, ', 
+                f'{trans_on_interf_spec:.2f}% - specular)' 
+                ])
+                    
+    # Write the file: j essaie d enlever ca pour voir si ca marche pour vrm recopier hole
     with open("Information.txt", "a", encoding="utf-8") as file:
         file.writelines(info)
+    
+        
 
 
 def output_parameter_warnings():
