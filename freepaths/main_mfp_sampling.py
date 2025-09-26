@@ -12,12 +12,12 @@ from colorama import Fore, Style
 # Modules:
 from freepaths.animation import create_animation
 from freepaths.config import cf
-from freepaths.run_phonon import run_phonon
+from freepaths.run_particle import run_particle
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite
+from freepaths.materials import Si, SiC, Graphite, Ge 
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.output_plots import plot_data
@@ -33,6 +33,12 @@ def main(input_file):
     # Initialize the material:
     if cf.media == "Si":
         material = Si(cf.temp, num_points=cf.number_of_particles +1)
+
+# -------- has to be modified fro have only SiGe values and not a mix between Ge and SiGe------------
+    elif cf.media == "Ge":
+        material = Ge(cf.temp, num_points=cf.number_of_particles +1) 
+# -------- has to be modified fro have only SiGe values and not a mix between Ge and SiGe------------
+
     elif cf.media == "SiC":
         material = SiC(cf.temp, num_points=cf.number_of_particles+1)
     elif cf.media == "Graphite":
@@ -68,7 +74,7 @@ def main(input_file):
             flight = Flight(phonon)
 
             # Run this phonon through the structure:
-            run_phonon(phonon, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material)
+            run_particle(phonon, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material)
 
             # Heat capacity, Ref. PRB 88 155318 (2013):
             omega = 2 * math.pi * phonon.f
