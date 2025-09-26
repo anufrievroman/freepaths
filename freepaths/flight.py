@@ -44,9 +44,7 @@ class Flight:
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
         self.free_paths_along_y = []
-        self.thermal_conductivity = 0.0
-        self.interfaces_transmission_specular = []  
-        self.interfaces_transmission_diffuse = []  
+        self.thermal_conductivity = 0.0 
         self.interfaces_angles = []  
         self.interfaces_transmission_factor = [] 
         self.interfaces_wavelength = [] 
