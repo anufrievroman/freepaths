@@ -908,9 +908,9 @@ def plot_trajectories():
     # Set labels:
     ax.set_xlabel('X (μm)')
     ax.set_ylabel('Y (μm)')
-    # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit 25/07
-    ax.set_xlim(2*-cf.width*1e6, 2*cf.width*1e6) #add 25/07
-    ax.set_ylim(0, cf.length*1e6) #add 25/07
+    # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit 
+    ax.set_xlim(2*-cf.width*1e6, 2*cf.width*1e6) 
+    ax.set_ylim(0, cf.length*1e6) 
     fig.savefig("Particle paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
 
