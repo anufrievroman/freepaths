@@ -19,17 +19,6 @@ from freepaths.scattering_types import ScatteringTypes
 from freepaths.interface_smmm import P_spec, alpha_total_2T, alpha_total_1T
 from freepaths.scattering_types import Scattering
 
-
-
-
-
-
-
-
-
-
-
-
 class Hole:
     def is_inside(self, x, y, z, cf) -> bool:
         """
@@ -872,12 +861,8 @@ class Interface:
         """
         pass
 
-
-
-
-
 class VerticalPlane(Interface):
-    """Interface verticale entre deux matériaux, avec modèle SMMM.""" # date of modification 26/06
+    """Vertical interface between two materials with the smmm approach SMMM.""" 
 
     def __init__(self, position_x=0, roughness=0, material=None, depth=None):
         super().__init__()
@@ -905,7 +890,7 @@ class VerticalPlane(Interface):
         if rho_i is None or rho_j is None:
             raise AttributeError(f"Material missing 'density': {mat_0}, {mat_j}")
 
-        # --- update phonon vlocity in materials ---
+        # --- update phonon velocity in materials ---
         original_speed = pt.speed
         pt.assign_speed(mat_0)
         vg_i = pt.speed
@@ -924,9 +909,9 @@ class VerticalPlane(Interface):
   
 
         """
-        Interagit avec le phonon quand il traverse une interface verticale.
-        Modèle SMMM appliqué aux deux passages :
-        Si → Ge → Si (toujours pareil, peu importe la direction du phonon)
+        phonon interaction when it cross a vertical interface
+        SMMM appraoch for two crossings:
+        Si → Ge → Si (always the same, whether it comes from the right or left side)
         """
         # Crossing the interface:
         transmission = self.transmission_probability(cf, pt)
