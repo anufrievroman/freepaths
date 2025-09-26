@@ -6,6 +6,7 @@ checks the validity of the parameters and converts the variables into enums
 import sys
 import argparse
 import logging
+import builtins #24/06
 from colorama import Fore, Style
 
 from freepaths.sources import Distributions
@@ -32,6 +33,9 @@ args = parser.parse_args()
 
 
 # If a file is provided, overwrite the default values:
+
+
+# If a file is provided, overwrite the default values:
 if args.input_file:
     try:
         exec(open(args.input_file, encoding='utf-8').read(), globals())
@@ -40,6 +44,8 @@ if args.input_file:
         sys.exit()
 else:
     logging.warning("You provided no input file, so we will run a demo simulation:")
+
+
 
 
 class Config:
@@ -131,6 +137,7 @@ class Config:
         self.holes = HOLES
         self.pillars = PILLARS
         self.interfaces = INTERFACES
+        self.bulks = BULKS
 
         # Multiprocessing:
         self.num_workers = NUMBER_OF_PROCESSES
@@ -260,3 +267,13 @@ cf = Config()
 cf.convert_to_enums()
 cf.check_parameter_validity()
 cf.check_depricated_parameters()
+
+
+
+# Inject user-defined materials into the config object (must be defined in input file) 24/06
+# MATERIALS injection
+try:
+    cf.materials = MATERIALS
+except NameError:
+    logging.error("You must define MATERIALS = [mat1, mat2] in your input file.")
+    sys.exit(1)
