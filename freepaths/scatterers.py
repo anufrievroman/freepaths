@@ -916,16 +916,15 @@ class VerticalPlane(Interface):
         # Crossing the interface:
         transmission = self.transmission_probability(cf, pt)
         theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
-        ulp = np.spacing(self.position_x if self.position_x != 0.0 else 1.0)
         
         if hasattr(pt, 'flight'): 
 
             pt.flight.save_interfaces_angles(abs(theta_i)) 
             pt.flight.save_interfaces_transmission_factor(transmission) 
-            pt.flight.save_interfaces_wavelength(pt.wavelength) 
-            pt.flight.save_interfaces_frequency(pt.f) 
-            pt.flight.save_interfaces_mode(pt.branch_number) 
-            
+            pt.flight.save_interfaces_wavelength()   
+            pt.flight.save_interfaces_frequency()    
+            pt.flight.save_interfaces_mode()         
+
         # else:
         if random() < transmission:
 
