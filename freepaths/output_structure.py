@@ -2,7 +2,7 @@
 
 from matplotlib.patches import Rectangle
 from freepaths.config import cf
-from freepaths.scatterers import HorizontalPlane, VerticalPlane
+from freepaths.scatterers import HorizontalPlane, VerticalPlane, Bulk
 
 def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
     """Draw shape of the structure using patches from matplotlib"""
@@ -32,6 +32,12 @@ def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
         if isinstance(interface, VerticalPlane):
             patch = interface.get_patch(color_holes, cf)
             patches.extend(patch if isinstance(patch, list) else [patch])
+
+
+    # Bulks as white patches: 
+    for bulk in cf.bulks:
+        patch = bulk.get_patch(color_holes, cf)
+        patches.extend(patch if isinstance(patch, list) else [patch])
 
     # Particle source areas as red patches:
     for source in cf.particles_sources:
@@ -65,5 +71,7 @@ def draw_structure_side_view(cf, color_holes="white", color_back="gray"):
         if isinstance(interface, HorizontalPlane):
             patch = interface.get_patch(color_holes, cf)
             patches.extend(patch if isinstance(patch, list) else [patch])
+
+   
 
     return patches
