@@ -128,7 +128,7 @@ def vertical_surface_right_scattering_2T(pt, roughness, cf, is_diffuse=False):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else: # add 24/07
+    else: 
 
         # Lambert cosine distribution:
         pt.theta = +pi/2 + asin(2*random() - 1)
@@ -177,7 +177,7 @@ def vertical_surface_left_scattering_1T(pt, roughness, cf=None, *, mat_in=None, 
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    else: # add 24/07
+    else: 
 
         # Lambert cosine distribution:
         pt.theta = -pi/2 + asin(2*random() - 1)
@@ -319,7 +319,7 @@ def vertical_surface_left_scattering(pt, roughness, cf, is_diffuse=False):
         return Scattering.SPECULAR
 
     # Diffuse scattering
-    else: # add 24/07
+    else: 
 
         # Lambert cosine distribution:
         pt.theta = -pi/2 + asin(2*random() - 1)
