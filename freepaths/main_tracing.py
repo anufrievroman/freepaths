@@ -19,11 +19,12 @@ from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite
+from freepaths.materials import Si, SiC, Graphite, Ge 
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.animation import create_animation
 from freepaths.output_plots import plot_data
+from freepaths.scattering import surface_scattering
 
 
 class ParticleSimulator:
@@ -37,6 +38,8 @@ class ParticleSimulator:
         # Initialize the material:
         if cf.media == "Si":
             self.material = Si(cf.temp)
+        elif cf.media == "Ge":  
+            self.material = Ge(cf.temp) 
         elif cf.media == "SiC":
             self.material = SiC(cf.temp)
         elif cf.media == "Graphite":
@@ -64,6 +67,8 @@ class ParticleSimulator:
         self.thermal_maps = ThermalMaps()
 
         self.total_thermal_conductivity = 0.0
+        self.interfaces_transmission_specular = 0 
+        self.interfaces_transmission_diffuse = 0 
 
 
     def simulate_particle(self, index):
@@ -73,6 +78,7 @@ class ParticleSimulator:
         else:
             particle = Electron(self.material)
         flight = Flight(particle)
+        particle.flight = flight
 
         # Run this particle through the structure:
         run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
