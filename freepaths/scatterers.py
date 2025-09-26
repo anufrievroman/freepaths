@@ -9,8 +9,25 @@ from numpy import pi, array, linspace, column_stack, vstack
 from random import random
 from matplotlib.patches import Rectangle, Circle, Polygon
 from scipy.spatial import cKDTree
+import math
+import numpy as np
+
 
 from freepaths.scattering_primitives import *
+from freepaths.scattering_types import ScatteringTypes
+
+from freepaths.interface_smmm import P_spec, alpha_total_2T, alpha_total_1T
+from freepaths.scattering_types import Scattering
+
+
+
+
+
+
+
+
+
+
 
 
 class Hole:
@@ -617,14 +634,222 @@ class CircularPillar():
         """Create a patch in the shape of the hole to use in the plots"""
         return Circle((1e6 * self.x0, 1e6 * self.y0), 1e6 * self.diameter / 2, facecolor=color_holes,)
 
+class Bulk:
 
-class Interface:
-    def is_crossed(self, pt, x, y, z) -> bool:
+    def is_inside(self, x, y, z, cf) -> bool:
+        """Vrai si (x,y,z) est dans l’inclusion de matériau."""
+        pass
+
+    def is_crossed(self, pt, x, y, z)-> bool:
         """
-        Check if particle with given coordinates traverses the plane.
-        It returns True or False depending whether x, y, z are on the other side.
+        Vérifie si le phonon traverse une des 4 faces du rectangle.
+        Retourne True si croisement, sinon False.
         """
         pass
+
+    def scatter(self, pt, scattering_types, x, y, z, cf):
+        """Calcule la nouvelle direction après interaction avec le bulk."""
+        pass
+
+    def get_patch(self, color_holes, cf):
+        """Retourne un (ou des) patch(es) matplotlib pour l’affichage."""
+        pass
+
+class RectangularBulk(Bulk):
+    """
+    Bloc rectangulaire plein (ex: Ge) dans une matrice (ex: Si).
+    Transmission: SMMM 1T (alpha_total_1T).
+    Direction après interaction: mêmes routines que pour RectangularHole,
+    avec inversion correcte des réflexions quand on est "dedans".
+    """
+
+    def __init__(self, x=0, y=0, size_x=100e-9, size_y=100e-9,
+                 roughness=0.0, material=None, depth=None):
+        self.x0 = x
+        self.y0 = y
+        self.size_x = size_x
+        self.size_y = size_y
+        self.depth = depth
+        self.roughness = roughness
+        self.material = material
+
+    # limits
+    @property
+    def x_min(self): return self.x0 - self.size_x/2
+    @property
+    def x_max(self): return self.x0 + self.size_x/2
+    @property
+    def y_min(self): return self.y0 - self.size_y/2
+    @property
+    def y_max(self): return self.y0 + self.size_y/2
+
+    # dinside or not
+    def is_inside(self, x, y, z, cf):
+        if self.depth and z is not None:
+            return (self.x_min <= x <= self.x_max) and (self.y_min <= y <= self.y_max) and \
+                   (z > cf.thickness/2 - self.depth)
+        return (self.x_min <= x <= self.x_max) and (self.y_min <= y <= self.y_max)
+
+    def is_crossed(self, pt, x, y, z) -> bool:
+        inside = (self.x_min <= pt.x <= self.x_max) and (self.y_min <= pt.y <= self.y_max)
+
+        crossed_x = ((pt.x < self.x_min and x >= self.x_min) or
+                     (pt.x > self.x_max and x <= self.x_max) or
+                     (inside and (x < self.x_min or x > self.x_max)))
+        if crossed_x:
+            self._last_cross = ('L' if (pt.x < self.x_min or (inside and x < self.x_min)) else 'R',
+                                'IN' if inside else 'OUT')
+            return True
+
+        crossed_y = ((pt.y < self.y_min and y >= self.y_min) or
+                     (pt.y > self.y_max and y <= self.y_max) or
+                     (inside and (y < self.y_min or y > self.y_max)))
+        if crossed_y:
+            self._last_cross = ('B' if (pt.y < self.y_min or (inside and y < self.y_min)) else 'T',
+                                'IN' if inside else 'OUT')
+            return True
+
+        self._last_cross = None
+        return False
+
+    # transmission probability (SMMM 1T)
+    def transmission_probability(self, pt, cf):
+
+        if self.is_inside(pt.x, pt.y, pt.z, cf):
+            mat_in,  mat_out = self.material,     cf.materials[0]
+        else:
+            mat_in,  mat_out = cf.materials[0],   self.material
+
+        
+        original_speed = pt.speed
+        pt.assign_speed(mat_in);  vg_i = pt.speed
+        pt.assign_speed(mat_out); vg_j = pt.speed
+        pt.speed = original_speed
+        
+        theta_i = np.pi/2 - pt.theta
+        rho_i, rho_j = mat_in.density, mat_out.density
+        omega_i = 2*np.pi*pt.f
+        omega_j = omega_i
+        branch  = pt.branch_number
+        rough   = self.roughness
+
+        return alpha_total_1T(theta_i, vg_i, vg_j, rho_i, rho_j,
+                              omega_i, omega_j, mat_in, mat_out,
+                              branch, rough)
+    def scatter(self, pt, scattering_types, x, y, z, cf):
+        """
+        Interaction with the rectangular bulk.
+        use the same logic as RectangularHole,
+        but with transmission / reflection adapted according to inside/outside.
+        """
+        
+
+        if (self.depth is not None) and (self.depth < cf.thickness) and (pt.z is not None) and (z is not None):
+            z_min = cf.thickness/2.0 - self.depth  # bottom of the rectangle
+
+            #  segment fully under the block -> no interaction with this bulk
+            if (pt.z < z_min) and (z < z_min):
+                return
+
+            # crossiing the bottom (from above to below of Z_min) 
+            if (pt.z - z_min) * (z - z_min) <= 0.0:
+                scattering_types.interfaces = in_plane_surface_scattering(pt, self.roughness)
+                return
+               
+        # like holes
+        y1 = (self.y0 - y) + cos(pt.theta) * (self.size_x/2 - abs(self.x0 - x)) / max(1e-30, abs(sin(pt.theta)))
+        x1 = (self.x0 - x) + sin(pt.theta) * (self.size_y/2 - abs(self.y0 - y)) / max(1e-30, abs(cos(pt.theta)))
+        eps = 1e-60
+        
+        # SMMM proba 
+        T = self.transmission_probability(pt, cf)
+
+        theta_i = np.pi/2 - pt.theta
+        if hasattr(pt, 'flight'):
+            pt.flight.save_interfaces_angles(abs(theta_i))
+            pt.flight.save_interfaces_transmission_factor(T)
+            pt.flight.save_interfaces_wavelength(pt.wavelength)
+            pt.flight.save_interfaces_frequency(pt.f)
+            pt.flight.save_interfaces_mode(pt.branch_number)
+
+        # inside or not
+        inside0 = self.is_inside(pt.x, pt.y, pt.z, cf)
+
+        # know mat in and mat out
+        if inside0:
+            mat_in,  mat_out = self.material,   cf.materials[0]   # inside: Ge -> outside: Si
+        else:
+            mat_in,  mat_out = cf.materials[0], self.material     # inside: Si -> outside: Ge
+
+        # *** DEBUG PRINT  ***
+        z_str = f"{pt.z:.3e}" if getattr(pt, "z", None) is not None else "None"
+        print(f"[BULK] inside={inside0}  mat_in={getattr(mat_in,'name','?')}  "
+            f"mat_out={getattr(mat_out,'name','?')}  x={pt.x:.3e} y={pt.y:.3e} z={z_str}",
+            flush=True)
+
+        # --- left side ---
+        if abs(y1) <= self.size_y/2 + eps and x < self.x0:
+            if random() <= T:  # transmission
+                fn = vertical_surface_right_scattering_1T if not inside0 else vertical_surface_left_scattering_1T
+                scattering_types.interfaces = fn(pt, self.roughness, cf, mat_in=mat_in, mat_out=mat_out)
+                scattering_types.interfaces_transmission = scattering_types.interfaces
+            else:              # reflexion
+                fn = vertical_surface_left_scattering if not inside0 else vertical_surface_right_scattering
+                scattering_types.interfaces = fn(pt, self.roughness, cf)
+
+        # --- right side ---
+        elif abs(y1) <= self.size_y/2 + eps and x > self.x0:
+            if random() <= T:
+                fn = vertical_surface_left_scattering_1T if not inside0 else vertical_surface_right_scattering_1T
+                scattering_types.interfaces = fn(pt, self.roughness, cf, mat_in=mat_in, mat_out=mat_out)
+                scattering_types.interfaces_transmission = scattering_types.interfaces
+            else:
+                fn = vertical_surface_right_scattering if not inside0 else vertical_surface_left_scattering
+                scattering_types.interfaces = fn(pt, self.roughness, cf)
+
+        # --- top side ---
+        elif abs(x1) <= self.size_x/2 + eps and y > self.y0:
+            if random() <= T:
+                fn = horizontal_surface_down_scattering_1T if not inside0 else horizontal_surface_up_scattering_1T
+                scattering_types.interfaces = fn(pt, self.roughness, cf, mat_in=mat_in, mat_out=mat_out)
+                scattering_types.interfaces_transmission = scattering_types.interfaces
+            else:
+                fn = horizontal_surface_up_scattering if not inside0 else horizontal_surface_down_scattering
+                scattering_types.interfaces = fn(pt, self.roughness, cf)
+
+        # --- bottom side ---
+        elif abs(x1) <= self.size_x/2 + eps and y < self.y0:
+            if random() <= T:
+                fn = horizontal_surface_up_scattering_1T if not inside0 else horizontal_surface_down_scattering_1T
+                scattering_types.interfaces = fn(pt, self.roughness, cf, mat_in=mat_in, mat_out=mat_out)
+                scattering_types.interfaces_transmission = scattering_types.interfaces
+            else:
+                fn = horizontal_surface_down_scattering if not inside0 else horizontal_surface_up_scattering
+                scattering_types.interfaces = fn(pt, self.roughness, cf)
+
+    def get_patch(self, color_bulk, cf):
+        return Rectangle(
+            (1e6 * self.x_min, 1e6 * self.y_min),
+            1e6 * self.size_x,
+            1e6 * self.size_y,
+            facecolor=color_bulk,
+            alpha=0.5
+        )
+    
+class Interface:
+
+    
+    def is_crossed(self, pt, x, y, z): 
+        """
+        Vérifie si le phonon traverse l'interface en x,
+        et retourne la direction (gauche vers droite ou inverse)
+        """
+        if (pt.x < self.position_x and x >= self.position_x):
+            return True
+        elif (pt.x > self.position_x and x <= self.position_x):
+            return True
+        else:
+            return False
 
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """
@@ -648,39 +873,109 @@ class Interface:
         pass
 
 
+
+
+
 class VerticalPlane(Interface):
-    """Vertical plane that represents an interface"""
+    """Interface verticale entre deux matériaux, avec modèle SMMM.""" # date of modification 26/06
 
-    def __init__(self, position_x=0, transmission=0):
+    def __init__(self, position_x=0, roughness=0, material=None, depth=None):
+        super().__init__()
         self.position_x = position_x
-        self.transmission = transmission
+        self.roughness = roughness
+        self.material = material
+        self.depth = depth 
+            
+    def get_material_at_position(self, x, cf):
+            """ use the material defined in the interfaces""" 
+            return cf.materials[1]  
 
-    def is_crossed(self, pt, x, y, z):
-        """Check if particle with traverses the vertical plane at given coordinate"""
-        return (pt.x < self.position_x < x) or (pt.x > self.position_x > x)
+    def transmission_probability(self, cf, pt):
+        """Calculate probability"""
 
-    def is_transmitted(self):
-        """Check if particle traverses the plane given the transmission probability"""
-        return random() < self.transmission
+        mat_0 = cf.materials[0]  # Silicium (Si)
+        mat_j = self.material  # Germanium (Ge)
 
-    def scatter(self, pt, scattering_types, x, y, z, cf):
-        """Calculate the new direction after scattering on the interface wall"""
 
-        # Scattering on the left wall:
-        if x < self.position_x:
-            scattering_types.interfaces = vertical_surface_left_scattering(pt, cf.interface_roughness, cf)
+        theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
 
-        # Scattering on the right wall:
+
+        rho_i = getattr(mat_0, 'density', None)
+        rho_j = getattr(mat_j, 'density', None)
+        if rho_i is None or rho_j is None:
+            raise AttributeError(f"Material missing 'density': {mat_0}, {mat_j}")
+
+        # --- update phonon vlocity in materials ---
+        original_speed = pt.speed
+        pt.assign_speed(mat_0)
+        vg_i = pt.speed
+
+        pt.assign_speed(mat_j)
+        vg_j = pt.speed
+        pt.speed = original_speed
+        omega_i = 2 * np.pi * pt.f 
+        omega_j = omega_i  #conservation 
+        branch_number = getattr(pt, 'branch_number', 0) 
+
+        return alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, mat_0, mat_j, branch_number, self.roughness)
+
+
+    def scatter(self, pt, cf, scattering_types):
+  
+
+        """
+        Interagit avec le phonon quand il traverse une interface verticale.
+        Modèle SMMM appliqué aux deux passages :
+        Si → Ge → Si (toujours pareil, peu importe la direction du phonon)
+        """
+        # Crossing the interface:
+        transmission = self.transmission_probability(cf, pt)
+        theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
+        ulp = np.spacing(self.position_x if self.position_x != 0.0 else 1.0)
+        
+        if hasattr(pt, 'flight'): 
+
+            pt.flight.save_interfaces_angles(abs(theta_i)) 
+            pt.flight.save_interfaces_transmission_factor(transmission) 
+            pt.flight.save_interfaces_wavelength(pt.wavelength) 
+            pt.flight.save_interfaces_frequency(pt.f) 
+            pt.flight.save_interfaces_mode(pt.branch_number) 
+            
+        # else:
+        if random() < transmission:
+
+            # Scattering on the left wall:
+            if pt.x > self.position_x:
+                scattering_types.interfaces = vertical_surface_left_scattering_2T(pt, cf.interface_roughness, cf)
+                scattering_types.interfaces_transmission = scattering_types.interfaces 
+                
+
+            # Scattering on the right wall:
+            else:
+                scattering_types.interfaces = vertical_surface_right_scattering_2T(pt, cf.interface_roughness, cf)
+                scattering_types.interfaces_transmission = scattering_types.interfaces  
+
+        # Not crossing the interface:
         else:
-            scattering_types.interfaces = vertical_surface_right_scattering(pt, cf.interface_roughness, cf)
+            # Scattering on the left wall:
+            if pt.x < self.position_x:
+                scattering_types.interfaces = vertical_surface_left_scattering(pt, cf.interface_roughness, cf)
+
+            # Scattering on the right wall:
+            else:
+                scattering_types.interfaces = vertical_surface_right_scattering(pt, cf.interface_roughness, cf)
+  
+
 
     def get_patch(self, color_holes, cf):
-        """Create a patch in the shape of a thin line to use in the plots"""
+        w = 0.005 * cf.width
         return Rectangle(
-            (1e6 * self.position_x, 0),
-            1e6 * 0.005*cf.width, 1e6 * cf.length,
+            (1e6 * (self.position_x - w/2), 0),
+            1e6 * w, 1e6 * cf.length,
             facecolor=color_holes,
         )
+
+
 
 
 class HorizontalPlane(Interface):
