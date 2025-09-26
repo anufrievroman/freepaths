@@ -138,12 +138,6 @@ def vertical_surface_right_scattering_2T(pt, roughness, cf, is_diffuse=False):
         if no_new_scattering(pt, cf):
             return Scattering.DIFFUSE
 
-def is_inside(self, x, y, z, cf):
-    if self.depth and z is not None:
-        return (self.x_min <= x <= self.x_max) and (self.y_min <= y <= self.y_max) and \
-                (z > cf.thickness/2 - self.depth)
-    return (self.x_min <= x <= self.x_max) and (self.y_min <= y <= self.y_max)
-
 def vertical_surface_left_scattering_1T(pt, roughness, cf=None, *, mat_in=None, mat_out=None, is_diffuse=False):
     """Scattering from a vertical surface to the left"""
 
