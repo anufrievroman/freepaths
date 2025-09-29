@@ -134,11 +134,21 @@ def surface_scattering(pt, scattering_types, triangle_scattering_places):
             if scattering_types.pillars is not None:
                 break
 
-    # Scattering on interfaces:
+    # Check for bulks shape:
+    if cf.bulks:
+        for bulk in cf.bulks:
+            if bulk.is_crossed(pt, x, y, z):
+                bulk.scatter(pt, scattering_types, x, y, z, cf)
+
+            # If there was any scattering, then no need to check other bulks:
+            if scattering_types.interfaces is not None:
+                break
+
+# Based on the smmm approach
     if cf.interfaces:
         for interface in cf.interfaces:
-            if interface.is_crossed(pt, x, y, z) and not interface.is_transmitted():
-                interface.scatter(pt, scattering_types, x, y, z, cf)
+            if interface.is_crossed(pt, x, y, z):
+                interface.scatter(pt, cf, scattering_types)
 
     # Correct angle if it became more than 180 degrees:
     pt.correct_angle()

@@ -13,8 +13,11 @@ from freepaths.config import cf
 from freepaths.particle_types import ParticleType
 from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
-from freepaths.materials import Si, SiC, Graphite
+from freepaths.materials import Si, SiC, Graphite, Ge
 import matplotlib.pyplot as plt
+import matplotlib as mpl 
+mpl.rcParams['pdf.compression'] = 9   # compresse PDF flux
+
 
 # Style of the plots:
 all_fonts = font_manager.get_font_names()
@@ -53,6 +56,74 @@ def distribution_calculation(filename, data_range, number_of_nodes):
     distribution[:, 1], _ = np.histogram(data[data != 0], number_of_nodes, range=(0, data_range))
     return distribution
 
+# --- Helper: binning 2D avec moyenne de la transmission ---
+
+def _bin_average_2d(x, y, z, nx=200, ny=100, min_count=1, x_range=None, y_range=None): #add 22/08
+    """
+    Moyenne z dans une grille (x,y).
+    Retourne des points agrégés (x_c, y_c), z_mean et le count par bin.
+    """
+    x = np.asarray(x); y = np.asarray(y); z = np.asarray(z)
+
+    if x_range is None: x_range = (np.nanmin(x), np.nanmax(x))
+    if y_range is None: y_range = (np.nanmin(y), np.nanmax(y))
+
+    xb = np.linspace(x_range[0], x_range[1], nx + 1)
+    yb = np.linspace(y_range[0], y_range[1], ny + 1)
+
+    ix = np.digitize(x, xb) - 1
+    iy = np.digitize(y, yb) - 1
+
+    mask = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & np.isfinite(z)
+    ix = ix[mask]; iy = iy[mask]; z = z[mask]
+
+    sumz = np.zeros((nx, ny), dtype=float)
+    cnt  = np.zeros((nx, ny), dtype=int)
+    np.add.at(sumz, (ix, iy), z)
+    np.add.at(cnt,  (ix, iy), 1)
+
+    mean = np.zeros_like(sumz); nonzero = cnt > 0
+    mean[nonzero] = sumz[nonzero] / cnt[nonzero]
+
+    xc = 0.5 * (xb[:-1] + xb[1:])
+    yc = 0.5 * (yb[:-1] + yb[1:])
+
+    I, J = np.where(cnt >= min_count)
+    return xc[I], yc[J], mean[I, J], cnt[I, J]
+
+# --- Helper: binning 1D avec moyenne ---
+def _bin_average_1d(x, y, nbins=120, min_count=1, x_range=None): # add 22/08
+    """
+    Moyenne y dans des bins de x.
+    Retourne: x_centers, mean(y), std(y), count par bin (filtré par min_count).
+    """
+    x = np.asarray(x); y = np.asarray(y)
+
+    if x_range is None:
+        x_range = (np.nanmin(x), np.nanmax(x))
+
+    edges = np.linspace(x_range[0], x_range[1], nbins + 1)
+    idx = np.digitize(x, edges) - 1
+
+    mask = (idx >= 0) & (idx < nbins) & np.isfinite(y)
+    idx = idx[mask]; y = y[mask]
+
+    sumy  = np.zeros(nbins); sumy2 = np.zeros(nbins); cnt = np.zeros(nbins, dtype=int)
+    np.add.at(sumy,  idx, y)
+    np.add.at(sumy2, idx, y*y)
+    np.add.at(cnt,   idx, 1)
+
+    mean = np.full(nbins, np.nan); std = np.full(nbins, np.nan)
+    nz = cnt > 0
+    mean[nz] = sumy[nz] / cnt[nz]
+    var = np.maximum(sumy2[nz] / cnt[nz] - mean[nz]**2, 0.0)
+    std[nz]  = np.sqrt(var)
+
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    keep = cnt >= min_count
+    return centers[keep], mean[keep], std[keep], cnt[keep]
+
+
 
 def angle_distribution_calculation():
     """Analyse measured particle angles and create their distribution"""
@@ -60,11 +131,29 @@ def angle_distribution_calculation():
     initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
     hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
     hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((360, 3))
+    distribution = np.zeros((360, 5)) 
     distribution[:, 0] = range(-180, 180)
     exit_angles = all_exit_angles[all_exit_angles != 0]
     distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
     distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
+    distribution[:, 3], _ = np.histogram(np.degrees(hole_diff_angles), 360, range=(-180, 180)) 
+    distribution[:, 4], _ = np.histogram(np.degrees(hole_spec_angles), 360, range=(-180, 180)) 
+    return distribution
+
+def interfaces_transmission_angles_calculation(): 
+    all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
+    initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
+    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8')  
+    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8')  
+    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')  
+    distribution = np.zeros((360, 6)) 
+    distribution[:, 0] = range(-180, 180)
+    exit_angles = all_exit_angles[all_exit_angles != 0]
+    distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
+    distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
+    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180))  
+    distribution[:, 4], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180))  
+    distribution[:, 5], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180))  
     return distribution
 
 
@@ -72,12 +161,22 @@ def scattering_angle_distribution_calculation():
     """Analyse scattering particle angles and create their distribution"""
     hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
     hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((360, 3))
-    distribution[:, 0] = range(-180, 180)
+    distribution = np.zeros((360, 3)) 
+    distribution[:, 0] = range(-180, 180) 
     distribution[:, 1], _ = np.histogram(np.degrees(hole_diff_angles), 360, range=(-180, 180))
     distribution[:, 2], _ = np.histogram(np.degrees(hole_spec_angles), 360, range=(-180, 180))
     return distribution
 
+def scattering_interfaces_angles_distribution_calculation(): 
+    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8') 
+    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8') 
+    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8') 
+    distribution = np.zeros((360, 4)) 
+    distribution[:, 0] = range(-180, 180) 
+    distribution[:, 1], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180)) 
+    distribution[:, 2], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180)) 
+    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180)) 
+    return distribution
 
 def wavelength_distribution_calculation(number_of_nodes):
     """Calculate particle wavelength distribution from their frequencies and velocities"""
@@ -156,6 +255,219 @@ def plot_scattering_angle_distribution():
     fig.savefig("Distribution of hole scattering angles.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of hole scattering angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
+
+def plot_interfaces_angles_distribution(): 
+    """Plot distribution of interfaces angles"""   
+    angle_distributions = scattering_interfaces_angles_distribution_calculation()
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    ax.grid(zorder=0)
+    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 'royalblue', label="Diffuse", zorder=2)  
+    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 0, alpha=0.2, zorder=2)  
+    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 'deeppink', label="Specular", zorder=3)  
+    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 0, alpha=0.2, zorder=3)  
+    ax.set_theta_zero_location('N')
+    ax.set_theta_direction(-1)
+    ax.legend(facecolor='white', framealpha=1, ncols=2, loc="lower center", bbox_to_anchor=(0.5, -0.17))
+    ax.set_title('Number of transmitted phonons per angle')
+    fig.savefig("Distribution of interfaces angles.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+    np.savetxt('Data/Distribution of interfaces angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
+
+
+import subprocess
+import os
+
+def open_pdf_with_mupdf(pdf_path):
+    try:
+        # path of mu pdf
+        mupdf_path = r"C:\Users\victo\Downloads\mupdf-1.26.2-windows\mupdf-1.26.2-windows\mupdf-gl.exe"
+
+        # Lancer mupdf avec ton fichier
+        subprocess.Popen([mupdf_path, os.path.abspath(pdf_path)])
+    except Exception as e:
+        print(f"[ERROR] Impossible d'ouvrir le PDF avec MuPDF : {e}")
+
+def plot_transmission_vs_angle():
+    try:
+        angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
+        angles_degrees = np.degrees(angles)
+        transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
+        modes = np.loadtxt("Data/All interfaces mode.csv", dtype='int', encoding='utf-8')
+
+        if not (len(angles) == len(transmission_factor) == len(modes)):
+            raise ValueError("Data arrays (angles, transmission, modes) must have the same length.")
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        mode_colors = {0: 'red', 1: 'blue', 2: 'green'}
+        mode_labels = {0: 'LA', 1: 'TA1', 2: 'TA2'}
+
+        for mode_number in [0, 1, 2]:
+            mask = (modes == mode_number)
+            if np.any(mask):
+                ax.scatter(
+                    angles_degrees[mask],
+                    transmission_factor[mask],
+                    alpha=0.5,
+                    s=10,
+                    c=mode_colors[mode_number],
+                    label=mode_labels[mode_number],
+                    edgecolors='none',
+                    rasterized=True,          
+                )
+
+        ax.set_xlabel('Angle (degree)')
+        ax.set_ylabel('Transmission factor')
+        ax.set_title('Transmission factor vs Angle (colored by mode)')
+        ax.legend()
+        ax.set_xlim(0, 90)
+        ax.set_ylim(0, 1)
+        ax.grid(True, linestyle='--', alpha=0.5)
+        fig.tight_layout()
+
+        out_pdf = "Transmission coefficient vs angle.pdf"
+        fig.savefig(out_pdf, dpi=220, format='pdf', bbox_inches="tight")  # dpi = résolution
+        plt.close(fig)
+
+        try:
+            open_pdf_with_mupdf(out_pdf)  # open automatically with mupdf
+        except Exception:
+            pass
+
+    except Exception as e:
+        print(f"[ERROR] plot_transmission_vs_angle: {e}")
+
+def plot_transmission_vs_wavelength():
+    """Plot transmission vs wavelength"""
+    wavelength = np.loadtxt("Data/All interfaces wavelength.csv", dtype='float', encoding='utf-8')
+    transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
+
+    # check the size correspondance and if there are data 
+    if len(wavelength) == 0 or len(wavelength) != len(transmission_factor):
+        return
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    
+    # convert wavelength to nm for better readability
+    ax.scatter(wavelength * 1e9, transmission_factor, alpha=0.7, s=10)
+
+    # labels
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Transmission factor')
+
+    # axes limits (nm)
+    wl_min_nm = np.min(wavelength) * 1e9
+    wl_max_nm = np.max(wavelength) * 1e9
+    if wl_min_nm == wl_max_nm:
+        # if all lambda are identical
+        if wl_min_nm == 0:
+            ax.set_xlim(0, 100) # random plage
+        else:
+            margin = wl_min_nm * 0.1
+            ax.set_xlim(wl_min_nm - margin, wl_max_nm + margin)
+    else:
+         ax.set_xlim(0.8 * wl_min_nm, 1.2 * wl_max_nm)
+
+    ax.set_ylim(0, 1)
+    ax.grid(True, linestyle='--', alpha=0.5)
+    fig.tight_layout()
+    fig.savefig("Transmission factor vs wavelength.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+
+    # save the brut data 
+    output_data = np.column_stack((wavelength * 1e9, transmission_factor))
+    header = "Wavelength_nm,Transmission_Factor"
+    np.savetxt('Data/Distribution of interfaces wavelength.csv', output_data, fmt='%.6f,%.6f', delimiter=",", header=header, comments='')
+
+def plot_transmission_vs_frequency():
+    """Plot transmission vs frequency"""
+    frequency = np.loadtxt("Data/All interfaces frequency.csv", dtype='float', encoding='utf-8')
+    transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(frequency, transmission_factor, alpha=0.5, s=1, c='blue', label='Événements')
+    ax.set_xlabel('Frequency (THz)')
+    ax.set_ylabel('Transmission factor')
+    ax.legend()
+    # axes limits (en nm)
+    wl_min = np.min(frequency) 
+    wl_max = np.max(frequency) 
+    if wl_min == wl_max:
+        # if all lambda are identical
+        if wl_min == 0:
+            ax.set_xlim(0, 100) # random plage
+        else:
+            margin = wl_min * 0.1
+            ax.set_xlim(wl_min - margin, wl_max + margin)
+    else:
+         ax.set_xlim(0.8 * wl_min, 1.2 * wl_max)
+   
+    ax.set_ylim(0, 1)
+    ax.grid(True, linestyle='--', alpha=0.5)
+    fig.tight_layout()
+    fig.savefig("Transmission coefficient vs frequency.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+    np.savetxt('Data/Distribution of frequency.csv', frequency, fmt='%1.3e', delimiter=",")
+        
+def plot_transmission_heatmaps_by_mode():
+    """
+    Génère un PDF multipage : 1 page par mode (LA, TA1, TA2).
+    Les nuages sont rasterisés pour un PDF léger.
+    Ouvre automatiquement le PDF avec MuPDF à la fin.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
+
+    # --- loading data ---
+    freq  = np.loadtxt("Data/All interfaces frequency.csv", dtype=float, encoding="utf-8")
+    ang   = np.loadtxt("Data/All interfaces angles.csv",    dtype=float, encoding="utf-8")
+    T     = np.loadtxt("Data/All interfaces transmission factor.csv", dtype=float, encoding="utf-8")
+    modes = np.loadtxt("Data/All interfaces mode.csv",      dtype=int,   encoding="utf-8")
+
+    if not (len(freq) == len(ang) == len(T) == len(modes)):
+        raise ValueError("The files does not have the same length.")
+
+    ang_deg = np.degrees(ang)
+
+    x_min, x_max = np.nanmin(freq), np.nanmax(freq)
+    y_min, y_max = 0.0, 90.0
+    vmin, vmax = 0.0, 1.0  # transmission e [0,1]
+
+    mode_labels = {0: "LA", 1: "TA1", 2: "TA2"}
+    pdf_filename = "Transmission_heatmaps_all_modes.pdf"
+
+    with PdfPages(pdf_filename) as pdf:
+        for m in (0, 1, 2):
+            mask = (modes == m) & np.isfinite(freq) & np.isfinite(ang_deg) & np.isfinite(T)
+
+            fig, ax = plt.subplots(figsize=(8, 6))
+            if np.any(mask):
+                sc = ax.scatter(
+                    freq[mask], ang_deg[mask],
+                    c=T[mask], cmap="jet", vmin=vmin, vmax=vmax,
+                    s=10, edgecolors="none", rasterized=True  # << RASTER
+                )
+                cbar = plt.colorbar(sc, ax=ax)
+                cbar.set_label("Transmission factor")
+            else:
+                ax.text(0.5, 0.5, "No data for this mode", ha="center", va="center", transform=ax.transAxes)
+
+            ax.set_xlabel("Frequency (THz)")
+            ax.set_ylabel("Incident angle (degrees)")
+            ax.set_title(f"Transmission vs Frequency and Angle — Mode {mode_labels[m]}")
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(y_min, y_max)
+            fig.tight_layout()
+
+            # one page per mode
+            pdf.savefig(fig, dpi=220, bbox_inches="tight")
+            plt.close(fig)
+
+    print(f"[INFO] PDF multipage sauvegardé : {pdf_filename}")
+    try:
+        open_pdf_with_mupdf(pdf_filename) # open automatically with mupdf
+    except Exception:
+        pass
 
 
 def plot_free_path_distribution():
@@ -571,6 +883,7 @@ def plot_scattering_map():
     plt.close(fig)
 
 
+
 def plot_trajectories():
     """Plot the particle trajectories"""
 
@@ -580,9 +893,10 @@ def plot_trajectories():
     fig, ax = plt.subplots()
 
     # Draw structure:
-    patches = draw_structure_top_view(cf, color_holes='white', color_back=cf.output_structure_color)
+    patches = draw_structure_top_view(cf, color_holes='black', color_back=cf.output_structure_color)
     for patch in patches:
         ax.add_patch(patch)
+
 
     # Draw paths:
     for index in range(cf.output_trajectories_of_first):
@@ -594,7 +908,9 @@ def plot_trajectories():
     # Set labels:
     ax.set_xlabel('X (μm)')
     ax.set_ylabel('Y (μm)')
-    ax.set_aspect('equal', 'datalim')
+    # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit 
+    ax.set_xlim(2*-cf.width*1e6, 2*cf.width*1e6) 
+    ax.set_ylim(0, cf.length*1e6) 
     fig.savefig("Particle paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
 
@@ -690,14 +1006,15 @@ def plot_structure():
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
-
-
+    
 def plot_material_properties():
     """Plot phonon dispersion and display some other material properties"""
 
     # Initialize the material:
     if cf.media == "Si":
         material = Si(cf.temp)
+    elif cf.media == "Ge ":
+        material = Ge(cf.temp)  
     elif cf.media == "SiC":
         material = SiC(cf.temp)
     elif cf.media == "Graphite":
@@ -728,6 +1045,8 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
         plot_structure,
         plot_trajectories,
         plot_angle_distribution,
+        plot_interfaces_angles_distribution,
+        plot_transmission_vs_angle,
         plot_scattering_angle_distribution,
         plot_free_path_distribution,
         plot_frequency_distribution,
@@ -745,6 +1064,9 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
         plot_scattering_statistics,
         plot_scattering_map,
         plot_material_properties,
+        plot_transmission_vs_wavelength,
+        plot_transmission_vs_frequency,
+        plot_transmission_heatmaps_by_mode,
     ]
     
     electron_function_list = [
@@ -793,3 +1115,7 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
     plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
     plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
     plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
+
+
+
+

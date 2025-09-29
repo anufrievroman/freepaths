@@ -45,6 +45,11 @@ class Flight:
         self.hole_spec_scattering_angles = []
         self.free_paths_along_y = []
         self.thermal_conductivity = 0.0
+        self.interfaces_angles = []  
+        self.interfaces_transmission_factor = [] 
+        self.interfaces_wavelength = [] 
+        self.interfaces_frequency = [] 
+        self.interfaces_mode = [] 
 
     @property
     def mean_free_path(self):
@@ -70,7 +75,29 @@ class Flight:
 
     def save_hole_spec_scattering_angle(self, angle):
         """Save angle of specular scattering from the hole"""
-        self.hole_spec_scattering_angles.append(angle)
+        self.f_angles.append(angle)
+
+
+    def save_interfaces_angles(self, angle):  
+        """Save a transmission event angle"""
+        self.interfaces_angles.append(angle)    
+      
+
+    def save_interfaces_transmission_factor(self, alpha_total):  
+        """Save a transmission event"""
+        self.interfaces_transmission_factor.append(alpha_total)     
+
+    def save_interfaces_wavelength(self): 
+        """Save a wavelength event"""
+        self.interfaces_wavelength.append(self.particle.wavelength) 
+
+    def save_interfaces_frequency(self): 
+        """Save a frequency event""" 
+        self.interfaces_frequency.append(self.particle.f) 
+
+    def save_interfaces_mode (self):
+        """Save mode"""
+        self.interfaces_mode.append(self.particle.branch_number)
 
     def restart(self):
         """Restart the flight after a scattering event"""

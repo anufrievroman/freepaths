@@ -67,8 +67,14 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if scattering_types.is_specular_on_hole:
             flight.save_hole_spec_scattering_angle(particle.theta)
 
+                # If interface transmission has occurred, record it:
+        if scattering_types.interfaces_transmission: 
+            places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission) 
+        elif scattering_types.interfaces_transmission:
+            places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission) 
         else:
             flight.add_step(cf.timestep)
+            
         
         # Record presence of the particle at this timestep and move on:
         thermal_maps.add_energy_to_maps(particle, step_number, material)
@@ -77,3 +83,4 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         triangle_scattering_places.reset()
         particle.move()
 
+   

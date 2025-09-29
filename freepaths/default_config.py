@@ -88,6 +88,7 @@ INTERFACE_ROUGHNESS              = 0.2e-9
 HOLES                            = []
 PILLARS                          = []
 INTERFACES                       = []
+BULKS                            = [] 
 
 # Multiprocessing:
 NUMBER_OF_PROCESSES              = 10
