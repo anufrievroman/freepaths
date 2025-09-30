@@ -5,7 +5,7 @@ import colorama
 from colorama import Fore, Style
 
 
-__version__ = "2.1.3"
+__version__ = "2.2"
 
 colorama.init()
 
@@ -27,12 +27,12 @@ def run():
     if args.sampling:
         import freepaths.main_mfp_sampling
         freepaths.main_mfp_sampling.main(args.input_file)
-        
+
     elif args.electron:
         import freepaths.main_tracing
         from freepaths.particle_types import ParticleType
         freepaths.main_tracing.main(args.input_file, ParticleType.ELECTRON)
-        
+
     else:
         import freepaths.main_tracing
         from freepaths.particle_types import ParticleType

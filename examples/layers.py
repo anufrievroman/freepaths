@@ -7,9 +7,9 @@ T                              = 300
 OUTPUT_TRAJECTORIES_OF_FIRST   = 10
 
 # Simulation time parameters:
-TIMESTEP                       = 0.5e-12 
-NUMBER_OF_TIMESTEPS            = 700000 
-NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*8 
+TIMESTEP                       = 0.5e-12
+NUMBER_OF_TIMESTEPS            = 700000
+NUMBER_OF_VIRTUAL_TIMESTEPS    = NUMBER_OF_TIMESTEPS*8
 NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
 NUMBER_OF_TIMEFRAMES            = 8
 
@@ -47,12 +47,6 @@ PARTICLE_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=
 
 
 
-# Materials: Si (bulk) et Ge (material layers) 
-from freepaths.materials import Si, Ge #import yout materials here
-
-MATERIALS = [Si(temp=T), Ge(temp=T)] # put all the materials you want to use in this list
-
-
 #-----if you devide the length by the period you must habe an integer number of interfaces-----#
 INTERFACES = []
 period = 20e-9 # modify this value to change the distance between two interfaces
@@ -63,7 +57,7 @@ INTERFACE_ROUGHNESS = 1.5e-9  # roughness of the interfaces
 
 x = start_x
 while x <= end_x:
-    INTERFACES.append(VerticalPlane(position_x=x, roughness=INTERFACE_ROUGHNESS, material=Ge(temp=T), depth = THICKNESS)) # add the material of the layers here
+    INTERFACES.append(VerticalPlane(position_x=x, roughness=INTERFACE_ROUGHNESS, inner_material='Ge', outer_material=MEDIA, depth = THICKNESS)) # add the material of the layers here
     x += period
 
 

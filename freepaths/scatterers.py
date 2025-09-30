@@ -18,6 +18,7 @@ from freepaths.scattering_types import ScatteringTypes
 
 from freepaths.interface_smmm import P_spec, alpha_total_2T, alpha_total_1T
 from freepaths.scattering_types import Scattering
+from freepaths.materials import Si, SiC, Graphite, Ge
 
 class Hole:
     def is_inside(self, x, y, z, cf) -> bool:
@@ -709,12 +710,12 @@ class RectangularBulk(Bulk):
         else:
             mat_in,  mat_out = cf.materials[0],   self.material
 
-        
+
         original_speed = pt.speed
         pt.assign_speed(mat_in);  vg_i = pt.speed
         pt.assign_speed(mat_out); vg_j = pt.speed
         pt.speed = original_speed
-        
+
         theta_i = np.pi/2 - pt.theta
         rho_i, rho_j = mat_in.density, mat_out.density
         omega_i = 2*np.pi*pt.f
@@ -731,7 +732,7 @@ class RectangularBulk(Bulk):
         use the same logic as RectangularHole,
         but with transmission / reflection adapted according to inside/outside.
         """
-        
+
 
         if (self.depth is not None) and (self.depth < cf.thickness) and (pt.z is not None) and (z is not None):
             z_min = cf.thickness/2.0 - self.depth  # bottom of the rectangle
@@ -740,17 +741,17 @@ class RectangularBulk(Bulk):
             if (pt.z < z_min) and (z < z_min):
                 return
 
-            # crossiing the bottom (from above to below of Z_min) 
+            # crossiing the bottom (from above to below of Z_min)
             if (pt.z - z_min) * (z - z_min) <= 0.0:
                 scattering_types.interfaces = in_plane_surface_scattering(pt, self.roughness)
                 return
-               
+
         # like holes
         y1 = (self.y0 - y) + cos(pt.theta) * (self.size_x/2 - abs(self.x0 - x)) / max(1e-30, abs(sin(pt.theta)))
         x1 = (self.x0 - x) + sin(pt.theta) * (self.size_y/2 - abs(self.y0 - y)) / max(1e-30, abs(cos(pt.theta)))
         eps = 1e-60
-        
-        # SMMM proba 
+
+        # SMMM proba
         T = self.transmission_probability(pt, cf)
 
         theta_i = np.pi/2 - pt.theta
@@ -824,11 +825,11 @@ class RectangularBulk(Bulk):
             facecolor=color_bulk,
             alpha=0.5
         )
-    
+
 class Interface:
 
-    
-    def is_crossed(self, pt, x, y, z): 
+
+    def is_crossed(self, pt, x, y, z):
         """
         Vérifie si le phonon traverse l'interface en x,
         et retourne la direction (gauche vers droite ou inverse)
@@ -862,82 +863,91 @@ class Interface:
         pass
 
 class VerticalPlane(Interface):
-    """Vertical interface between two materials with the smmm approach SMMM.""" 
+    """Vertical interface between two materials with the smmm approach SMMM."""
 
-    def __init__(self, position_x=0, roughness=0, material=None, depth=None):
+    def __init__(self, position_x=0, roughness=0, outer_material=None, inner_material=None, depth=None):
         super().__init__()
         self.position_x = position_x
         self.roughness = roughness
-        self.material = material
-        self.depth = depth 
-            
-    def get_material_at_position(self, x, cf):
-            """ use the material defined in the interfaces""" 
-            return cf.materials[1]  
+        self.inner_material = inner_material
+        self.outer_material = outer_material
+        self.depth = depth
+
+    def assign_materials(self, cf):
+        # Initialize the material:
+        if self.inner_material == "Si":
+            self.inner_material = Si(cf.temp)
+        if self.inner_material == "Ge":
+            self.inner_material = Ge(cf.temp)
+        if self.inner_material == "SiC":
+            self.inner_material = SiC(cf.temp)
+        if self.inner_material == "Graphite":
+            self.inner_material = Graphite(cf.temp)
+        if self.outer_material == "Si":
+            self.outer_material = Si(cf.temp)
+        if self.outer_material == "Ge":
+            self.outer_material = Ge(cf.temp)
+        if self.outer_material == "SiC":
+            self.outer_material = SiC(cf.temp)
+        if self.outer_material == "Graphite":
+            self.outer_material = Graphite(cf.temp)
 
     def transmission_probability(self, cf, pt):
-        """Calculate probability"""
+        """Calculate probability across the interface"""
 
-        mat_0 = cf.materials[0]  # Silicium (Si)
-        mat_j = self.material  # Germanium (Ge)
-
+        self.assign_materials(cf)
 
         theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
 
+        mat_0 = self.outer_material
+        mat_j = self.inner_material
 
-        rho_i = getattr(mat_0, 'density', None)
-        rho_j = getattr(mat_j, 'density', None)
-        if rho_i is None or rho_j is None:
-            raise AttributeError(f"Material missing 'density': {mat_0}, {mat_j}")
+        rho_i = self.outer_material.density # getattr(mat_0, 'density', None)
+        rho_j = self.inner_material.density #getattr(mat_j, 'density', None)
 
-        # --- update phonon velocity in materials ---
-        original_speed = pt.speed
-        pt.assign_speed(mat_0)
+        # Assing velocities:
         vg_i = pt.speed
-
-        pt.assign_speed(mat_j)
+        pt.assign_speed(self.inner_material)
         vg_j = pt.speed
-        pt.speed = original_speed
-        omega_i = 2 * np.pi * pt.f 
-        omega_j = omega_i  #conservation 
-        branch_number = getattr(pt, 'branch_number', 0) 
+        pt.speed = vg_i
+        omega_i = 2 * np.pi * pt.f
+        omega_j = omega_i  #conservation
 
-        return alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, mat_0, mat_j, branch_number, self.roughness)
+        self.vg_i_to_vg_j = vg_i / vg_j
+
+        return alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, mat_0, mat_j, pt.branch_number, self.roughness)
 
 
     def scatter(self, pt, cf, scattering_types):
-  
-
         """
-        phonon interaction when it cross a vertical interface
+        Phonon interaction when it cross a vertical interface
         SMMM appraoch for two crossings:
         Si → Ge → Si (always the same, whether it comes from the right or left side)
         """
         # Crossing the interface:
         transmission = self.transmission_probability(cf, pt)
         theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
-        
-        if hasattr(pt, 'flight'): 
 
-            pt.flight.save_interfaces_angles(abs(theta_i)) 
-            pt.flight.save_interfaces_transmission_factor(transmission) 
-            pt.flight.save_interfaces_wavelength()   
-            pt.flight.save_interfaces_frequency()    
-            pt.flight.save_interfaces_mode()         
+        if hasattr(pt, 'flight'):
+
+            pt.flight.save_interfaces_angles(abs(theta_i))
+            pt.flight.save_interfaces_transmission_factor(transmission)
+            pt.flight.save_interfaces_wavelength()
+            pt.flight.save_interfaces_frequency()
+            pt.flight.save_interfaces_mode()
 
         # else:
         if random() < transmission:
 
             # Scattering on the left wall:
             if pt.x > self.position_x:
-                scattering_types.interfaces = vertical_surface_left_scattering_2T(pt, cf.interface_roughness, cf)
-                scattering_types.interfaces_transmission = scattering_types.interfaces 
-                
+                scattering_types.interfaces = vertical_surface_left_scattering_2T(pt, cf.interface_roughness, cf, self.vg_i_to_vg_j)
+                scattering_types.interfaces_transmission = scattering_types.interfaces
 
             # Scattering on the right wall:
             else:
-                scattering_types.interfaces = vertical_surface_right_scattering_2T(pt, cf.interface_roughness, cf)
-                scattering_types.interfaces_transmission = scattering_types.interfaces  
+                scattering_types.interfaces = vertical_surface_right_scattering_2T(pt, cf.interface_roughness, cf, self.vg_i_to_vg_j)
+                scattering_types.interfaces_transmission = scattering_types.interfaces
 
         # Not crossing the interface:
         else:
@@ -948,8 +958,6 @@ class VerticalPlane(Interface):
             # Scattering on the right wall:
             else:
                 scattering_types.interfaces = vertical_surface_right_scattering(pt, cf.interface_roughness, cf)
-  
-
 
     def get_patch(self, color_holes, cf):
         w = 0.005 * cf.width
@@ -958,8 +966,6 @@ class VerticalPlane(Interface):
             1e6 * w, 1e6 * cf.length,
             facecolor=color_holes,
         )
-
-
 
 
 class HorizontalPlane(Interface):

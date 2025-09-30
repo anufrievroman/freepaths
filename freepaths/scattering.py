@@ -38,7 +38,7 @@ def reinitialization(pt, scattering_types):
     if cf.hot_side_position_left and x < -cf.width / 2:
         scattering_types.hot_side = vertical_surface_right_scattering(pt, cf.side_wall_roughness, cf, is_diffuse=True)
         return True
-    
+
     return False
 
 

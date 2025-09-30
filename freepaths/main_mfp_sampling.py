@@ -121,7 +121,7 @@ def main(input_file):
 
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")
-    plot_data(mfp_sampling=True)
+    plot_data(particle_type, cf, mfp_sampling=True)
 
     # Output general information:
     output_general_information(start_time)

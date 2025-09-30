@@ -99,34 +99,32 @@ def output_scattering_information(scatter_stats):
                     f'{sc_on_pill_spec:.2f}% - specular)']
                     )
 
-    # if cf.interfaces:
-    sc_on_interf = 100*(np.sum(scatter_stats.interfaces_diffuse) +
-                            np.sum(scatter_stats.interfaces_specular)) / total
-    sc_on_interf_diff = 100*np.sum(scatter_stats.interfaces_diffuse) / total_interf
-    sc_on_interf_spec = 100*np.sum(scatter_stats.interfaces_specular) / total_interf
-    info.extend([
-                f'\n{sc_on_interf:.2f}% - scattering on interfaces ',
-                f'({sc_on_interf_diff:.2f}% - diffuse, ',
-                f'{sc_on_interf_spec:.2f}% - specular)']
-                )
+    if cf.interfaces:
+        sc_on_interf = 100*(np.sum(scatter_stats.interfaces_diffuse) +
+                                np.sum(scatter_stats.interfaces_specular)) / total
+        sc_on_interf_diff = 100*np.sum(scatter_stats.interfaces_diffuse) / total_interf
+        sc_on_interf_spec = 100*np.sum(scatter_stats.interfaces_specular) / total_interf
+        info.extend([
+                    f'\n{sc_on_interf:.2f}% - scattering on interfaces ',
+                    f'({sc_on_interf_diff:.2f}% - diffuse, ',
+                    f'{sc_on_interf_spec:.2f}% - specular)']
+                    )
 
-    trans_on_interf = 100 * (np.sum(scatter_stats.interfaces_transmission_diffuse) +
-                            np.sum(scatter_stats.interfaces_transmission_specular)) / total_interf 
-    trans_on_interf_diff = 100*np.sum(scatter_stats.interfaces_transmission_diffuse)/ total_transmission 
-    trans_on_interf_spec = 100*np.sum(scatter_stats.interfaces_transmission_specular)/ total_transmission 
+        trans_on_interf = 100 * (np.sum(scatter_stats.interfaces_transmission_diffuse) +
+                                np.sum(scatter_stats.interfaces_transmission_specular)) / total_interf
+        trans_on_interf_diff = 100*np.sum(scatter_stats.interfaces_transmission_diffuse)/ total_transmission
+        trans_on_interf_spec = 100*np.sum(scatter_stats.interfaces_transmission_specular)/ total_transmission
 
 
-    info.extend([
-                f'\n{trans_on_interf:.2f}% - transmission through interfaces ', 
-                f'({trans_on_interf_diff:.2f}% - diffuse, ', 
-                f'{trans_on_interf_spec:.2f}% - specular)' 
-                ])
-                    
-    # Write the file: j essaie d enlever ca pour voir si ca marche pour vrm recopier hole
+        info.extend([
+                    f'\n{trans_on_interf:.2f}% - transmission through interfaces ',
+                    f'({trans_on_interf_diff:.2f}% - diffuse, ',
+                    f'{trans_on_interf_spec:.2f}% - specular)'
+                    ])
+
+    # Write the file:
     with open("Information.txt", "a", encoding="utf-8") as file:
         file.writelines(info)
-    
-        
 
 
 def output_parameter_warnings():
@@ -152,4 +150,4 @@ def output_parameter_warnings():
     # Check how many particles reached the cold side during simulation:
     percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
     if percentage < 95:
-        logging.warning(f"Only {percentage}% of particles reached the cold side. Increase number of timesteps.")
+        logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")

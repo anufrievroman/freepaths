@@ -1,22 +1,22 @@
 """Module that assigns physical properties according to chosen material"""
 
+from abc import ABC, abstractmethod
 import numpy as np
 from scipy.constants import electron_volt, electron_mass
-from abc import ABC, abstractmethod
 
-    
+
 class Material(ABC):
-    
+
     @abstractmethod
     def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
         pass
-    
+
     @abstractmethod
     def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature"""
         pass
-    
+
     @abstractmethod
     def assign_heat_capacity(self):
         """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
@@ -56,7 +56,7 @@ class Si(Material):
 
     def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature"""
-        deb_temp = 152.0  # Debye temperature normal constant calculated for Si 
+        deb_temp = 152.0  # Debye temperature normal constant calculated for Si
         tau_impurity = 1 / (2.95e-45 * (omega ** 4))
         tau_umklapp = 1 / (0.95e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
         return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
@@ -73,7 +73,7 @@ class Si(Material):
         else:
             coeffs = above_50K_coeffs
         self.heat_capacity = np.polyval(coeffs, self.temp)
-    
+
     def assign_electrical_properties(self, fermi_level):
         """Assign differents electrical properties to the material."""
         self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
@@ -81,72 +81,12 @@ class Si(Material):
         self.effective_hole_dos_mass = 0.81 * electron_mass
         self.effective_electron_mass = 0.26 * electron_mass
         self.effective_hole_mass = 0.23 * electron_mass # light hole
-        
+
         if fermi_level:
             self.fermi_level = fermi_level
         else:
             self.fermi_level = -0.037 * electron_volt # [J]
-        
-class Ge: #I am calling it Ge because it is shorter but it is exactly the propeties of Si 0.8 and Ge 0.2
-    """
-    Physical properties of Germanium.
 
-    Dispersion – Adapted from:
-        - M. Muta, H. Nakamura, and S. Yamanaka, *J. Alloys Compd.* **392**, 306–309 (2005)
-        - H. H. Li, *J. Phys. Chem. Ref. Data* **9**, 561 (1980)
-    
-    Relaxation time – Adapted from:
-        - Maire et al., *Scientific Reports* **7**, 41794 (2017) for impurity and Umklapp models in semiconductors
-        - Callaway model-based simplification
-
-    Heat capacity – Fit based on:
-        - Desai P.D., *J. Phys. Chem. Ref. Data* **13**, 1069 (1984)
-        - W. Wunderlich, *Thermophysical Properties of Materials*, Springer (2005)
-    """
-
-    def __init__(self, temp, num_points=1000):
-        self.name = "Ge"
-        self.default_speed = 3700   # [m/s] – avera LA/TA
-        self.density = 3008         # [kg/m^3] Density	Si1-xGex	(2.329+3.493x-0.499x**2)g cm-3	300 K	Schaffler F. et al.(2001) 4/07
-        self.temp = temp
-        self.vg = 3700              # averge group velocity approximation 24/06
-        self.assign_dispersion(num_points)
-        self.assign_heat_capacity()
-
-    def assign_dispersion(self, num_points):
-        """Assign phonon dispersion"""
-
-        # Coefficients fro approximation f(k) from Ge data – need to be change 
-        coefficients_LA = [-2.0e-19, -1.0e-8, 1245.0, 0]
-        coefficients_TA = [5.0e-29, 4.0e-19, -6.0e-8, 950.0, 0]
-
-        self.dispersion = np.zeros((num_points, 4))
-        self.dispersion[:, 0] = np.linspace(0, 12e9, num_points)
-        self.dispersion[:, 1] = np.abs(np.polyval(coefficients_LA, self.dispersion[:, 0]))  # LA
-        self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA
-        self.dispersion[:, 3] = self.dispersion[:, 2]  # TA2 = TA1 (approx)
-
-    def relaxation_time(self, omega):
-        """Relaxation time model (impurities + Umklapp scattering)"""
-
-        # Debye Température approx from Ge : ~230 K
-        deb_temp = 586.8 #(640 - 266x) K	300 K	Schaffler F. et al.(2001) 4/07
-        tau_impurity = 1 / (3.5e-45 * (omega ** 4))  # Maire et al.
-        tau_umklapp = 1 / (1.1e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
-        return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
-
-    def assign_heat_capacity(self):
-        """Empirical polynomial fits for Cp vs T"""
-
-        # Fit from experimental data of Desai + Wunderlich
-        if self.temp < 20:
-            coeffs = np.array([0.00052, -0.0025, 0.0078])
-        elif 20 <= self.temp <= 50:
-            coeffs = np.array([-0.001, 0.15, -4.1, 36])
-        else:
-            coeffs = np.array([-3.2e-6, -4.9e-3, 4.5, -145])
-
-        self.heat_capacity = np.polyval(coeffs, self.temp)
 
 class Vacuum:
     def __init__(self, temp=300):
@@ -154,7 +94,7 @@ class Vacuum:
         self.density = 0.0
         self.heat_capacity = 0.0
         self.temp = temp
-        self.dispersion_table = None  
+        self.dispersion_table = None
 
     def get_group_velocity(self, omega, branch_number):
         return 0.0
@@ -261,6 +201,68 @@ class Graphite(Material):
 
 # Materials below are not fully supported and don't have the relaxation times:
 
+class Ge: #I am calling it Ge because it is shorter but it is exactly the propeties of Si 0.8 and Ge 0.2
+    """
+    Physical properties of Germanium.
+
+    Dispersion – Adapted from:
+        - M. Muta, H. Nakamura, and S. Yamanaka, *J. Alloys Compd.* **392**, 306–309 (2005)
+        - H. H. Li, *J. Phys. Chem. Ref. Data* **9**, 561 (1980)
+
+    Relaxation time – Adapted from:
+        - Maire et al., *Scientific Reports* **7**, 41794 (2017) for impurity and Umklapp models in semiconductors
+        - Callaway model-based simplification
+
+    Heat capacity – Fit based on:
+        - Desai P.D., *J. Phys. Chem. Ref. Data* **13**, 1069 (1984)
+        - W. Wunderlich, *Thermophysical Properties of Materials*, Springer (2005)
+    """
+
+    def __init__(self, temp, num_points=1000):
+        self.name = "Ge"
+        self.default_speed = 3700   # [m/s] – avera LA/TA
+        self.density = 3008         # [kg/m^3] Density	Si1-xGex	(2.329+3.493x-0.499x**2)g cm-3	300 K	Schaffler F. et al.(2001) 4/07
+        self.temp = temp
+        self.vg = 3700              # averge group velocity approximation 24/06
+        self.assign_dispersion(num_points)
+        self.assign_heat_capacity()
+
+    def assign_dispersion(self, num_points):
+        """Assign phonon dispersion"""
+
+        # Coefficients fro approximation f(k) from Ge data – need to be change
+        coefficients_LA = [-2.0e-19, -1.0e-8, 1245.0, 0]
+        coefficients_TA = [5.0e-29, 4.0e-19, -6.0e-8, 950.0, 0]
+
+        self.dispersion = np.zeros((num_points, 4))
+        self.dispersion[:, 0] = np.linspace(0, 12e9, num_points)
+        self.dispersion[:, 1] = np.abs(np.polyval(coefficients_LA, self.dispersion[:, 0]))  # LA
+        self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA
+        self.dispersion[:, 3] = self.dispersion[:, 2]  # TA2 = TA1 (approx)
+
+    def relaxation_time(self, omega):
+        """Relaxation time model (impurities + Umklapp scattering)"""
+
+        # Debye Température approx from Ge : ~230 K
+        deb_temp = 586.8 #(640 - 266x) K	300 K	Schaffler F. et al.(2001) 4/07
+        tau_impurity = 1 / (3.5e-45 * (omega ** 4))  # Maire et al.
+        tau_umklapp = 1 / (1.1e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
+        return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
+
+    def assign_heat_capacity(self):
+        """Empirical polynomial fits for Cp vs T"""
+
+        # Fit from experimental data of Desai + Wunderlich
+        if self.temp < 20:
+            coeffs = np.array([0.00052, -0.0025, 0.0078])
+        elif 20 <= self.temp <= 50:
+            coeffs = np.array([-0.001, 0.15, -4.1, 36])
+        else:
+            coeffs = np.array([-3.2e-6, -4.9e-3, 4.5, -145])
+
+        self.heat_capacity = np.polyval(coeffs, self.temp)
+
+
 class Diamond(Material):
     """
     Physical properties of diamond
@@ -305,7 +307,7 @@ class AlN(Material):
         self.density = 3255           # [kg/m^3]
         self.default_speed = 6200     # [m/s]
         self.temp = temp              # [K]
-        self.dispersion = np.zeros((self.num_points, 4))
+        self.dispersion = np.zeros((num_points, 4))
         self.assign_phonon_dispersion(num_points)
 
     def assign_phonon_dispersion(self, num_points):

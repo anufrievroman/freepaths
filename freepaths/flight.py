@@ -37,19 +37,17 @@ class Flight:
         self.path = Path(self.particle.x, self.particle.y, self.particle.z)
         self.exit_theta = 0.0
         self.free_path = 0.0
-        self.free_path_along_y = 0.0
         self.travel_time = 0.0
         self.time_since_previous_scattering = 0.0
         self.free_paths = []
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
-        self.free_paths_along_y = []
         self.thermal_conductivity = 0.0
-        self.interfaces_angles = []  
-        self.interfaces_transmission_factor = [] 
-        self.interfaces_wavelength = [] 
-        self.interfaces_frequency = [] 
-        self.interfaces_mode = [] 
+        self.interfaces_angles = []
+        self.interfaces_transmission_factor = []
+        self.interfaces_wavelength = []
+        self.interfaces_frequency = []
+        self.interfaces_mode = []
 
     @property
     def mean_free_path(self):
@@ -67,7 +65,6 @@ class Flight:
     def save_free_paths(self):
         """Save current free path to the list of free paths"""
         self.free_paths.append(self.free_path)
-        self.free_paths_along_y.append(self.free_path_along_y)
 
     def save_hole_diff_scattering_angle(self, angle):
         """Save angle of diffuse scattering from the hole"""
@@ -75,25 +72,23 @@ class Flight:
 
     def save_hole_spec_scattering_angle(self, angle):
         """Save angle of specular scattering from the hole"""
-        self.f_angles.append(angle)
+        self.hole_spec_scattering_angles.append(angle)
 
-
-    def save_interfaces_angles(self, angle):  
+    def save_interfaces_angles(self, angle):
         """Save a transmission event angle"""
-        self.interfaces_angles.append(angle)    
-      
+        self.interfaces_angles.append(angle)
 
-    def save_interfaces_transmission_factor(self, alpha_total):  
+    def save_interfaces_transmission_factor(self, alpha_total):
         """Save a transmission event"""
-        self.interfaces_transmission_factor.append(alpha_total)     
+        self.interfaces_transmission_factor.append(alpha_total)
 
-    def save_interfaces_wavelength(self): 
+    def save_interfaces_wavelength(self):
         """Save a wavelength event"""
-        self.interfaces_wavelength.append(self.particle.wavelength) 
+        self.interfaces_wavelength.append(self.particle.wavelength)
 
-    def save_interfaces_frequency(self): 
-        """Save a frequency event""" 
-        self.interfaces_frequency.append(self.particle.f) 
+    def save_interfaces_frequency(self):
+        """Save a frequency event"""
+        self.interfaces_frequency.append(self.particle.f)
 
     def save_interfaces_mode (self):
         """Save mode"""
@@ -103,7 +98,6 @@ class Flight:
         """Restart the flight after a scattering event"""
         self.time_since_previous_scattering = 0.0
         self.free_path = 0.0
-        self.free_path_along_y = 0.0
 
     def finish(self, step, timestep):
         """Finish the flight and record final state"""
@@ -114,7 +108,6 @@ class Flight:
         """Increase parameters of the flight by length of one step"""
         step_length = self.particle.speed * timestep
         self.free_path += step_length
-        self.free_path_along_y += step_length * abs(cos(self.particle.phi)) * abs(cos(self.particle.theta))
         self.time_since_previous_scattering += timestep
 
     def reset_travel_time(self):

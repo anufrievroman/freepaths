@@ -19,8 +19,6 @@ from freepaths.default_config import *
 logging.basicConfig(level=logging.WARNING, format=f"{Fore.RED}%(levelname)s:{Style.RESET_ALL} %(message)s",
                     handlers=[logging.StreamHandler(), ])
 
-
-# --------------------------------
 # Parse user arguments:
 WEBSITE = 'https://anufrievroman.gitbook.io/freepaths'
 parser = argparse.ArgumentParser(prog='FreePATHS', description='Monte Carlo simulator',
@@ -29,10 +27,6 @@ parser.add_argument('input_file', nargs='?', default=None, help='The input file'
 parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
 parser.add_argument("-e", "--electron", help="Run with electrons", action="store_true")
 args = parser.parse_args()
-# --------------------------------
-
-
-# If a file is provided, overwrite the default values:
 
 
 # If a file is provided, overwrite the default values:
@@ -44,8 +38,6 @@ if args.input_file:
         sys.exit()
 else:
     logging.warning("You provided no input file, so we will run a demo simulation:")
-
-
 
 
 class Config:
@@ -70,7 +62,7 @@ class Config:
         self.number_of_timesteps = NUMBER_OF_TIMESTEPS
         self.number_of_timeframes = NUMBER_OF_TIMEFRAMES
         self.number_of_stabilization_timeframes = NUMBER_OF_STABILIZATION_TIMEFRAMES
-        
+
         # Electron parameters:
         self.energy_upper_bound = ENERGY_UPPER_BOUND
         self.energy_lower_bound = ENERGY_LOWER_BOUND
@@ -252,15 +244,15 @@ class Config:
                           "Phonon source should be defined through the PHONON_SOURCES variable.\n" +
                           f"See the documentation at {WEBSITE}")
             sys.exit()
-        
+
         if any([
             'NUMBER_OF_PHONONS' in globals(),
             'IGNORE_FAULTY_PHONONS' in globals(),
             'PHONON_SOURCES' in globals(),
         ]):
             logging.error("Parameters NUMBER_OF_PHONONS, PHONON_SOURCES and IGNORE_FAULTY_PHONONS were deprecated.\n" +
-                          "They are replaced with PARTICLES parameters.\n" + 
-                          f"See the documentation at {WEBSITE}")    
+                          "They are replaced with PARTICLES parameters.\n" +
+                          f"See the documentation at {WEBSITE}")
             sys.exit()
 
 cf = Config()
@@ -268,12 +260,3 @@ cf.convert_to_enums()
 cf.check_parameter_validity()
 cf.check_depricated_parameters()
 
-
-
-# Inject user-defined materials into the config object (must be defined in input file) 24/06
-# MATERIALS injection
-try:
-    cf.materials = MATERIALS
-except NameError:
-    logging.error("You must define MATERIALS = [mat1, mat2] in your input file.")
-    sys.exit(1)

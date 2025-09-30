@@ -1,8 +1,8 @@
-"""Config file to simulate a membrane with array of trenches"""
+"""Config file to simulate a membrane with array of holes"""
 
 # General parameters:
-OUTPUT_FOLDER_NAME             = 'Holey'
-NUMBER_OF_PARTICLES            = 1000 * 8 
+OUTPUT_FOLDER_NAME             = 'Holey membrane'
+NUMBER_OF_PARTICLES            = 1000 * 8
 T                              = 300
 
 # Simulation time parameters:
@@ -35,7 +35,7 @@ GRAY_APPROXIMATION_MFP         = None
 period = 60e-9
 neck = 30e-9
 THICKNESS                      = 1e-6
-WIDTH                          = period * 4 
+WIDTH                          = period * 4
 LENGTH                         = period * 4
 
 # Map & profiles parameters:

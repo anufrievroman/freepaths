@@ -328,11 +328,6 @@ def plot_transmission_vs_angle():
         fig.savefig(out_pdf, dpi=220, format='pdf', bbox_inches="tight")  # dpi = résolution
         plt.close(fig)
 
-        try:
-            open_pdf_with_mupdf(out_pdf)  # open automatically with mupdf
-        except Exception:
-            pass
-
     except Exception as e:
         print(f"[ERROR] plot_transmission_vs_angle: {e}")
 
@@ -407,7 +402,7 @@ def plot_transmission_vs_frequency():
     fig.savefig("Transmission coefficient vs frequency.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of frequency.csv', frequency, fmt='%1.3e', delimiter=",")
-        
+
 def plot_transmission_heatmaps_by_mode():
     """
     Génère un PDF multipage : 1 page par mode (LA, TA1, TA2).
@@ -462,12 +457,6 @@ def plot_transmission_heatmaps_by_mode():
             # one page per mode
             pdf.savefig(fig, dpi=220, bbox_inches="tight")
             plt.close(fig)
-
-    print(f"[INFO] PDF multipage sauvegardé : {pdf_filename}")
-    try:
-        open_pdf_with_mupdf(pdf_filename) # open automatically with mupdf
-    except Exception:
-        pass
 
 
 def plot_free_path_distribution():
@@ -556,7 +545,7 @@ def plot_energy_distribution():
     fig.savefig("Distribution of energy.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
-def plot_travel_time_vs_energy():  
+def plot_travel_time_vs_energy():
     """Plot mean travel time vs energy, slope on log-log and linear regression fit."""
     # Load data
     energy, travel_time = np.genfromtxt(
@@ -883,7 +872,6 @@ def plot_scattering_map():
     plt.close(fig)
 
 
-
 def plot_trajectories():
     """Plot the particle trajectories"""
 
@@ -909,8 +897,8 @@ def plot_trajectories():
     ax.set_xlabel('X (μm)')
     ax.set_ylabel('Y (μm)')
     # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit 
-    ax.set_xlim(2*-cf.width*1e6, 2*cf.width*1e6) 
-    ax.set_ylim(0, cf.length*1e6) 
+    ax.set_xlim(2*-cf.width*1e6, 2*cf.width*1e6)
+    ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Particle paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
 
@@ -977,7 +965,7 @@ def plot_scattering_statistics():
 def plot_scattering_rate_vs_energy():
     fig, ax = plt.subplots()
     energies, scattering_rate = np.genfromtxt("Data/Scattering rate vs energy.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
-    
+
     ax.plot(energies * 1e3 / electron_volt, scattering_rate, '-o', markersize=2, c='royalblue')
     ax.axhline(y=cf.timestep, color='gray', linestyle='--', linewidth=1, label='Timestep')
     ax.set_xlabel('Energy (meV)')
@@ -1006,7 +994,7 @@ def plot_structure():
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
-    
+
 def plot_material_properties():
     """Plot phonon dispersion and display some other material properties"""
 
@@ -1014,7 +1002,7 @@ def plot_material_properties():
     if cf.media == "Si":
         material = Si(cf.temp)
     elif cf.media == "Ge ":
-        material = Ge(cf.temp)  
+        material = Ge(cf.temp)
     elif cf.media == "SiC":
         material = SiC(cf.temp)
     elif cf.media == "Graphite":
@@ -1039,22 +1027,20 @@ def plot_material_properties():
     plt.close(fig)
 
 
-def plot_data(particle_type: ParticleType, mfp_sampling=False):
+def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
     """Create plots of various distributions, maps, profiles, and other quantities"""
+
+    # Defines what will be plotted after the phonon simulations:
     phonon_function_list = [
         plot_structure,
         plot_trajectories,
         plot_angle_distribution,
-        plot_interfaces_angles_distribution,
-        plot_transmission_vs_angle,
-        plot_scattering_angle_distribution,
         plot_free_path_distribution,
         plot_frequency_distribution,
         plot_wavelength_distribution,
         plot_travel_time_distribution,
         plot_mean_free_path_distribution,
         plot_velocity_distribution,
-        plot_energy_distribution,
         plot_time_in_segments,
         plot_thermal_conductivity,
         plot_temperature_profile,
@@ -1064,16 +1050,27 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
         plot_scattering_statistics,
         plot_scattering_map,
         plot_material_properties,
-        plot_transmission_vs_wavelength,
-        plot_transmission_vs_frequency,
-        plot_transmission_heatmaps_by_mode,
     ]
-    
+
+    if cf.holes:
+        phonon_function_list.extend([
+            plot_scattering_angle_distribution,
+            ])
+
+    if cf.interfaces:
+        phonon_function_list.extend([
+            plot_interfaces_angles_distribution,
+            plot_transmission_vs_angle,
+            plot_transmission_vs_wavelength,
+            plot_transmission_vs_frequency,
+            plot_transmission_heatmaps_by_mode,
+            ])
+
+    # Defines what will be plotted after the electron simulations:
     electron_function_list = [
         plot_structure,
         plot_trajectories,
         plot_angle_distribution,
-        plot_scattering_angle_distribution,
         plot_free_path_distribution,
         plot_frequency_distribution,
         plot_wavelength_distribution,
@@ -1090,14 +1087,20 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
         plot_electron_thermal_conductivity,
         plot_scattering_rate_vs_energy,
         plot_time_in_segments,
-        plot_thermal_conductivity,
-        plot_temperature_profile,
-        plot_heat_flux_profile,
-        plot_thermal_map,
+        # plot_thermal_conductivity,
+        # plot_temperature_profile,
+        # plot_heat_flux_profile,
+        # plot_thermal_map,
         plot_pixel_volumes,
         plot_scattering_statistics,
         plot_scattering_map,
     ]
+
+    if cf.holes:
+        electron_function_list.extend([
+            plot_scattering_angle_distribution,
+            ])
+
     if particle_type is ParticleType.PHONON:
         function_list = phonon_function_list
     else:
@@ -1111,10 +1114,11 @@ def plot_data(particle_type: ParticleType, mfp_sampling=False):
             logging.warning(f"Function {func.__name__} failed: {e}")
 
     # Run additional functions:
-    plot_cumulative_thermal_conductivity(mfp_sampling)
-    plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
-    plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
-    plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
+    if particle_type is ParticleType.PHONON:
+        plot_cumulative_thermal_conductivity(mfp_sampling)
+        plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
+        plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
+        plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
 
 
 

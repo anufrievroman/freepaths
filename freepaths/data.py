@@ -60,29 +60,28 @@ class GeneralData(Data):
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
         self.free_paths = []
-        self.free_paths_along_y = []
         self.frequencies = []
         self.initial_energies = []
         self.group_velocities = []
         self.travel_times = []
         self.mean_free_paths = []
         self.thermal_conductivity = []
-        self.interfaces_angles = []  
-        self.interfaces_transmission_factor = []  
-        self.interfaces_wavelength = [] 
-        self.interfaces_frequency = [] 
-        self.interfaces_mode = [] 
-    
+        self.interfaces_angles = []
+        self.interfaces_transmission_factor = []
+        self.interfaces_wavelength = []
+        self.interfaces_frequency = []
+        self.interfaces_mode = []
+
     def save_particle_data(self, pt):
         """Add information about the particle to the dataset"""
         self.frequencies.append(pt.f)
         self.group_velocities.append(pt.speed)
+        self.initial_energies.append(pt.energy)
 
     def save_flight_data(self, flight):
         """Add information about the particle flight to the dataset"""
         if not cf.low_memory_usage:
             self.free_paths.extend(flight.free_paths)
-            self.free_paths_along_y.extend(flight.free_paths_along_y)
         self.initial_angles.append(flight.initial_theta)
         self.exit_angles.append(flight.exit_theta)
         self.hole_diff_scattering_angles.extend(flight.hole_diff_scattering_angles)
@@ -90,12 +89,12 @@ class GeneralData(Data):
         self.travel_times.append(flight.travel_time)
         self.mean_free_paths.append(flight.mean_free_path)
         self.thermal_conductivity.append(flight.thermal_conductivity)
-        self.interfaces_angles.extend(flight.interfaces_angles)  
-        self.interfaces_transmission_factor.extend(flight.interfaces_transmission_factor)     
-        self.interfaces_wavelength.extend(flight.interfaces_wavelength) 
-        self.interfaces_frequency.extend(flight.interfaces_frequency) 
+        self.interfaces_angles.extend(flight.interfaces_angles)
+        self.interfaces_transmission_factor.extend(flight.interfaces_transmission_factor)
+        self.interfaces_wavelength.extend(flight.interfaces_wavelength)
+        self.interfaces_frequency.extend(flight.interfaces_frequency)
         self.interfaces_mode.extend(flight.interfaces_mode)
-        
+
 
 
     def write_into_files(self):
@@ -105,7 +104,6 @@ class GeneralData(Data):
         """Write all the data into files"""
         if not cf.low_memory_usage:
             np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', header="L [m]", encoding='utf-8')
-            np.savetxt("Data/All free paths in plane.csv", self.free_paths_along_y, fmt='%2.4e', header="Ly [m]", encoding='utf-8')
         np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
         np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
@@ -116,12 +114,12 @@ class GeneralData(Data):
         np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', header="MFPs [m]", encoding='utf-8')
         np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
         np.savetxt("Data/All initial energies.csv", self.initial_energies, fmt='%2.4e', header="Energy [J]", encoding='utf-8')
-        np.savetxt("Data/All interfaces angles.csv", self.interfaces_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')  
-        np.savetxt("Data/All interfaces transmission factor.csv", self.interfaces_transmission_factor, fmt='%2.4e', header="Transmission factor [%]", encoding='utf-8')   
+        np.savetxt("Data/All interfaces angles.csv", self.interfaces_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+        np.savetxt("Data/All interfaces transmission factor.csv", self.interfaces_transmission_factor, fmt='%2.4e', header="Transmission factor [%]", encoding='utf-8')
         np.savetxt("Data/All interfaces wavelength.csv", self.interfaces_wavelength, fmt='%.18f', header="Interfaces wavelength [m]", encoding='utf-8')
-        np.savetxt("Data/All interfaces frequency.csv", self.interfaces_frequency, fmt='%.18f', header="Interfaces frequency [THz]", encoding='utf-8') 
-        np.savetxt("Data/All interfaces mode.csv", self.interfaces_mode, fmt='%d', header="Interfaces mode", encoding='utf-8') 
-    
+        np.savetxt("Data/All interfaces frequency.csv", self.interfaces_frequency, fmt='%.18f', header="Interfaces frequency [THz]", encoding='utf-8')
+        np.savetxt("Data/All interfaces mode.csv", self.interfaces_mode, fmt='%d', header="Interfaces mode", encoding='utf-8')
+
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
@@ -130,20 +128,19 @@ class GeneralData(Data):
             'hole_diff_scattering_angles': self.hole_diff_scattering_angles,
             'hole_spec_scattering_angles': self.hole_spec_scattering_angles,
             'free_paths': self.free_paths,
-            'free_paths_along_y': self.free_paths_along_y,
             'frequencies': self.frequencies,
             'group_velocities': self.group_velocities,
             'travel_times': self.travel_times,
             'mean_free_paths': self.mean_free_paths,
             'thermal_conductivity': self.thermal_conductivity,
             'initial_energies': self.initial_energies,
-            'interfaces_angles': self.interfaces_angles,  
-            'interfaces_transmission_factor': self.interfaces_transmission_factor, 
-            'interfaces_wavelength': self.interfaces_wavelength, 
-            'interfaces_frequency': self.interfaces_frequency, 
-            'interfaces_mode': self.interfaces_mode, 
+            'interfaces_angles': self.interfaces_angles,
+            'interfaces_transmission_factor': self.interfaces_transmission_factor,
+            'interfaces_wavelength': self.interfaces_wavelength,
+            'interfaces_frequency': self.interfaces_frequency,
+            'interfaces_mode': self.interfaces_mode,
         }
-    
+
 
 
 class ScatteringData(Data):
@@ -164,13 +161,13 @@ class ScatteringData(Data):
         self.interfaces_diffuse = np.zeros(cf.number_of_length_segments+1)
         self.interfaces_specular = np.zeros(cf.number_of_length_segments+1)
         self.total = np.zeros(cf.number_of_length_segments+1)
-        self.interfaces_transmission_specular= np.zeros(cf.number_of_length_segments + 1) 
-        self.interfaces_transmission_diffuse = np.zeros(cf.number_of_length_segments + 1) 
-        self.interfaces_angles = np.zeros(cf.number_of_length_segments + 1) 
-        self.interfaces_transmission_factor = np.zeros(cf.number_of_length_segments + 1)  
-        self.interfaces_wavelength = np.zeros(cf.number_of_length_segments+1) 
-        self.interfaces_frequency = np.zeros(cf.number_of_length_segments+1) 
-        self.interfaces_mode = np.zeros(cf.number_of_length_segments+1) 
+        self.interfaces_transmission_specular= np.zeros(cf.number_of_length_segments + 1)
+        self.interfaces_transmission_diffuse = np.zeros(cf.number_of_length_segments + 1)
+        self.interfaces_angles = np.zeros(cf.number_of_length_segments + 1)
+        self.interfaces_transmission_factor = np.zeros(cf.number_of_length_segments + 1)
+        self.interfaces_wavelength = np.zeros(cf.number_of_length_segments+1)
+        self.interfaces_frequency = np.zeros(cf.number_of_length_segments+1)
+        self.interfaces_mode = np.zeros(cf.number_of_length_segments+1)
 
 
 
@@ -207,8 +204,8 @@ class ScatteringData(Data):
             self.internal[segment] += 1 if scattering_types.internal == Scattering.DIFFUSE else 0
 
             # Interfaces transmission events:
-            self.interfaces_transmission_specular[segment] += 1 if scattering_types.interfaces_transmission== Scattering.SPECULAR else 0 
-            self.interfaces_transmission_diffuse[segment] += 1 if scattering_types.interfaces_transmission == Scattering.DIFFUSE else 0 
+            self.interfaces_transmission_specular[segment] += 1 if scattering_types.interfaces_transmission== Scattering.SPECULAR else 0
+            self.interfaces_transmission_diffuse[segment] += 1 if scattering_types.interfaces_transmission == Scattering.DIFFUSE else 0
         except:
             pass
 
@@ -216,16 +213,16 @@ class ScatteringData(Data):
         """Write data into a file"""
         filename = "Data/Scattering events statistics.csv"
         data = np.vstack((self.wall_diffuse, self.wall_specular, self.top_diffuse, self.top_specular, self.hole_diffuse,
-                        self.hole_specular, self.hot_side, self.internal, self.pillar_diffuse, self.pillar_specular, 
-                        self.interfaces_diffuse, self.interfaces_specular, 
-                        self.interfaces_transmission_diffuse, self.interfaces_transmission_specular, 
-                        self.interfaces_transmission_factor, self.interfaces_angles, 
-                        self.interfaces_wavelength, self.interfaces_mode)).T 
+                        self.hole_specular, self.hot_side, self.internal, self.pillar_diffuse, self.pillar_specular,
+                        self.interfaces_diffuse, self.interfaces_specular,
+                        self.interfaces_transmission_diffuse, self.interfaces_transmission_specular,
+                        self.interfaces_transmission_factor, self.interfaces_angles,
+                        self.interfaces_wavelength, self.interfaces_mode)).T
         header1 = "Sidewalls diffuse, Sidewalls specular, Top & bottom diffuse, Top & bottom specular, "
         header2 = "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular"
         header3 = "Interfaces diffuse, Interfaces specular, Interfaces transmission diffuse, Interfaces transmission specular, " \
-        "Interfaces transmission factor, Interfaces angles, Interfaces wavelength, Interfaces frequency, Interfaces mode" 
-        header = header1 + header2 + header3 
+        "Interfaces transmission factor, Interfaces angles, Interfaces wavelength, Interfaces frequency, Interfaces mode"
+        header = header1 + header2 + header3
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
 
     def dump_data(self):
@@ -243,13 +240,13 @@ class ScatteringData(Data):
             'internal': self.internal,
             'interfaces_diffuse': self.interfaces_diffuse,
             'interfaces_specular': self.interfaces_specular,
-            'interfaces_transmission_specular': self.interfaces_transmission_specular, 
-            'interfaces_transmission_diffuse': self.interfaces_transmission_diffuse, 
-            'interfaces_angles': self.interfaces_angles,  
-            'interfaces_transmission_factor': self.interfaces_transmission_factor,  
-            'interfaces_wavelength': self.interfaces_wavelength, 
-            'interfaces_frequency': self.interfaces_frequency, 
-            'interfaces_mode' : self.interfaces_mode, 
+            'interfaces_transmission_specular': self.interfaces_transmission_specular,
+            'interfaces_transmission_diffuse': self.interfaces_transmission_diffuse,
+            'interfaces_angles': self.interfaces_angles,
+            'interfaces_transmission_factor': self.interfaces_transmission_factor,
+            'interfaces_wavelength': self.interfaces_wavelength,
+            'interfaces_frequency': self.interfaces_frequency,
+            'interfaces_mode' : self.interfaces_mode,
             'total': self.total
         }
 
