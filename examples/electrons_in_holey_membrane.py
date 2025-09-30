@@ -24,7 +24,7 @@ NUMBER_OF_PROCESSES = 15
 # Material parameters:
 from scipy.constants import electron_volt
 MEDIA                          = 'Si'
-MEDIA_FERMI_LEVEL              = -0.5* electron_volt
+MEDIA_FERMI_LEVEL              = -0.3* electron_volt
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
@@ -57,5 +57,4 @@ for row in range(rows):
         if row%2==1 and col==0:
             continue
         diam = ((2**0.5)/2) * period - neck
-        # diam = 0
         HOLES.append(CircularHole(x=x, y=y, diameter=diam))

@@ -15,7 +15,7 @@ from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
 from freepaths.materials import Si, SiC, Graphite, Ge
 import matplotlib.pyplot as plt
-import matplotlib as mpl 
+import matplotlib as mpl
 mpl.rcParams['pdf.compression'] = 9   # compresse PDF flux
 
 
@@ -124,36 +124,32 @@ def _bin_average_1d(x, y, nbins=120, min_count=1, x_range=None): # add 22/08
     return centers[keep], mean[keep], std[keep], cnt[keep]
 
 
-
 def angle_distribution_calculation():
     """Analyse measured particle angles and create their distribution"""
     all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
     initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
-    hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
-    hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((360, 5)) 
+    distribution = np.zeros((360, 5))
     distribution[:, 0] = range(-180, 180)
     exit_angles = all_exit_angles[all_exit_angles != 0]
     distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
     distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
-    distribution[:, 3], _ = np.histogram(np.degrees(hole_diff_angles), 360, range=(-180, 180)) 
-    distribution[:, 4], _ = np.histogram(np.degrees(hole_spec_angles), 360, range=(-180, 180)) 
     return distribution
 
-def interfaces_transmission_angles_calculation(): 
+
+def interfaces_transmission_angles_calculation():
     all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
     initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
-    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8')  
-    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8')  
-    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')  
-    distribution = np.zeros((360, 6)) 
+    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8')
+    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8')
+    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
+    distribution = np.zeros((360, 6))
     distribution[:, 0] = range(-180, 180)
     exit_angles = all_exit_angles[all_exit_angles != 0]
     distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
     distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
-    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180))  
-    distribution[:, 4], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180))  
-    distribution[:, 5], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180))  
+    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180))
+    distribution[:, 4], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180))
+    distribution[:, 5], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180))
     return distribution
 
 
@@ -161,21 +157,22 @@ def scattering_angle_distribution_calculation():
     """Analyse scattering particle angles and create their distribution"""
     hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
     hole_spec_angles = np.loadtxt("Data/All hole specular scattering angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((360, 3)) 
-    distribution[:, 0] = range(-180, 180) 
+    distribution = np.zeros((360, 3))
+    distribution[:, 0] = range(-180, 180)
     distribution[:, 1], _ = np.histogram(np.degrees(hole_diff_angles), 360, range=(-180, 180))
     distribution[:, 2], _ = np.histogram(np.degrees(hole_spec_angles), 360, range=(-180, 180))
     return distribution
 
-def scattering_interfaces_angles_distribution_calculation(): 
-    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8') 
-    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8') 
-    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8') 
-    distribution = np.zeros((360, 4)) 
-    distribution[:, 0] = range(-180, 180) 
-    distribution[:, 1], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180)) 
-    distribution[:, 2], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180)) 
-    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180)) 
+
+def scattering_interfaces_angles_distribution_calculation():
+    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8')
+    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8')
+    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
+    distribution = np.zeros((360, 4))
+    distribution[:, 0] = range(-180, 180)
+    distribution[:, 1], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180))
+    distribution[:, 2], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180))
+    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180))
     return distribution
 
 def wavelength_distribution_calculation(number_of_nodes):
@@ -256,15 +253,15 @@ def plot_scattering_angle_distribution():
     plt.close(fig)
     np.savetxt('Data/Distribution of hole scattering angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
 
-def plot_interfaces_angles_distribution(): 
-    """Plot distribution of interfaces angles"""   
+def plot_interfaces_angles_distribution():
+    """Plot distribution of interfaces angles"""
     angle_distributions = scattering_interfaces_angles_distribution_calculation()
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     ax.grid(zorder=0)
-    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 'royalblue', label="Diffuse", zorder=2)  
-    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 0, alpha=0.2, zorder=2)  
-    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 'deeppink', label="Specular", zorder=3)  
-    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 0, alpha=0.2, zorder=3)  
+    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 'royalblue', label="Diffuse", zorder=2)
+    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 0, alpha=0.2, zorder=2)
+    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 'deeppink', label="Specular", zorder=3)
+    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 0, alpha=0.2, zorder=3)
     ax.set_theta_zero_location('N')
     ax.set_theta_direction(-1)
     ax.legend(facecolor='white', framealpha=1, ncols=2, loc="lower center", bbox_to_anchor=(0.5, -0.17))
@@ -312,7 +309,7 @@ def plot_transmission_vs_angle():
                     c=mode_colors[mode_number],
                     label=mode_labels[mode_number],
                     edgecolors='none',
-                    rasterized=True,          
+                    rasterized=True,
                 )
 
         ax.set_xlabel('Angle (degree)')
@@ -336,12 +333,12 @@ def plot_transmission_vs_wavelength():
     wavelength = np.loadtxt("Data/All interfaces wavelength.csv", dtype='float', encoding='utf-8')
     transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
 
-    # check the size correspondance and if there are data 
+    # check the size correspondance and if there are data
     if len(wavelength) == 0 or len(wavelength) != len(transmission_factor):
         return
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    
+
     # convert wavelength to nm for better readability
     ax.scatter(wavelength * 1e9, transmission_factor, alpha=0.7, s=10)
 
@@ -368,7 +365,7 @@ def plot_transmission_vs_wavelength():
     fig.savefig("Transmission factor vs wavelength.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
-    # save the brut data 
+    # save the brut data
     output_data = np.column_stack((wavelength * 1e9, transmission_factor))
     header = "Wavelength_nm,Transmission_Factor"
     np.savetxt('Data/Distribution of interfaces wavelength.csv', output_data, fmt='%.6f,%.6f', delimiter=",", header=header, comments='')
@@ -384,8 +381,8 @@ def plot_transmission_vs_frequency():
     ax.set_ylabel('Transmission factor')
     ax.legend()
     # axes limits (en nm)
-    wl_min = np.min(frequency) 
-    wl_max = np.max(frequency) 
+    wl_min = np.min(frequency)
+    wl_max = np.max(frequency)
     if wl_min == wl_max:
         # if all lambda are identical
         if wl_min == 0:
@@ -395,7 +392,7 @@ def plot_transmission_vs_frequency():
             ax.set_xlim(wl_min - margin, wl_max + margin)
     else:
          ax.set_xlim(0.8 * wl_min, 1.2 * wl_max)
-   
+
     ax.set_ylim(0, 1)
     ax.grid(True, linestyle='--', alpha=0.5)
     fig.tight_layout()
@@ -646,14 +643,14 @@ def plot_electron_conductivity():
         color='gray',
         linestyle='--',
         linewidth=1,
-        label=f"y = {material_conductivity:.4e}"
+        label=f"σ = {material_conductivity:.4e} S/m at {material.fermi_level*1e3 / electron_volt:.2e} meV"
     )
     ax.axvline(
         x=material.fermi_level * 1e3 / electron_volt,
         color='gray',
         linestyle='--',
         linewidth=1,
-        label=f"x = {material.fermi_level*1e3 / electron_volt:.2e}"
+        # label=f"x = {material.fermi_level*1e3 / electron_volt:.2e}"
     )
     plt.legend()
     fig.savefig("Electron conductivity.pdf", format="pdf", bbox_inches="tight")
@@ -896,8 +893,9 @@ def plot_trajectories():
     # Set labels:
     ax.set_xlabel('X (μm)')
     ax.set_ylabel('Y (μm)')
-    # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit 
-    ax.set_xlim(2*-cf.width*1e6, 2*cf.width*1e6)
+    # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit
+    ax.set_aspect('equal') #remove this to adapt x and y limit
+    ax.set_xlim(0.6*-cf.width*1e6, 0.6*cf.width*1e6)
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Particle paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -989,8 +987,9 @@ def plot_structure():
     # Set labels:
     ax.set_xlabel('X (μm)')
     ax.set_ylabel('Y (μm)')
-    ax.set_aspect('equal', 'datalim')
-    ax.set_xlim(1.2*-cf.width*1e6, 1.2*cf.width*1e6)
+    # ax.set_aspect('equal', 'datalim')
+    ax.set_aspect('equal')
+    ax.set_xlim(0.6*-cf.width*1e6, 0.6*cf.width*1e6)
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
