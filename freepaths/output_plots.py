@@ -895,7 +895,7 @@ def plot_trajectories():
     ax.set_ylabel('Y (μm)')
     # ax.set_aspect('equal', 'datalim') #remove this to adapt x and y limit
     ax.set_aspect('equal') #remove this to adapt x and y limit
-    ax.set_xlim(0.6*-cf.width*1e6, 0.6*cf.width*1e6)
+    ax.set_xlim(0.8*-cf.width*1e6, 0.8*cf.width*1e6)
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Particle paths XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -989,7 +989,7 @@ def plot_structure():
     ax.set_ylabel('Y (μm)')
     # ax.set_aspect('equal', 'datalim')
     ax.set_aspect('equal')
-    ax.set_xlim(0.6*-cf.width*1e6, 0.6*cf.width*1e6)
+    ax.set_xlim(0.8*-cf.width*1e6, 0.8*cf.width*1e6)
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -1051,11 +1051,13 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_material_properties,
     ]
 
+    # If there are holes, plot scattering statistics:
     if cf.holes:
         phonon_function_list.extend([
             plot_scattering_angle_distribution,
             ])
 
+    # If there are interfaces, plot transmission statistics:
     if cf.interfaces:
         phonon_function_list.extend([
             plot_interfaces_angles_distribution,
@@ -1095,6 +1097,7 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_scattering_map,
     ]
 
+    # If there are holes, plot scattering statistics:
     if cf.holes:
         electron_function_list.extend([
             plot_scattering_angle_distribution,
@@ -1118,7 +1121,4 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
         plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
         plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
-
-
-
 

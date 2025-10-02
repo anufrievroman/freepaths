@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(
                 )
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
 parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
-parser.add_argument("-e", "--electron", help="Run with electrons", action="store_true")
+parser.add_argument("-e", "--electron", help="Run simulation for electrons", action="store_true")
 args = parser.parse_args()
 
 

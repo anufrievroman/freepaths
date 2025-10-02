@@ -251,7 +251,7 @@ class Config:
             'PHONON_SOURCES' in globals(),
         ]):
             logging.error("Parameters NUMBER_OF_PHONONS, PHONON_SOURCES and IGNORE_FAULTY_PHONONS were deprecated.\n" +
-                          "They are replaced with PARTICLES parameters.\n" +
+                          "Replace PHONONS with PARTICLES.\n" +
                           f"See the documentation at {WEBSITE}")
             sys.exit()
 

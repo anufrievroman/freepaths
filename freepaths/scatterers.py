@@ -14,6 +14,7 @@ import numpy as np
 
 
 from freepaths.scattering_primitives import *
+from freepaths.scattering_interfaces import *
 from freepaths.scattering_types import ScatteringTypes
 
 from freepaths.interface_smmm import P_spec, alpha_total_2T, alpha_total_1T
@@ -865,16 +866,14 @@ class Interface:
 class VerticalPlane(Interface):
     """Vertical interface between two materials with the smmm approach SMMM."""
 
-    def __init__(self, position_x=0, roughness=0, outer_material=None, inner_material=None, depth=None):
+    def __init__(self, position_x=0, outer_material=None, inner_material=None, depth=None):
         super().__init__()
         self.position_x = position_x
-        self.roughness = roughness
         self.inner_material = inner_material
         self.outer_material = outer_material
         self.depth = depth
 
     def assign_materials(self, cf):
-        # Initialize the material:
         if self.inner_material == "Si":
             self.inner_material = Si(cf.temp)
         if self.inner_material == "Ge":
@@ -915,7 +914,7 @@ class VerticalPlane(Interface):
 
         self.vg_i_to_vg_j = vg_i / vg_j
 
-        return alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, mat_0, mat_j, pt.branch_number, self.roughness)
+        return alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, mat_0, mat_j, pt.branch_number, cf.interface_roughness)
 
 
     def scatter(self, pt, cf, scattering_types):

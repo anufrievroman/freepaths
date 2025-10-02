@@ -2,9 +2,10 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Interfaces'
-NUMBER_OF_PARTICLES            = 1000
+NUMBER_OF_PARTICLES            = 3000
 T                              = 300
 OUTPUT_TRAJECTORIES_OF_FIRST   = 10
+LOW_MEMORY_USAGE               = True
 
 # Simulation time parameters:
 TIMESTEP                       = 0.5e-12
@@ -18,7 +19,7 @@ NUMBER_OF_TIMEFRAMES            = 8
 NUMBER_OF_PROCESSES = 8
 
 # Material parameters:
-MEDIA                          = 'Si' # put the material of the bulk here
+MEDIA                          = 'Si'
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
@@ -44,20 +45,16 @@ IGNORE_FAULTY_PARTICLES          = False
 PARTICLE_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKNESS, angle_distribution="random", angle=0)]
 
 
-
-
-
-#-----if you devide the length by the period you must habe an integer number of interfaces-----#
+# Interfaces (or thin layers of another material):
 INTERFACES = []
-period = 20e-9 # modify this value to change the distance between two interfaces
+period = 20e-9 # i.e. istance between interfaces
 start_x = -WIDTH / 2 + period
 end_x = WIDTH / 2 - period
-INTERFACE_ROUGHNESS = 1.5e-9  # roughness of the interfaces
-
+INTERFACE_ROUGHNESS = 1.5e-9
 
 x = start_x
 while x <= end_x:
-    INTERFACES.append(VerticalPlane(position_x=x, roughness=INTERFACE_ROUGHNESS, inner_material='Ge', outer_material=MEDIA, depth = THICKNESS)) # add the material of the layers here
+    INTERFACES.append(VerticalPlane(position_x=x, inner_material='Ge', outer_material=MEDIA, depth = THICKNESS))
     x += period
 
 

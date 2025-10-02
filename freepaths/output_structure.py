@@ -72,6 +72,4 @@ def draw_structure_side_view(cf, color_holes="white", color_back="gray"):
             patch = interface.get_patch(color_holes, cf)
             patches.extend(patch if isinstance(patch, list) else [patch])
 
-   
-
     return patches
