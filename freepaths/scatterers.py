@@ -17,7 +17,7 @@ from freepaths.scattering_primitives import *
 from freepaths.scattering_interfaces import *
 from freepaths.scattering_types import ScatteringTypes
 
-from freepaths.interface_smmm import P_spec, alpha_total_2T, alpha_total_1T
+from freepaths.interface_smmm import alpha_total_2T, alpha_total_1T
 from freepaths.scattering_types import Scattering
 from freepaths.materials import Si, SiC, Graphite, Ge
 

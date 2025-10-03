@@ -16,7 +16,7 @@ NUMBER_OF_TIMEFRAMES = 8
 ENERGY_UPPER_BOUND               = 160e-3
 ENERGY_STEP                      = 10e-3
 ELECTRON_MFP                     = 15e-9
-MEAN_MAPPING_CONSTANT            = 1.9e-5
+MEAN_MAPPING_CONSTANT            = 1.4e-5
 
 # Multiprocessing:
 NUMBER_OF_PROCESSES = 15
@@ -24,7 +24,7 @@ NUMBER_OF_PROCESSES = 15
 # Material parameters:
 from scipy.constants import electron_volt
 MEDIA                          = 'Si'
-MEDIA_FERMI_LEVEL              = -0.3* electron_volt
+MEDIA_FERMI_LEVEL              = -50e-3 * electron_volt
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
@@ -34,7 +34,7 @@ GRAY_APPROXIMATION_MFP         = None
 # System dimensions [m]:
 period = 60e-9
 neck = 30e-9
-THICKNESS                      = 1e-6
+THICKNESS                      = 100e-9
 WIDTH                          = period * 4
 LENGTH                         = period * 4
 
@@ -56,5 +56,5 @@ for row in range(rows):
         y = (row+1) * period / 2
         if row%2==1 and col==0:
             continue
-        diam = ((2**0.5)/2) * period - neck
+        diam = period - neck
         HOLES.append(CircularHole(x=x, y=y, diameter=diam))

@@ -573,7 +573,7 @@ def plot_travel_time_vs_energy():
     ax1.loglog(x, y_fit, '-', c='green', linewidth=1.5,
                label=f'Regression: y as x^{m:.2f}')
     ax1.set_xlabel('Energy (meV)')
-    ax1.set_ylabel('Mean travel time (ns)', color='royalblue')
+    ax1.set_ylabel('Mean travel time (ns)')
     ax1.grid(True, linestyle='--', alpha=0.7)
 
     # Combine legends
@@ -583,6 +583,7 @@ def plot_travel_time_vs_energy():
     # Save and close
     fig.savefig("Travel time vs energy.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)
+
 
 def plot_transport_function():
     """Plot transport distribution function vs energy with regression and slope."""
@@ -595,7 +596,7 @@ def plot_transport_function():
         unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
 
     # Convert units
-    x = e1 * 1e3 / electron_volt                   # Energy in meV
+    x = e1 * 1e3 / electron_volt                  # Energy in meV
     y1 = tdf1 * electron_volt * 1e-25             # Computed TDF in 10^25 m^-1 s^-1 eV^-1
     y2 = tdf2 * electron_volt * 1e-25             # Theoretical TDF
 
@@ -615,7 +616,7 @@ def plot_transport_function():
                label=f'Regression: TDF as E^{m:.2f}')
     ax1.loglog(x, y2, '-o', markersize=2, c='darkorange', label='Theoretical TDF')
     ax1.set_xlabel('Energy (meV)')
-    ax1.set_ylabel('Transport distribution function ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-1}$)', color='black')
+    ax1.set_ylabel('TDF, Ξ ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-1}$)', color='black')
     ax1.grid(True, linestyle='--', alpha=0.7)
 
 
@@ -878,7 +879,7 @@ def plot_trajectories():
     fig, ax = plt.subplots()
 
     # Draw structure:
-    patches = draw_structure_top_view(cf, color_holes='black', color_back=cf.output_structure_color)
+    patches = draw_structure_top_view(cf, color_holes='white', color_back=cf.output_structure_color)
     for patch in patches:
         ax.add_patch(patch)
 
