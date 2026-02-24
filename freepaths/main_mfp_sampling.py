@@ -1,6 +1,7 @@
 """Module to run thermal conductivity calculations by integrating the phonon dispersion"""
 
 import os
+import numpy as np
 import sys
 import time
 import shutil
@@ -15,15 +16,16 @@ from freepaths.config import cf
 from freepaths.run_particle import run_particle
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
+from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite, Ge 
+from freepaths.materials import Si, SiC, Graphite, Ge
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.output_plots import plot_data
 
 
-def main(input_file):
+def main(input_file, particle_type):
     """This is the main function, which integrates phonon dispersion to get thermal conductivity"""
 
     print(f'Mean free path sampling of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
@@ -36,7 +38,7 @@ def main(input_file):
 
 # -------- has to be modified fro have only SiGe values and not a mix between Ge and SiGe------------
     elif cf.media == "Ge":
-        material = Ge(cf.temp, num_points=cf.number_of_particles +1) 
+        material = Ge(cf.temp, num_points=cf.number_of_particles +1)
 # -------- has to be modified fro have only SiGe values and not a mix between Ge and SiGe------------
 
     elif cf.media == "SiC":
@@ -112,6 +114,7 @@ def main(input_file):
     scatter_stats.write_into_files()
     segment_stats.write_into_files()
     thermal_maps.write_into_files()
+
     scatter_maps.write_into_files()
     path_stats.write_into_files()
 
@@ -128,6 +131,7 @@ def main(input_file):
     output_scattering_information(scatter_stats)
     output_parameter_warnings()
 
+    np.savetxt("Data/Thermal conductivity from MFP.csv", np.array([total_thermal_conductivity]), fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")

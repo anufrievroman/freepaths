@@ -4,8 +4,9 @@ import argparse
 import colorama
 from colorama import Fore, Style
 
+from freepaths.particle_types import ParticleType
 
-__version__ = "2.2"
+__version__ = "2.2.1"
 
 colorama.init()
 
@@ -16,7 +17,7 @@ parser = argparse.ArgumentParser(
                 epilog = 'For more information, examples, and tutorials, visit: https://anufrievroman.gitbook.io/freepaths'
                 )
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
-parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
+parser.add_argument("-s", "--sampling", help="Run in phonon MFP sampling mode", action="store_true")
 parser.add_argument("-e", "--electron", help="Run simulation for electrons", action="store_true")
 args = parser.parse_args()
 
@@ -26,16 +27,14 @@ def run():
     print(f"\n{Fore.BLUE}FreePATHS v{__version__}{Style.RESET_ALL}")
     if args.sampling:
         import freepaths.main_mfp_sampling
-        freepaths.main_mfp_sampling.main(args.input_file)
+        freepaths.main_mfp_sampling.main(args.input_file, ParticleType.PHONON)
 
     elif args.electron:
         import freepaths.main_tracing
-        from freepaths.particle_types import ParticleType
         freepaths.main_tracing.main(args.input_file, ParticleType.ELECTRON)
 
     else:
         import freepaths.main_tracing
-        from freepaths.particle_types import ParticleType
         freepaths.main_tracing.main(args.input_file, ParticleType.PHONON)
 
 
