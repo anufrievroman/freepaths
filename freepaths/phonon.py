@@ -20,7 +20,7 @@ class Phonon(Particle):
         super().__init__()
         # Assign particle type
         self.type = ParticleType.PHONON
-        
+
         self.branch_number = branch_number
         self.phonon_number = phonon_number
 

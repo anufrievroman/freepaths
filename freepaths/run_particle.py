@@ -72,8 +72,8 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission)
         else:
             flight.add_step(cf.timestep)
-            
-        
+
+
         # Record presence of the particle at this timestep and move on:
         thermal_maps.add_energy_to_maps(particle, step_number, material)
         segment_stats.record_time_in_segment(particle.y)
@@ -81,4 +81,3 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         triangle_scattering_places.reset()
         particle.move()
 
-   

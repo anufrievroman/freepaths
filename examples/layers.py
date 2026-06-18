@@ -34,7 +34,6 @@ THICKNESS                      = 1000e-9
 LENGTH                         = 2000e-9
 
 
-
 # Map & profiles parameters:
 pixel_size =15e-9
 NUMBER_OF_PIXELS_X             = int(WIDTH / pixel_size)
@@ -56,7 +55,4 @@ x = start_x
 while x <= end_x:
     INTERFACES.append(VerticalPlane(position_x=x, inner_material='Ge', outer_material=MEDIA, depth = THICKNESS))
     x += period
-
-
-
 

@@ -25,9 +25,9 @@ class ScatteringTypes:
         self.internal = None
         self.hot_side = None
         self.interfaces = None
-        self.interfaces_transmission_diffuse = None 
-        self.interfaces_transmission_specular = None 
-        self.interfaces_transmission = None 
+        self.interfaces_transmission_diffuse = None
+        self.interfaces_transmission_specular = None
+        self.interfaces_transmission = None
 
 
     @property
@@ -39,7 +39,7 @@ class ScatteringTypes:
                     self.walls == Scattering.DIFFUSE,
                     self.hot_side == Scattering.DIFFUSE,
                     self.interfaces == Scattering.DIFFUSE,
-                    self.interfaces_transmission == Scattering.DIFFUSE, 
+                    self.interfaces_transmission == Scattering.DIFFUSE,
                     ])
 
     @property
@@ -56,7 +56,7 @@ class ScatteringTypes:
     def is_specular_on_hole(self):
         """Was there a specular scattering on holes?"""
         return self.holes == Scattering.SPECULAR
-    
+
     @property
     def transmission_is_diffuse(self):
         """Was there a diffuse scattering on interfaces?"""
@@ -77,7 +77,7 @@ class ScatteringTypes:
                     self.internal,
                     self.hot_side,
                     self.interfaces,
-                    self.interfaces_transmission, 
+                    self.interfaces_transmission,
                     ])
 
     def reset(self):
@@ -89,9 +89,9 @@ class ScatteringTypes:
         self.internal = None
         self.hot_side = None
         self.interfaces = None
-        self.interfaces_transmission = None 
-        self.interfaces_transmission_diffuse = None 
-        self.interfaces_transmission_specular = None 
+        self.interfaces_transmission = None
+        self.interfaces_transmission_diffuse = None
+        self.interfaces_transmission_specular = None
 
 
 class ScatteringPlaces:

@@ -262,4 +262,3 @@ def horizontal_surface_down_scattering_1T(pt, roughness, cf, *, mat_in=None, mat
     pt.phi   = asin((asin(2*random() - 1)) / (pi/2))
     return Scattering.DIFFUSE
 
-

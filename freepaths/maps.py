@@ -227,7 +227,6 @@ class ThermalMaps(Maps):
             self.std_material_thermal_conductivity = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
 
 
-
     def write_into_files(self):
         """Write thermal maps into files"""
 

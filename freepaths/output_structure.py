@@ -34,7 +34,7 @@ def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
             patches.extend(patch if isinstance(patch, list) else [patch])
 
 
-    # Bulks as white patches: 
+    # Bulks as white patches:
     for bulk in cf.bulks:
         patch = bulk.get_patch(color_holes, cf)
         patches.extend(patch if isinstance(patch, list) else [patch])

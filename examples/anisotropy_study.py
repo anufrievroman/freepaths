@@ -69,7 +69,6 @@ PARTICLE_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=0, size_z=THICKN
 PARTICLE_SOURCES = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=LENGTH, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]
 
 
-
 HOLES = []
 
 # Staggered lattice of holes:

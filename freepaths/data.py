@@ -96,7 +96,6 @@ class GeneralData(Data):
         self.interfaces_mode.extend(flight.interfaces_mode)
 
 
-
     def write_into_files(self):
         import os
         if not os.path.exists("Data"):
@@ -142,7 +141,6 @@ class GeneralData(Data):
         }
 
 
-
 class ScatteringData(Data):
     """Statistics of particle scattering events"""
 
@@ -168,7 +166,6 @@ class ScatteringData(Data):
         self.interfaces_wavelength = np.zeros(cf.number_of_length_segments+1)
         self.interfaces_frequency = np.zeros(cf.number_of_length_segments+1)
         self.interfaces_mode = np.zeros(cf.number_of_length_segments+1)
-
 
 
     def save_scattering_events(self, y, scattering_types):
@@ -295,7 +292,6 @@ class TriangleScatteringData(Data):
             'floor_diffuse': self.floor_diffuse,
             'floor_specular': self.floor_specular,
         }
-
 
 
 class SegmentData(Data):
