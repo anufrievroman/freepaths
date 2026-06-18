@@ -59,7 +59,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             if cf.is_two_dimensional_material:
                 particle.phi = 0.0
 
-        # If hole scattering has occured, record it:
+        # If hole scattering has occurred, record it:
         if triangle_scattering_places.is_scattered:
             places_stats.save_scattering_events(particle.y, triangle_scattering_places)
         if scattering_types.is_diffuse_on_hole:
@@ -67,11 +67,9 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if scattering_types.is_specular_on_hole:
             flight.save_hole_spec_scattering_angle(particle.theta)
 
-                # If interface transmission has occurred, record it:
-        if scattering_types.interfaces_transmission: 
-            places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission) 
-        elif scattering_types.interfaces_transmission:
-            places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission) 
+        # If interface transmission has occurred, record it:
+        if scattering_types.interfaces_transmission:
+            places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission)
         else:
             flight.add_step(cf.timestep)
             

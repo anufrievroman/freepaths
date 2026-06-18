@@ -36,10 +36,10 @@ def main(input_file, particle_type):
     if cf.media == "Si":
         material = Si(cf.temp, num_points=cf.number_of_particles +1)
 
-# -------- has to be modified fro have only SiGe values and not a mix between Ge and SiGe------------
+# -------- has to be modified to have only SiGe values and not a mix between Ge and SiGe------------
     elif cf.media == "Ge":
         material = Ge(cf.temp, num_points=cf.number_of_particles +1)
-# -------- has to be modified fro have only SiGe values and not a mix between Ge and SiGe------------
+# -------- has to be modified to have only SiGe values and not a mix between Ge and SiGe------------
 
     elif cf.media == "SiC":
         material = SiC(cf.temp, num_points=cf.number_of_particles+1)

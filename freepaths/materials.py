@@ -201,7 +201,7 @@ class Graphite(Material):
 
 # Materials below are not fully supported and don't have the relaxation times:
 
-class Ge: #I am calling it Ge because it is shorter but it is exactly the propeties of Si 0.8 and Ge 0.2
+class Ge(Material): #I am calling it Ge because it is shorter but it is exactly the properties of Si 0.8 and Ge 0.2
     """
     Physical properties of Germanium.
 
@@ -220,17 +220,17 @@ class Ge: #I am calling it Ge because it is shorter but it is exactly the propet
 
     def __init__(self, temp, num_points=1000):
         self.name = "Ge"
-        self.default_speed = 3700   # [m/s] – avera LA/TA
+        self.default_speed = 3700   # [m/s] – average LA/TA
         self.density = 3008         # [kg/m^3] Density	Si1-xGex	(2.329+3.493x-0.499x**2)g cm-3	300 K	Schaffler F. et al.(2001) 4/07
         self.temp = temp
-        self.vg = 3700              # averge group velocity approximation 24/06
-        self.assign_dispersion(num_points)
+        self.vg = 3700              # average group velocity approximation 24/06
+        self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
 
-    def assign_dispersion(self, num_points):
+    def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
 
-        # Coefficients fro approximation f(k) from Ge data – need to be change
+        # Coefficients for approximation f(k) from Ge data – need to be changed
         coefficients_LA = [-2.0e-19, -1.0e-8, 1245.0, 0]
         coefficients_TA = [5.0e-29, 4.0e-19, -6.0e-8, 950.0, 0]
 

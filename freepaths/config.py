@@ -160,7 +160,7 @@ class Config:
 
         for source in self.particles_sources:
             if source.y > self.length:
-                logging.error("Y coordinate of a source exceeded LENGHT")
+                logging.error("Y coordinate of a source exceeded LENGTH")
                 sys.exit()
 
             if source.y < 0:
@@ -215,7 +215,7 @@ class Config:
             sys.exit()
 
 
-    def check_depricated_parameters(self):
+    def check_deprecated_parameters(self):
         """Check for deprecated parameters and warn about them"""
 
         if 'COLD_SIDE_POSITION' in globals():
@@ -258,5 +258,5 @@ class Config:
 cf = Config()
 cf.convert_to_enums()
 cf.check_parameter_validity()
-cf.check_depricated_parameters()
+cf.check_deprecated_parameters()
 

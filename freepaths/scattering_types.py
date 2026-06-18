@@ -59,12 +59,12 @@ class ScatteringTypes:
     
     @property
     def transmission_is_diffuse(self):
-        """Was there a diffuse scattering on holes?"""
+        """Was there a diffuse scattering on interfaces?"""
         return self.interfaces_transmission == Scattering.DIFFUSE
 
     @property
     def transmission_is_specular(self):
-        """Was there a specular scattering on holes?"""
+        """Was there a specular scattering on interfaces?"""
         return self.interfaces_transmission == Scattering.SPECULAR
 
     @property

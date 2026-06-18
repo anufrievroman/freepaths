@@ -42,7 +42,7 @@ class Particle(ABC):
         """
         Checks if the particle at this timestep crossed the cold side.
         Depending on where user set cold sides, we check if particle crossed that line.
-        Return boolean of wheather any of the cold sides has been crossed.
+        Return boolean of whether any of the cold sides has been crossed.
         """
         has_crossed_top = self.y > cf.length
         has_crossed_bottom = self.y < 0
@@ -58,7 +58,7 @@ class Particle(ABC):
         """
         Checks if the particle at this timestep crossed the hot side.
         Depending on where user set hot sides, we check if particle crossed that line.
-        Return boolean of wheather any of the hot sides has been crossed.
+        Return boolean of whether any of the hot sides has been crossed.
         """
         has_crossed_top = self.y > cf.length
         has_crossed_bottom = self.y < 0
@@ -81,7 +81,7 @@ class Particle(ABC):
     
     @abstractmethod
     def assign_speed(self, material):
-        """Assining speed to the particle"""
+        """Assigning speed to the particle"""
         pass
     
     @abstractmethod

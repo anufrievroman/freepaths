@@ -86,7 +86,7 @@ def scattering_on_arccircular_v_holes(
         y = y + 1e-12
     tangent_theta = atan(
         (x - x0) / (y - y0)
-    )  # use for scatering sepcular of circular boundary
+    )  # use for specular scattering on circular boundary
 
     # to know if it is in or not
     if (
@@ -223,7 +223,7 @@ def scattering_on_arccircular_v_demi_down_holes(
         y = y + 1e-12
     tangent_theta = atan(
         (x - x0) / (y - y0)
-    )  # use for scatering sepcular of circular boundary
+    )  # use for specular scattering on circular boundary
 
     # to know if it is in or not
     if (
@@ -374,7 +374,7 @@ def scattering_on_arccircular_v_demi_up_holes(
         y = y + 1e-12
     tangent_theta = atan(
         (x - x0) / (y - y0)
-    )  # use for scatering sepcular of circular boundary
+    )  # use for specular scattering on circular boundary
 
     # to know if it is in or not
     if (

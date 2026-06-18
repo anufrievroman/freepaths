@@ -142,7 +142,6 @@ def worker_process(worker_id, particle_type: ParticleType,total_particles, share
         })
         # Optionnel : re‑lever pour un exitcode ≠ 0
         sys.exit(1)
-        sys.stdout.write(f'\rworker {worker_id} had error {e}\n')
 
 
 def display_workers_finished(finished_workers):

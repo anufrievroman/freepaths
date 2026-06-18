@@ -54,7 +54,7 @@ class Flight:
         """Mean value of all free flights"""
         try:
             mfp = sum(self.free_paths)/len(self.free_paths)
-        except:
+        except ZeroDivisionError:
             mfp = 0
         return mfp
 

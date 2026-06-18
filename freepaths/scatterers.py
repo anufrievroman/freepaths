@@ -91,7 +91,7 @@ class RectangularHole(Hole):
         self.depth = depth
 
     def is_inside(self, x, y, z, cf):
-        """Check if particle with given coordinates traverses the boundary. It also depens on in the hole is complete or partial."""
+        """Check if particle with given coordinates traverses the boundary. It also depends on whether the hole is complete or partial."""
         if self.depth and z:
             return (abs(x - self.x0) <= self.size_x / 2) and (abs(y - self.y0) <= self.size_y / 2) and (z > cf.thickness/2 - self.depth)
         else:
@@ -845,14 +845,14 @@ class Interface:
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """
         Calculate the new direction after scattering on the interface wall.
-        It returns ScatteringTypes object with the scattering type that occured.
+        It returns ScatteringTypes object with the scattering type that occurred.
         """
         pass
 
     def is_transmitted(self) -> bool:
         """
         Check if particle transmitted without scattering, taking into account the probability.
-        It return True if transmission occured or False if it must scatter.
+        It returns True if transmission occurred or False if it must scatter.
         """
         pass
 
