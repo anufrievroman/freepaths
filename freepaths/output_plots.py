@@ -944,8 +944,8 @@ def plot_scattering_statistics():
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Scattering rate (1/ns)')
     legend = ["Sidewalls diffuse", "Sidewalls specular", "Top & bottom diffuse", "Top & bottom specular",
-              "Holes diffuse", "Holes specular", "Internal", "Pillars diffuse", "Pillars specular"]
-    # ax.legend(legend, loc='upper right')
+              "Holes diffuse", "Holes specular", "Internal", "Pillars diffuse", "Pillars specular",
+              "Interfaces diffuse", "Interfaces specular", "Interfaces transmission diffuse", "Interfaces transmission specular"]
     ax.legend(legend, loc='lower center', ncol=2, fancybox=True)
     plt.yscale('log')
     ax.set_ylim(bottom=1.0)
@@ -954,10 +954,11 @@ def plot_scattering_statistics():
 
     # Save the file:
     filename = "Data/Scattering rates.csv"
-    header1 = "Y [um], Sidewalls diffuse [1/ns], Sidewalls specular [1/ns], Top & bottom diffuse [1/ns], "
-    header2 = "Top & bottom specular [1/ns], Holes diffuse [1/ns], Holes specular [1/ns], Hot side [1/ns], "
-    header3 = "Internal [1/ns], Pillars diffuse [1/ns], Pillars specular [1/ns]"
-    header = header1 + header2 + header3
+    header = ("Y [um], Sidewalls diffuse [1/ns], Sidewalls specular [1/ns], Top & bottom diffuse [1/ns], "
+              "Top & bottom specular [1/ns], Holes diffuse [1/ns], Holes specular [1/ns], "
+              "Internal [1/ns], Pillars diffuse [1/ns], Pillars specular [1/ns], "
+              "Interfaces diffuse [1/ns], Interfaces specular [1/ns], "
+              "Interfaces transmission diffuse [1/ns], Interfaces transmission specular [1/ns]")
     data = np.vstack((segments, all_scattering_rates)).T
     np.savetxt(filename, data, fmt='%1.2e', delimiter=",", header=header)
 
