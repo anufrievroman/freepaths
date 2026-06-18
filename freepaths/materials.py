@@ -240,7 +240,7 @@ class Ge(Material): #I am calling it Ge because it is shorter but it is exactly 
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA
         self.dispersion[:, 3] = self.dispersion[:, 2]  # TA2 = TA1 (approx)
 
-    def relaxation_time(self, omega):
+    def phonon_relaxation_time(self, omega):
         """Relaxation time model (impurities + Umklapp scattering)"""
 
         # Debye Température approx from Ge : ~230 K
