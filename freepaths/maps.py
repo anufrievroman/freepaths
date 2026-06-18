@@ -1,11 +1,9 @@
 """Module that controls recording, calculation, and saving thermal and scattering maps"""
 
-from math import cos
+from math import cos, sin
 from scipy.constants import hbar, pi
 import numpy as np
-from math import cos , sin
 from freepaths.config import cf
-from freepaths.move import move
 
 class Maps:
     """Parent maps class with functions common to all classes below"""
@@ -116,6 +114,8 @@ class ThermalMaps(Maps):
 
         # Calculate the pixel volumes with respect to holes:
         self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
+        self.vol_pixel_correction_per_col = np.mean(self.vol_pixel_ratio, axis=0)
+        self.vol_pixel_correction_per_row = np.mean(self.vol_pixel_ratio, axis=1)
 
     def calculate_pixel_volumes(self, number_of_pixels_x, number_of_pixels_y):
         """Calculate a map showing if the pixel contains material (1) or a hole (0)"""
@@ -140,20 +140,17 @@ class ThermalMaps(Maps):
         This first time step is unique for each phonon. This is done to simulate more relistic continious heat flow.
         """
 
-        # Move the recording point forwards half a timestep as to remove asymetric boundary fluxes (doesn't work)
-        ph_x, ph_y, _ = move(pt, cf.timestep/2)
-
         # Calculate the index of the pixel in which we record this phonon:
-        index_x = int(((ph_x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
-        index_y = int(ph_y // (cf.length / cf.number_of_pixels_y))
+        index_x = int(((pt.x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
+        index_y = int(pt.y // (cf.length / cf.number_of_pixels_y))
 
         # Prevent error if the phonon is outside the structure:
         if (0 <= index_x < cf.number_of_pixels_x) and (0 <= index_y < cf.number_of_pixels_y):
 
             # Calculate pixel volume correction factors:
             vol_pixel_correction = self.vol_pixel_ratio[index_y, index_x]
-            vol_pixel_correction_x = np.mean(self.vol_pixel_ratio[:, index_x])
-            vol_pixel_correction_y = np.mean(self.vol_pixel_ratio[index_y, :])
+            vol_pixel_correction_x = self.vol_pixel_correction_per_col[index_x]
+            vol_pixel_correction_y = self.vol_pixel_correction_per_row[index_y]
 
             # Do not record data if the pixel is an empty one:
             if vol_pixel_correction == 0 and cf.ignore_faulty_particles:

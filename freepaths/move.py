@@ -1,6 +1,6 @@
 """Module that move a particle in one timestep using cache of previous moves"""
 
-from numpy import cos, sin
+from math import cos, sin
 from functools import lru_cache
 
 
