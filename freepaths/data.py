@@ -161,11 +161,6 @@ class ScatteringData(Data):
         self.total = np.zeros(cf.number_of_length_segments+1)
         self.interfaces_transmission_specular= np.zeros(cf.number_of_length_segments + 1)
         self.interfaces_transmission_diffuse = np.zeros(cf.number_of_length_segments + 1)
-        self.interfaces_angles = np.zeros(cf.number_of_length_segments + 1)
-        self.interfaces_transmission_factor = np.zeros(cf.number_of_length_segments + 1)
-        self.interfaces_wavelength = np.zeros(cf.number_of_length_segments+1)
-        self.interfaces_frequency = np.zeros(cf.number_of_length_segments+1)
-        self.interfaces_mode = np.zeros(cf.number_of_length_segments+1)
 
 
     def save_scattering_events(self, y, scattering_types):
@@ -212,14 +207,10 @@ class ScatteringData(Data):
         data = np.vstack((self.wall_diffuse, self.wall_specular, self.top_diffuse, self.top_specular, self.hole_diffuse,
                         self.hole_specular, self.hot_side, self.internal, self.pillar_diffuse, self.pillar_specular,
                         self.interfaces_diffuse, self.interfaces_specular,
-                        self.interfaces_transmission_diffuse, self.interfaces_transmission_specular,
-                        self.interfaces_transmission_factor, self.interfaces_angles,
-                        self.interfaces_wavelength, self.interfaces_mode)).T
-        header1 = "Sidewalls diffuse, Sidewalls specular, Top & bottom diffuse, Top & bottom specular, "
-        header2 = "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular"
-        header3 = "Interfaces diffuse, Interfaces specular, Interfaces transmission diffuse, Interfaces transmission specular, " \
-        "Interfaces transmission factor, Interfaces angles, Interfaces wavelength, Interfaces frequency, Interfaces mode"
-        header = header1 + header2 + header3
+                        self.interfaces_transmission_diffuse, self.interfaces_transmission_specular)).T
+        header = ("Sidewalls diffuse, Sidewalls specular, Top & bottom diffuse, Top & bottom specular, "
+                  "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular, "
+                  "Interfaces diffuse, Interfaces specular, Interfaces transmission diffuse, Interfaces transmission specular")
         np.savetxt(filename, data, fmt='%1.3e', delimiter=",", header=header, encoding='utf-8')
 
     def dump_data(self):
@@ -239,11 +230,6 @@ class ScatteringData(Data):
             'interfaces_specular': self.interfaces_specular,
             'interfaces_transmission_specular': self.interfaces_transmission_specular,
             'interfaces_transmission_diffuse': self.interfaces_transmission_diffuse,
-            'interfaces_angles': self.interfaces_angles,
-            'interfaces_transmission_factor': self.interfaces_transmission_factor,
-            'interfaces_wavelength': self.interfaces_wavelength,
-            'interfaces_frequency': self.interfaces_frequency,
-            'interfaces_mode' : self.interfaces_mode,
             'total': self.total
         }
 
