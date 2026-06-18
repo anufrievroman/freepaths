@@ -1,4 +1,4 @@
-"""This example show how FreePATHS can output animation of particle paths in the structure"""
+"""This example shows how FreePATHS can output animation of particle paths in the structure"""
 
 # !! Animations are currently broken !!
 

@@ -1,9 +1,9 @@
-"""Test file which contains all possible shapes for testing"""
+"""Config file which contains all possible hole shapes for testing"""
 
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'All shapes'
-NUMBER_OF_PARTICLE             = 1000
+NUMBER_OF_PARTICLES            = 1000
 T                              = 4.0
 
 # Multiprocessing

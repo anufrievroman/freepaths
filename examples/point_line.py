@@ -1,6 +1,5 @@
 """Example file to explain the point line hole shape"""
 
-import math
 import numpy as np
 
 

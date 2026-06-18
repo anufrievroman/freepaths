@@ -1,4 +1,4 @@
-"""Config file to simulate a membrane with a staggered lattice of rectangular slits"""
+"""Config file to simulate a membrane with a staggered lattice of triangular holes"""
 
 import numpy as np
 

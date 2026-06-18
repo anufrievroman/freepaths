@@ -2,7 +2,7 @@
 
 # General parameters:
 OUTPUT_FOLDER_NAME             = 'Phononic crystal square'
-NUMBER_OF_PARTCILES            = 10000
+NUMBER_OF_PARTICLES            = 10000
 NUMBER_OF_TIMESTEPS            = 60000
 T                              = 4.0
 

@@ -1,6 +1,6 @@
 """
 Config file to simulate a membrane with a staggered lattice of rectangular slits
-Here we impose thermal gradient in vertical or horizonta direction
+Here we impose thermal gradient in vertical or horizontal direction
 """
 
 import numpy as np
@@ -72,7 +72,7 @@ PARTICLE_SOURCES = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=LENGTH
 
 HOLES = []
 
-# Staggered attice of holes:
+# Staggered lattice of holes:
 period_x = 300e-9
 period_y = 300e-9
 number_of_periods_x = 4

@@ -47,7 +47,7 @@ PARTICLE_SOURCES                 = [Source(x=0, y=0, z=0, size_x=WIDTH,  size_y=
 
 # Interfaces (or thin layers of another material):
 INTERFACES = []
-period = 20e-9 # i.e. istance between interfaces
+period = 20e-9 # i.e. distance between interfaces
 start_x = -WIDTH / 2 + period
 end_x = WIDTH / 2 - period
 INTERFACE_ROUGHNESS = 1.5e-9

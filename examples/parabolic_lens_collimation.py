@@ -34,12 +34,6 @@ USE_GRAY_APPROXIMATION_MFP     = False
 GRAY_APPROXIMATION_MFP         = None
 
 
-# System dimensions [m]:
-THICKNESS                      = 150e-9
-WIDTH                          = 2000e-9
-LENGTH                         = 2000e-9
-
-
 # Roughness [m]:
 SIDE_WALL_ROUGHNESS            = 2e-9
 TOP_ROUGHNESS                  = 0.2e-9
