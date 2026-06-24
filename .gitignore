@@ -2,5 +2,10 @@
 /build
 /Results
 /Runs
+/Nanowires
 */__pycache__
 /.vscode
+
+# Root-level input files (user simulations, not part of the package)
+/*.py
+!setup.py
