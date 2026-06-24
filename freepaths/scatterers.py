@@ -19,7 +19,7 @@ from freepaths.scattering_types import ScatteringTypes
 
 from freepaths.interface_smmm import alpha_total_2T, alpha_total_1T
 from freepaths.scattering_types import Scattering
-from freepaths.materials import Si, SiC, Graphite, Ge
+from freepaths.materials import Si, SiC, Graphite, SiGe
 
 class Hole:
     def is_inside(self, x, y, z, cf) -> bool:
@@ -876,16 +876,16 @@ class VerticalPlane(Interface):
     def assign_materials(self, cf):
         if self.inner_material == "Si":
             self.inner_material = Si(cf.temp)
-        if self.inner_material == "Ge":
-            self.inner_material = Ge(cf.temp)
+        if self.inner_material == "SiGe":
+            self.inner_material = SiGe(cf.temp)
         if self.inner_material == "SiC":
             self.inner_material = SiC(cf.temp)
         if self.inner_material == "Graphite":
             self.inner_material = Graphite(cf.temp)
         if self.outer_material == "Si":
             self.outer_material = Si(cf.temp)
-        if self.outer_material == "Ge":
-            self.outer_material = Ge(cf.temp)
+        if self.outer_material == "SiGe":
+            self.outer_material = SiGe(cf.temp)
         if self.outer_material == "SiC":
             self.outer_material = SiC(cf.temp)
         if self.outer_material == "Graphite":
@@ -904,7 +904,7 @@ class VerticalPlane(Interface):
         rho_i = self.outer_material.density # getattr(mat_0, 'density', None)
         rho_j = self.inner_material.density #getattr(mat_j, 'density', None)
 
-        # Assing velocities:
+        # Assign velocities:
         vg_i = pt.speed
         pt.assign_speed(self.inner_material)
         vg_j = pt.speed
@@ -913,6 +913,13 @@ class VerticalPlane(Interface):
         omega_j = omega_i  #conservation
 
         self.vg_i_to_vg_j = vg_i / vg_j
+
+        # Phonons use the SMMM model which requires a dispersion branch index.
+        # Electrons have no branch, so fall back to an effective-mass acoustic mismatch: T = 4*m1*m2/(m1+m2)^2
+        if not hasattr(pt, 'branch_number'):
+            m_i = mat_0.effective_electron_dos_mass if cf.is_carrier_electron else mat_0.effective_hole_dos_mass
+            m_j = mat_j.effective_electron_dos_mass if cf.is_carrier_electron else mat_j.effective_hole_dos_mass
+            return 4 * m_i * m_j / (m_i + m_j) ** 2
 
         return alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, mat_0, mat_j, pt.branch_number, cf.interface_roughness)
 
@@ -928,12 +935,13 @@ class VerticalPlane(Interface):
         theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
 
         if hasattr(pt, 'flight'):
-
             pt.flight.save_interfaces_angles(abs(theta_i))
             pt.flight.save_interfaces_transmission_factor(transmission)
-            pt.flight.save_interfaces_wavelength()
-            pt.flight.save_interfaces_frequency()
-            pt.flight.save_interfaces_mode()
+            # wavelength and branch mode are phonon-only quantities; skip for electrons
+            if hasattr(pt, 'branch_number'):
+                pt.flight.save_interfaces_wavelength()
+                pt.flight.save_interfaces_frequency()
+                pt.flight.save_interfaces_mode()
 
         # else:
         if random() < transmission:

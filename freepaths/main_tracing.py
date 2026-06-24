@@ -19,7 +19,7 @@ from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite, Ge
+from freepaths.materials import Si, SiC, Graphite, SiGe
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.animation import create_animation
@@ -38,8 +38,8 @@ class ParticleSimulator:
         # Initialize the material:
         if cf.media == "Si":
             self.material = Si(cf.temp)
-        elif cf.media == "Ge":
-            self.material = Ge(cf.temp)
+        elif cf.media == "SiGe":
+            self.material = SiGe(cf.temp)
         elif cf.media == "SiC":
             self.material = SiC(cf.temp)
         elif cf.media == "Graphite":

@@ -19,7 +19,7 @@ from freepaths.flight import Flight
 from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite, Ge
+from freepaths.materials import Si, SiC, Graphite, SiGe
 from freepaths.maps import ScatteringMap, ThermalMaps
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.output_plots import plot_data
@@ -36,10 +36,8 @@ def main(input_file, particle_type):
     if cf.media == "Si":
         material = Si(cf.temp, num_points=cf.number_of_particles +1)
 
-# -------- has to be modified to have only SiGe values and not a mix between Ge and SiGe------------
-    elif cf.media == "Ge":
-        material = Ge(cf.temp, num_points=cf.number_of_particles +1)
-# -------- has to be modified to have only SiGe values and not a mix between Ge and SiGe------------
+    elif cf.media == "SiGe":
+        material = SiGe(cf.temp, num_points=cf.number_of_particles +1)
 
     elif cf.media == "SiC":
         material = SiC(cf.temp, num_points=cf.number_of_particles+1)

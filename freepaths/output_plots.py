@@ -13,7 +13,7 @@ from freepaths.config import cf
 from freepaths.particle_types import ParticleType
 from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
-from freepaths.materials import Si, SiC, Graphite, Ge
+from freepaths.materials import Si, SiC, Graphite, SiGe
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['pdf.compression'] = 9   # compresse PDF flux
@@ -1002,8 +1002,8 @@ def plot_material_properties():
     # Initialize the material:
     if cf.media == "Si":
         material = Si(cf.temp)
-    elif cf.media == "Ge ":
-        material = Ge(cf.temp)
+    elif cf.media == "SiGe":
+        material = SiGe(cf.temp)
     elif cf.media == "SiC":
         material = SiC(cf.temp)
     elif cf.media == "Graphite":

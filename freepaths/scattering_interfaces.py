@@ -7,7 +7,7 @@ from numpy import sign
 from freepaths.particle_types import ParticleType
 from freepaths.move import move
 from freepaths.scattering_types import Scattering
-from freepaths.materials import Si, Ge
+from freepaths.materials import Si, SiGe
 
 
 def specularity(angle, roughness, particle):
@@ -109,7 +109,7 @@ def vertical_surface_left_scattering_1T(pt, roughness, cf=None, *, mat_in=None, 
 
     if (mat_in is None) or (mat_out is None):
         mat_0 = next((m for m in cf.materials if getattr(m, "name", "") == "Si"), None) or cf.materials[0]
-        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "Ge"), None) or cf.materials[-1]
+        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "SiGe"), None) or cf.materials[-1]
     else:
         mat_0, mat_j = mat_in, mat_out
 
@@ -152,7 +152,7 @@ def vertical_surface_right_scattering_1T(pt, roughness, cf, *, mat_in=None, mat_
 
     if (mat_in is None) or (mat_out is None):
         mat_0 = next((m for m in cf.materials if getattr(m, "name", "") == "Si"), None) or cf.materials[0]
-        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "Ge"), None) or cf.materials[-1]
+        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "SiGe"), None) or cf.materials[-1]
     else:
         mat_0, mat_j = mat_in, mat_out
 
@@ -194,7 +194,7 @@ def horizontal_surface_up_scattering_1T(pt, roughness, cf, *, mat_in=None, mat_o
 
     if (mat_in is None) or (mat_out is None):
         mat_0 = next((m for m in cf.materials if getattr(m, "name", "") == "Si"), None) or cf.materials[0]
-        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "Ge"), None) or cf.materials[-1]
+        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "SiGe"), None) or cf.materials[-1]
     else:
         mat_0, mat_j = mat_in, mat_out
 
@@ -231,7 +231,7 @@ def horizontal_surface_down_scattering_1T(pt, roughness, cf, *, mat_in=None, mat
 
     if (mat_in is None) or (mat_out is None):
         mat_0 = next((m for m in cf.materials if getattr(m, "name", "") == "Si"), None) or cf.materials[0]
-        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "Ge"), None) or cf.materials[-1]
+        mat_j = next((m for m in cf.materials if getattr(m, "name", "") == "SiGe"), None) or cf.materials[-1]
     else:
         mat_0, mat_j = mat_in, mat_out
 

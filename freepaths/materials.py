@@ -201,9 +201,9 @@ class Graphite(Material):
 
 # Materials below are not fully supported and don't have the relaxation times:
 
-class Ge(Material): #I am calling it Ge because it is shorter but it is exactly the properties of Si 0.8 and Ge 0.2
+class SiGe(Material):
     """
-    Physical properties of Germanium.
+    Physical properties of Si0.8Ge0.2 alloy.
 
     Dispersion – Adapted from:
         - M. Muta, H. Nakamura, and S. Yamanaka, *J. Alloys Compd.* **392**, 306–309 (2005)
@@ -216,14 +216,20 @@ class Ge(Material): #I am calling it Ge because it is shorter but it is exactly 
     Heat capacity – Fit based on:
         - Desai P.D., *J. Phys. Chem. Ref. Data* **13**, 1069 (1984)
         - W. Wunderlich, *Thermophysical Properties of Materials*, Springer (2005)
+
+    Effective masses – linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
 
     def __init__(self, temp, num_points=1000):
-        self.name = "Ge"
+        self.name = "SiGe"
         self.default_speed = 3700   # [m/s] – average LA/TA
-        self.density = 3008         # [kg/m^3] Density	Si1-xGex	(2.329+3.493x-0.499x**2)g cm-3	300 K	Schaffler F. et al.(2001) 4/07
+        self.density = 3008         # [kg/m^3] Si1-xGex: (2.329+3.493x-0.499x**2) g/cm^3, x=0.2, Schaffler (2001)
         self.temp = temp
         self.vg = 3700              # average group velocity approximation 24/06
+        self.effective_electron_dos_mass = 1.06 * electron_mass  # [kg] Si0.8Ge0.2: linear interp. Si(1.18) and Ge(0.56)
+        self.effective_electron_mass = 0.23 * electron_mass      # [kg] conductivity mass, linear interp. Si(0.26) and Ge(0.12)
+        self.effective_hole_dos_mass = 0.71 * electron_mass      # [kg] linear interp. Si(0.81) and Ge(0.29)
+        self.effective_hole_mass = 0.19 * electron_mass          # [kg] light hole, linear interp. Si(0.23) and Ge(0.044)
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
 
