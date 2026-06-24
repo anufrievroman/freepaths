@@ -1,6 +1,6 @@
-# FreePATHS - Free Phonon And Thermal Simulator
+# FreePATHS - Free Phonon And THermal Simulator
 
-This Monte Carlo algorithm simulates trajectories of phonons in 3D models of nanostructures, which consists of a box with holes or pillars of various shapes. The algorithm outputs phonon trajectories, heat fluxes, temperature maps and profiles, the thermal conductivity, scattering maps and statistics and other information. See [documentation](https://anufrievroman.gitbook.io/freepaths/) for the details of the simulation.
+This Monte Carlo algorithm simulates trajectories of phonons or electrons in 3D models of nanostructures, which consists of a box with holes, pillars, or interfaces of various shapes. For phonons, the algorithm outputs heat fluxes, temperature maps and profiles, thermal conductivity, scattering maps and statistics, and other information. For electrons, it outputs electrical conductivity, Seebeck coefficient, electronic thermal conductivity, power factor, and related quantities as a function of Fermi level. See [documentation](https://anufrievroman.gitbook.io/freepaths/) for the details of the simulation.
 
 ![Screenshot](https://github.com/anufrievroman/Monte-Carlo/blob/master/screenshot.png)
 
@@ -35,6 +35,15 @@ See [documentation](https://anufrievroman.gitbook.io/freepaths/examples) for exp
 `freepaths simple_nanowire.py`
 
 After the simulation, see the results in a newly created **Results** folder.
+
+
+### Electron mode
+
+FreePATHS can also simulate electron transport. In this mode, electrons are traced through the structure and thermoelectric properties — electrical conductivity, Seebeck coefficient, electronic thermal conductivity, and power factor — are computed as a function of Fermi level. To run in electron mode, add the `-e` flag:
+
+`freepaths -e your_input_file.py`
+
+See the [tutorial](https://anufrievroman.gitbook.io/freepaths/basic-tutorials/electrons-in-holey-membranes) and [theory](https://anufrievroman.gitbook.io/freepaths/theory/electrical-conductivity) for details.
 
 
 ### MFP sampling mode
