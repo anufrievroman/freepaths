@@ -633,18 +633,18 @@ def plot_electron_conductivity():
     material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
     fig, ax = plt.subplots()
     fermi_levels, conductivity, theorical_conductivity = np.genfromtxt("Data/Electron conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_levels * 1e3 / electron_volt, conductivity, '-o', markersize=2, c='royalblue', label="Computed")
-    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
+    ax.plot(fermi_levels * 1e3 / electron_volt, conductivity * 1e-3, '-o', markersize=2, c='royalblue', label="Computed")
+    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity * 1e-3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Electron conductivity (S/m)')
+    ax.set_ylabel('Electron conductivity (kS/m)')
     ax.grid(True, linestyle='--', alpha=0.7)
     material_conductivity = interpolate_property(fermi_levels, conductivity, material.fermi_level)
     ax.axhline(
-        y=material_conductivity,
+        y=material_conductivity * 1e-3,
         color='gray',
         linestyle='--',
         linewidth=1,
-        label=f"σ = {material_conductivity:.4e} S/m at {material.fermi_level*1e3 / electron_volt:.2e} meV"
+        label=f"σ = {material_conductivity * 1e-3:.2f} kS/m at {material.fermi_level*1e3 / electron_volt:.2e} meV"
     )
     ax.axvline(
         x=material.fermi_level * 1e3 / electron_volt,
@@ -673,7 +673,13 @@ def plot_seebeck_coefficient():
         color='gray',
         linestyle='--',
         linewidth=1,
-        label=f"y = {material_seebeck:.2e}"
+        label=f"S = {material_seebeck:.2f} mV/K at {material.fermi_level * 1e3 / electron_volt:.2e} meV"
+    )
+    ax.axvline(
+        x=material.fermi_level * 1e3 / electron_volt,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
     )
     plt.legend()
     fig.savefig("Seebeck coefficient.pdf", format="pdf", bbox_inches="tight")
@@ -697,11 +703,23 @@ def plot_mapping_constant():
     material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
     fig, ax = plt.subplots()
     fermi_level, mapping_constant = np.genfromtxt("Data/Mapping constant.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
-    material_constant = interpolate_property(fermi_level, mapping_constant, material.fermi_level) * np.ones_like(fermi_level)
+    material_constant = interpolate_property(fermi_level, mapping_constant, material.fermi_level)
     ax.plot(fermi_level * 1e3 / electron_volt, mapping_constant, '-o', markersize=2, c='royalblue', label='Computed')
-    ax.plot(fermi_level * 1e3 / electron_volt, material_constant, markersize=2, c='darkorange', label=f"C={material_constant[0]:.4e}")
+    ax.axhline(
+        y=material_constant,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+        label=f"C = {material_constant:.4e} m² at {material.fermi_level * 1e3 / electron_volt:.2e} meV"
+    )
+    ax.axvline(
+        x=material.fermi_level * 1e3 / electron_volt,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+    )
     ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Mapping constant (m^2)')
+    ax.set_ylabel('Mapping constant (m²)')
     ax.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     fig.savefig("Mapping constant.pdf", format="pdf", bbox_inches="tight")
@@ -709,13 +727,28 @@ def plot_mapping_constant():
 
 def plot_electron_thermal_conductivity():
     """Plot electron thermal conductivity with respect to fermi-level"""
+    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
     fig, ax = plt.subplots()
     fermi_level, thermal_conductivity, theorical_thermal_conductivity = np.genfromtxt("Data/Electron thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
     ax.plot(fermi_level * 1e3 / electron_volt, thermal_conductivity, '-o', markersize=2, c='royalblue', label="Computed")
     # ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
     ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Thermal conductivity (W/m.K)')
+    ax.set_ylabel('Thermal conductivity (W/m·K)')
     ax.grid(True, linestyle='--', alpha=0.7)
+    material_kappa = interpolate_property(fermi_level, thermal_conductivity, material.fermi_level)
+    ax.axhline(
+        y=material_kappa,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+        label=f"κ_e = {material_kappa:.4f} W/m·K at {material.fermi_level * 1e3 / electron_volt:.2e} meV"
+    )
+    ax.axvline(
+        x=material.fermi_level * 1e3 / electron_volt,
+        color='gray',
+        linestyle='--',
+        linewidth=1,
+    )
     plt.legend()
     fig.savefig("Electron thermal conductivity.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)
@@ -1059,15 +1092,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
             plot_scattering_angle_distribution,
             ])
 
-    # If there are interfaces, plot transmission statistics:
-    if cf.interfaces:
-        phonon_function_list.extend([
-            plot_interfaces_angles_distribution,
-            plot_transmission_vs_angle,
-            plot_transmission_vs_wavelength,
-            plot_transmission_vs_frequency,
-            plot_transmission_heatmaps_by_mode,
-            ])
 
     # Defines what will be plotted after the electron simulations:
     electron_function_list = [

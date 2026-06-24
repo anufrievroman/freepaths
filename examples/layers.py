@@ -20,6 +20,12 @@ NUMBER_OF_PROCESSES = 8
 
 # Material parameters:
 MEDIA                          = 'Si'
+# Fermi level for n-type Si at n ≈ 1.85e19 cm⁻³ (average of measured carrier concentrations).
+# Calculated via Joyce-Dixon approximation for degenerate semiconductors:
+#   E_F = kT * [ln(n/Nc) + (1/√8) * (n/Nc)]
+# with Nc(300K) ≈ 2.8e19 cm⁻³, giving E_F ≈ −0.005 eV below the conduction band edge.
+MEDIA_FERMI_LEVEL              = -0.005 * electron_volt
+MEAN_MAPPING_CONSTANT          = 1e-6  # [m²] calibration constant; tune against a known reference
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
@@ -31,7 +37,7 @@ RETHERMALIZATION_ON_HOT_SIDES = True
 # System dimensions [m]:
 WIDTH                          = 180.5e-9 # security of 0.5nm to avoid numerical issues
 THICKNESS                      = 1000e-9
-LENGTH                         = 2000e-9
+LENGTH                         = 1000e-9
 
 
 # Map & profiles parameters:

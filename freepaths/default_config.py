@@ -25,11 +25,11 @@ NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
 
 # Electron parameters [eV]
 IS_CARRIER_ELECTRON              = True
-ENERGY_UPPER_BOUND               = 3*k*T / electron_volt
+ENERGY_UPPER_BOUND               = 6*k*T / electron_volt
 ENERGY_LOWER_BOUND               = 0
 ENERGY_STEP                      = 5e-3
 
-ELECTRON_MFP                     = 15e-9 # [m]
+ELECTRON_MFP                     = 10e-9 # [m]
 MEAN_MAPPING_CONSTANT            = 5e-6 # [m²]
 
 

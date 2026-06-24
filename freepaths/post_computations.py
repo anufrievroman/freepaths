@@ -54,7 +54,7 @@ class ElectronPostComputation:
 
     def compute_physical_functions(self):
         """Compute physical functions used for others calculations"""
-        self.fermi_levels = np.linspace(self.material.fermi_level - 0.1*electron_volt, self.material.fermi_level + 0.1*electron_volt, 200)
+        self.fermi_levels = np.linspace(self.material.fermi_level - 0.03*electron_volt, self.material.fermi_level + 0.03*electron_volt, 200)
         # Suppose energy null at minimum of conduction band
         self.eta = np.subtract.outer(self.energies_unique, self.fermi_levels) / (k*cf.temp) # shape = (energies_unique, fermi_levels)
         self.fermi_dist = 1.0/(1.0 + np.exp(self.eta))
