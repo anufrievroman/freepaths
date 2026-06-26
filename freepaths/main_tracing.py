@@ -149,13 +149,16 @@ def worker_process(worker_id, particle_type: ParticleType,total_particles, share
 def display_workers_finished(finished_workers):
     """ Print out the number of active workers"""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-    while True:
-        text_to_display = f'  Processes finished: {finished_workers.value}/{cf.num_workers}'
-        sys.stdout.write(text_to_display)
-        sys.stdout.write(f'\033[{len(text_to_display)}D') # move cursor back
-        sys.stdout.flush()
-        if finished_workers.value == cf.num_workers: break
-        time.sleep(0.3)
+    try:
+        while True:
+            text_to_display = f'  Processes finished: {finished_workers.value}/{cf.num_workers}'
+            sys.stdout.write(text_to_display)
+            sys.stdout.write(f'\033[{len(text_to_display)}D') # move cursor back
+            sys.stdout.flush()
+            if finished_workers.value == cf.num_workers: break
+            time.sleep(0.3)
+    except Exception:
+        pass
 
 
 def main(input_file, particle_type):

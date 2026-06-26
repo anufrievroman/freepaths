@@ -7,7 +7,7 @@ from colorama import Fore, Style
 
 from freepaths.particle_types import ParticleType
 
-__version__ = "2.2.4"
+__version__ = "2.3.0"
 
 colorama.init()
 
@@ -56,7 +56,7 @@ def run():
             freepaths.main_tracing.main(args.input_file, ParticleType.PHONON)
 
     except KeyboardInterrupt:
-        print("\nSimulation interrupted by user.")
+        print(f"\n{Fore.RED}Simulation interrupted by user.{Style.RESET_ALL}")
         sys.exit(0)
 
 
