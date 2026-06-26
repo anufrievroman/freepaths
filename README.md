@@ -18,9 +18,13 @@ FreePATHS is a command line application, so it runs inside Linux, MacOS, or Wind
 
 There are two modes of using the program. Main mode traces a large number of phonons through a structure and collects statistics about their paths. The MFP sampling mode measures phonon mean free paths using a small number of phonons and calculates the thermal conductivity by integrating phonon dispersion. 
 
-### Demo
+### Getting started
 
-If you simply run `freepaths` without specifying an input file, the program will run a demo simulation.
+If you run `freepaths` without any arguments, the program will print a usage summary. To run a demo simulation with default parameters, use the `--demo` flag:
+
+`freepaths --demo`
+
+Example input files are available in the [examples](https://github.com/anufrievroman/freepaths/tree/master/examples) folder.
 
 ### Main mode
 
