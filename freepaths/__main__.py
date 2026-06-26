@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(
                 epilog = 'For more information, examples, and tutorials, visit: https://anufrievroman.gitbook.io/freepaths'
                 )
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
+parser.add_argument("-v", "--version", action="version", version=f"FreePATHS {__version__}")
 parser.add_argument("-s", "--sampling", help="Run in phonon MFP sampling mode", action="store_true")
 parser.add_argument("-e", "--electron", help="Run simulation for electrons", action="store_true")
 args = parser.parse_args()

@@ -808,8 +808,13 @@ def plot_temperature_profile():
     """Plot profile of temperature for each time segment"""
     fig, ax = plt.subplots()
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe_num in range(len(data) - 1):
-        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+    coords = data[0]
+    n_timeframes = len(data) - 1
+    for timeframe_num in range(n_timeframes):
+        ax.plot(coords[1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+    # Linear fit of the last timeframe (same algorithm as thermal conductivity calculation)
+    slope, intercept = np.polyfit(coords, data[n_timeframes], 1)
+    ax.plot(coords[1:], slope * coords[1:] + intercept, '--', color='gray', linewidth=1, label='Linear fit (last frame)')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
     ax.legend()
@@ -819,11 +824,16 @@ def plot_temperature_profile():
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
 
+    data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
+    n_timeframes = (len(data) - 1) // 2
+
     # Effective heat flux:
     fig, ax = plt.subplots()
-    data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
-    for timeframe_num in range((len(data) - 1) // 2):
-        ax.plot(data[0], data[timeframe_num + 1], linewidth=1, label=f'Time frame {timeframe_num+1}')
+    for timeframe_num in range(n_timeframes):
+        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+    # Mean of the last timeframe, skipping first pixel (same as thermal conductivity calculation)
+    mean_flux = np.mean(data[n_timeframes][1:])
+    ax.axhline(mean_flux, color='gray', linestyle='--', linewidth=1, label='Mean (last frame)')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
@@ -832,8 +842,10 @@ def plot_heat_flux_profile():
 
     # Material heat flux:
     fig, ax = plt.subplots()
-    for timeframe_num in range((len(data) - 1) // 2):
-        ax.plot(data[0], data[2*timeframe_num + 1], linewidth=1, label=f'Time frame {timeframe_num+1}')
+    for timeframe_num in range(n_timeframes):
+        ax.plot(data[0][1:], data[2*timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+    mean_flux_mat = np.mean(data[2*n_timeframes - 1][1:])
+    ax.axhline(mean_flux_mat, color='gray', linestyle='--', linewidth=1, label='Mean (last frame)')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
     ax.legend()
@@ -1133,6 +1145,10 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         function_list = phonon_function_list
     else:
         function_list = electron_function_list
+
+    # These plots require data files that are not saved in low memory mode:
+    if cf.low_memory_usage:
+        function_list = [f for f in function_list if f not in (plot_trajectories, plot_free_path_distribution)]
 
     # Run main functions and handle exceptions:
     for func in function_list:

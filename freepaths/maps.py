@@ -208,9 +208,10 @@ class ThermalMaps(Maps):
             slope, _ = np.polyfit(coordinates_y, self.temperature_profile_y[:, timeframe_number], 1)
             grad_T = -slope
 
-            # Average heat flux:
-            J_effective = np.mean(self.effective_heat_flux_profile_y[:, timeframe_number])
-            J_material = np.mean(self.material_heat_flux_profile_y[:, timeframe_number])
+            # Average heat flux (skip first pixel — it has a spurious spike due to
+            # rethermalization being applied before map recording in the time-step loop):
+            J_effective = np.mean(self.effective_heat_flux_profile_y[1:, timeframe_number])
+            J_material = np.mean(self.material_heat_flux_profile_y[1:, timeframe_number])
 
             # By definition, J = -K * grad(T), so:
             if grad_T != 0:
