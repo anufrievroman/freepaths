@@ -271,19 +271,6 @@ def plot_interfaces_angles_distribution():
     np.savetxt('Data/Distribution of interfaces angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
 
 
-import subprocess
-import os
-
-def open_pdf_with_mupdf(pdf_path):
-    try:
-        # path of mu pdf
-        mupdf_path = r"C:\Users\victo\Downloads\mupdf-1.26.2-windows\mupdf-1.26.2-windows\mupdf-gl.exe"
-
-        # Lancer mupdf avec ton fichier
-        subprocess.Popen([mupdf_path, os.path.abspath(pdf_path)])
-    except Exception as e:
-        print(f"[ERROR] Impossible d'ouvrir le PDF avec MuPDF : {e}")
-
 def plot_transmission_vs_angle():
     try:
         angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
@@ -982,7 +969,8 @@ def plot_scattering_statistics():
         if scattering_type == 6: # Skip hot side scattering
             continue
         # Calculate and plot scattering events per second:
-        scattering_rate = [events / time for events, time in zip(scattering_data[scattering_type, :], time_spent)]
+        scattering_rate = np.divide(scattering_data[scattering_type, :], time_spent,
+                                    out=np.zeros_like(time_spent), where=time_spent != 0)
         all_scattering_rates.append(scattering_rate)
         ax.plot(segments, scattering_rate,  '-o', markersize=2)
 
@@ -1111,11 +1099,8 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_trajectories,
         plot_angle_distribution,
         plot_free_path_distribution,
-        plot_frequency_distribution,
-        plot_wavelength_distribution,
         plot_travel_time_distribution,
         plot_mean_free_path_distribution,
-        plot_velocity_distribution,
         plot_energy_distribution,
         plot_travel_time_vs_energy,
         plot_transport_function,

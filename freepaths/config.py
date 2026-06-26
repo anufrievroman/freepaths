@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser(prog='FreePATHS', description='Monte Carlo simu
 parser.add_argument('input_file', nargs='?', default=None, help='The input file')
 parser.add_argument("-s", "--sampling", help="Run in MFP sampling mode", action="store_true")
 parser.add_argument("-e", "--electron", help="Run with electrons", action="store_true")
+parser.add_argument("--demo", help="Run a demo simulation with default parameters", action="store_true")
 args = parser.parse_args()
 
 
@@ -36,8 +37,6 @@ if args.input_file:
     except FileNotFoundError:
         logging.error("Input file does not exist. Check if you are in the right folder and the file name is correct.")
         sys.exit()
-else:
-    logging.warning("You provided no input file, so we will run a demo simulation:")
 
 
 class Config:
