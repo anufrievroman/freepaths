@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import shutil
+import signal
 import multiprocessing
 import traceback
 import logging
@@ -126,6 +127,7 @@ class ParticleSimulator:
 
 
 def worker_process(worker_id, particle_type: ParticleType,total_particles, shared_list, output_trajectories_of, finished_workers):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
         # Create a particle simulator and run the simulation:
         simulator = ParticleSimulator(worker_id, particle_type, total_particles, shared_list, output_trajectories_of)
@@ -146,6 +148,7 @@ def worker_process(worker_id, particle_type: ParticleType,total_particles, share
 
 def display_workers_finished(finished_workers):
     """ Print out the number of active workers"""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     while True:
         text_to_display = f'  Processes finished: {finished_workers.value}/{cf.num_workers}'
         sys.stdout.write(text_to_display)
