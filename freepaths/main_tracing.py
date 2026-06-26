@@ -196,8 +196,13 @@ def main(input_file, particle_type):
 
     # Wait for all processes to finish:
     # Note that join is not called on worker_count_process because we do not want to wait for it to finish
-    for process in processes:
-        process.join()
+    try:
+        for process in processes:
+            process.join()
+    except KeyboardInterrupt:
+        for process in processes:
+            process.terminate()
+        raise
 
     # Wait for the worker count to finish but continue after 3 seconds:
     worker_count_process.join(timeout=3)

@@ -42,17 +42,22 @@ def run():
         print(f"  https://anufrievroman.gitbook.io/freepaths")
         sys.exit(0)
 
-    if args.sampling:
-        import freepaths.main_mfp_sampling
-        freepaths.main_mfp_sampling.main(args.input_file, ParticleType.PHONON)
+    try:
+        if args.sampling:
+            import freepaths.main_mfp_sampling
+            freepaths.main_mfp_sampling.main(args.input_file, ParticleType.PHONON)
 
-    elif args.electron:
-        import freepaths.main_tracing
-        freepaths.main_tracing.main(args.input_file, ParticleType.ELECTRON)
+        elif args.electron:
+            import freepaths.main_tracing
+            freepaths.main_tracing.main(args.input_file, ParticleType.ELECTRON)
 
-    else:
-        import freepaths.main_tracing
-        freepaths.main_tracing.main(args.input_file, ParticleType.PHONON)
+        else:
+            import freepaths.main_tracing
+            freepaths.main_tracing.main(args.input_file, ParticleType.PHONON)
+
+    except KeyboardInterrupt:
+        print("\nSimulation interrupted by user.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
