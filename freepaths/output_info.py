@@ -39,13 +39,18 @@ def output_scattering_information(scatter_stats):
     """Calculate and output general statistics on scattering events"""
 
     # Calculate the percentage of different scattering events:
-    total = np.sum(scatter_stats.total)
     total_wall = np.sum(scatter_stats.wall_diffuse) + np.sum(scatter_stats.wall_specular)
     total_topbot = np.sum(scatter_stats.top_diffuse) + np.sum(scatter_stats.top_specular)
     total_hole = np.sum(scatter_stats.hole_diffuse) + np.sum(scatter_stats.hole_specular)
     total_pill = np.sum(scatter_stats.pillar_diffuse) + np.sum(scatter_stats.pillar_specular)
+    # total_interf counts ALL interface events (both reflection and transmission),
+    # because scattering_types.interfaces is set for both. total_transmission is
+    # a subset of total_interf, so must NOT be added separately to avoid double-counting.
     total_interf = np.sum(scatter_stats.interfaces_diffuse) + np.sum(scatter_stats.interfaces_specular)
     total_transmission = np.sum(scatter_stats.interfaces_transmission_specular) + np.sum(scatter_stats.interfaces_transmission_diffuse)
+    total_retherm = np.sum(scatter_stats.hot_side)
+    total_internal = np.sum(scatter_stats.internal)
+    total = total_wall + total_topbot + total_hole + total_pill + total_interf + total_retherm + total_internal
 
     sc_on_walls = 100*(np.sum(scatter_stats.wall_diffuse) +
                          np.sum(scatter_stats.wall_specular)) / total
@@ -62,8 +67,8 @@ def output_scattering_information(scatter_stats):
         sc_on_topbot_diff = 0
         sc_on_topbot_spec = 0
 
-    retherm = 100*np.sum(scatter_stats.hot_side) / total
-    internal = 100*np.sum(scatter_stats.internal) / total
+    retherm = 100 * total_retherm / total
+    internal = 100 * total_internal / total
 
     info = [
             f'\n{sc_on_walls:.2f}% - scattering on side walls ',
@@ -100,14 +105,11 @@ def output_scattering_information(scatter_stats):
                     )
 
     if cf.interfaces:
-        total_all_interf = total_interf + total_transmission
-        sc_on_interf = 100 * total_all_interf / total
-        sc_on_interf_diff = 100 * (np.sum(scatter_stats.interfaces_diffuse) +
-                                   np.sum(scatter_stats.interfaces_transmission_diffuse)) / total_all_interf
-        sc_on_interf_spec = 100 * (np.sum(scatter_stats.interfaces_specular) +
-                                   np.sum(scatter_stats.interfaces_transmission_specular)) / total_all_interf
-        refl_on_interf  = 100 * total_interf      / total_all_interf
-        trans_on_interf = 100 * total_transmission / total_all_interf
+        sc_on_interf = 100 * total_interf / total
+        sc_on_interf_diff = 100 * np.sum(scatter_stats.interfaces_diffuse) / total_interf
+        sc_on_interf_spec = 100 * np.sum(scatter_stats.interfaces_specular) / total_interf
+        trans_on_interf = 100 * total_transmission / total_interf
+        refl_on_interf  = 100 * (total_interf - total_transmission) / total_interf
         info.extend([
                     f'\n{sc_on_interf:.2f}% - scattering on interfaces ',
                     f'({sc_on_interf_diff:.2f}% - diffuse, ',
@@ -120,19 +122,37 @@ def output_scattering_information(scatter_stats):
     with open("Information.txt", "a", encoding="utf-8") as file:
         file.writelines(info)
 
+    # Warn if multiple scattering events co-occur in a single timestep:
+    total_timesteps_with_scattering = np.sum(scatter_stats.total)
+    if total_timesteps_with_scattering > 0:
+        multi_event_percentage = 100 * (total - total_timesteps_with_scattering) / total_timesteps_with_scattering
+        if multi_event_percentage > 5:
+            logging.warning(f"In {multi_event_percentage:.1f}% of scattering timesteps, more than one scattering "
+                            f"mechanism fired simultaneously. Consider reducing TIMESTEP.")
 
-def output_parameter_warnings():
+
+def output_parameter_warnings(particle_type):
     """Check if parameters used for this simulation made sense considering the simulation results"""
 
-    # Check if some particles had longer travel times than stabilization period:
+    from freepaths.particle_types import ParticleType
+
+    # These checks are only relevant for phonon simulations:
+    if particle_type is not ParticleType.ELECTRON:
+        travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
+
+        total_time = cf.timestep * cf.number_of_timesteps
+        time_of_stabilization = cf.number_of_stabilization_timeframes * total_time / cf.number_of_timeframes
+        long_travel_times = travel_times[travel_times > time_of_stabilization]
+        percentage = (len(long_travel_times) / len(travel_times)) * 100
+        if percentage > 10:
+            logging.warning(f"Travel time of {percentage}% of particles was longer than the stabilization period.\n" +
+                              "Increase stabilization period as the thermal conductivity might be incorrect.")
+
+    # Check how many particles reached the cold side during simulation:
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    total_time = cf.timestep * cf.number_of_timesteps
-    time_of_stabilization = cf.number_of_stabilization_timeframes * total_time / cf. number_of_timeframes
-    long_travel_times = travel_times[travel_times > time_of_stabilization]
-    percentage = (len(long_travel_times) / len(travel_times)) * 100
-    if percentage > 10:
-        logging.warning(f"Travel time of {percentage}% of particles was longer than the stabilization period.\n" +
-                          "Increase stabilization period as the thermal conductivity might be incorrect.")
+    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
+    if percentage < 95:
+        logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")
 
     # Check if pixel size is too small:
     speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
@@ -140,8 +160,3 @@ def output_parameter_warnings():
         logging.warning("Pixels in y direction are smaller than length of one step")
     if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
         logging.warning("Pixels in x direction are smaller than length of one step")
-
-    # Check how many particles reached the cold side during simulation:
-    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
-    if percentage < 95:
-        logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")

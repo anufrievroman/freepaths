@@ -299,7 +299,7 @@ def main(input_file, particle_type):
     # Output general information:
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
-    output_parameter_warnings()
+    output_parameter_warnings(particle_type)
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")
