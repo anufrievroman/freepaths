@@ -995,6 +995,15 @@ def plot_scattering_statistics():
     data = np.vstack((segments, all_scattering_rates)).T
     np.savetxt(filename, data, fmt='%1.2e', delimiter=",", header=header)
 
+    # Save average scattering rates (one value per type, averaged over all segments):
+    avg_header = ("Sidewalls diffuse [1/ns], Sidewalls specular [1/ns], Top & bottom diffuse [1/ns], "
+                  "Top & bottom specular [1/ns], Holes diffuse [1/ns], Holes specular [1/ns], "
+                  "Internal [1/ns], Pillars diffuse [1/ns], Pillars specular [1/ns], "
+                  "Interfaces diffuse [1/ns], Interfaces specular [1/ns], "
+                  "Interfaces transmission diffuse [1/ns], Interfaces transmission specular [1/ns]")
+    avg_data = np.array([np.mean(rate) for rate in all_scattering_rates])
+    np.savetxt("Data/Scattering rates averaged.csv", avg_data.reshape(1, -1), fmt='%1.2e', delimiter=",", header=avg_header)
+
 def plot_scattering_rate_vs_energy():
     fig, ax = plt.subplots()
     energies, scattering_rate = np.genfromtxt("Data/Scattering rate vs energy.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)

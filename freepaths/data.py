@@ -204,10 +204,12 @@ class ScatteringData(Data):
     def write_into_files(self):
         """Write data into a file"""
         filename = "Data/Scattering events statistics.csv"
-        data = np.vstack((self.wall_diffuse, self.wall_specular, self.top_diffuse, self.top_specular, self.hole_diffuse,
-                        self.hole_specular, self.hot_side, self.internal, self.pillar_diffuse, self.pillar_specular,
-                        self.interfaces_diffuse, self.interfaces_specular,
-                        self.interfaces_transmission_diffuse, self.interfaces_transmission_specular)).T
+        n = cf.number_of_length_segments
+        data = np.vstack((self.wall_diffuse[:n], self.wall_specular[:n], self.top_diffuse[:n], self.top_specular[:n],
+                        self.hole_diffuse[:n], self.hole_specular[:n], self.hot_side[:n], self.internal[:n],
+                        self.pillar_diffuse[:n], self.pillar_specular[:n],
+                        self.interfaces_diffuse[:n], self.interfaces_specular[:n],
+                        self.interfaces_transmission_diffuse[:n], self.interfaces_transmission_specular[:n])).T
         header = ("Sidewalls diffuse, Sidewalls specular, Top & bottom diffuse, Top & bottom specular, "
                   "Holes diffuse, Holes specular, Hot side, Internal, Pillars diffuse, Pillars specular, "
                   "Interfaces diffuse, Interfaces specular, Interfaces transmission diffuse, Interfaces transmission specular")
