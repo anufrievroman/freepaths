@@ -126,6 +126,13 @@ class ElectronPostComputation:
         self.electron_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.power_factor[:,1]*cf.temp
         self.electron_thermal_conductivity = np.column_stack((self.fermi_levels, self.electron_thermal_conductivity))
 
+    # def compute_effective_mfp(self):
+    #     """Resolve electron MFP: use config override if set, otherwise ask the material class"""
+    #     if cf.electron_mfp is not None:
+    #         self.effective_mfp = cf.electron_mfp
+    #     else:
+    #         self.effective_mfp = self.material.effective_electron_mfp()
+
     def compute_true_tdf(self):
         """Compute true tdf for a pristine material, not correct in most other cases"""
         mfp = cf.electron_mfp

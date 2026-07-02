@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
-from scipy.constants import electron_volt, electron_mass
+from scipy.constants import electron_volt, electron_mass, k as k_B, h as h_planck
 
 
 class Material(ABC):
@@ -74,6 +74,16 @@ class Si(Material):
             coeffs = above_50K_coeffs
         self.heat_capacity = np.polyval(coeffs, self.temp)
 
+    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
+    # Phonon-limited electron MFP at 300K, calibrated to match lightly doped Si literature
+    # phonon_limited_electron_mfp = 10e-9  # [m]
+    # Caughey-Thomas ionized-impurity parameters for electrons, Masetti et al. (1983)
+    # _ct_mu_max = 1417e-4   # [m²/V·s]
+    # _ct_mu_min = 52.2e-4   # [m²/V·s]
+    # _ct_n_ref  = 9.68e22   # [m⁻³]  (= 9.68e16 cm⁻³)
+    # _ct_alpha  = 0.680
+    # ---------------------------------------------------------------------------------
+
     def assign_electrical_properties(self, fermi_level):
         """Assign differents electrical properties to the material."""
         self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
@@ -86,6 +96,17 @@ class Si(Material):
             self.fermi_level = fermi_level
         else:
             self.fermi_level = -0.037 * electron_volt # [J]
+
+    # def carrier_density(self):
+    #     """Electron carrier density from Fermi level using Boltzmann approximation [m⁻³]"""
+    #     nc = 2 * (2 * np.pi * self.effective_electron_dos_mass * k_B * self.temp / h_planck**2) ** 1.5
+    #     return nc * np.exp(self.fermi_level / (k_B * self.temp))
+
+    # def effective_electron_mfp(self):
+    #     """Effective electron MFP combining phonon and impurity scattering via Matthiessen's rule"""
+    #     n = self.carrier_density()
+    #     mu = self._ct_mu_min + (self._ct_mu_max - self._ct_mu_min) / (1 + (n / self._ct_n_ref) ** self._ct_alpha)
+    #     return self.phonon_limited_electron_mfp * mu / self._ct_mu_max
 
 
 class Vacuum:
@@ -110,13 +131,45 @@ class SiC:
     Heat capacity - Collins et al. Journal of Applied Physics 68, 6510 (1990)
     """
 
-    def __init__(self, temp, num_points=1000):
+    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
+    # 4H-SiC electrical properties:
+    # Electron effective masses - Ioffe database / Persson & Lindefelt, PRB 54, 10257 (1996)
+    # CT parameters - Roschke & Schwierz, IEEE Trans. Electron Devices 48, 1442 (2001)
+    # phonon_limited_electron_mfp = 7e-9  # [m] estimate, needs experimental calibration
+    # _ct_mu_max = 947e-4    # [m²/V·s]
+    # _ct_mu_min = 40e-4     # [m²/V·s]
+    # _ct_n_ref  = 2.0e23    # [m⁻³]  (= 2.0e17 cm⁻³)
+    # _ct_alpha  = 0.61
+    # ---------------------------------------------------------------------------------
+
+    def __init__(self, temp, num_points=1000, fermi_level=None):
         self.name = "SiC"
         self.density = 3215         # [kg/m^3]
         self.default_speed = 6500   # [m/s] Need to change this probably...
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
+
+    # def assign_electrical_properties(self, fermi_level):
+    #     """Assign electrical properties for 4H-SiC"""
+    #     self.effective_electron_dos_mass = 1.0 * electron_mass   # [kg] 4H-SiC, Ioffe
+    #     self.effective_electron_mass = 0.36 * electron_mass       # [kg] conductivity mass
+    #     self.effective_hole_dos_mass = 0.6 * electron_mass
+    #     self.effective_hole_mass = 0.6 * electron_mass
+    #     self.fermi_level = fermi_level  # None = no CT correction applied
+
+    # def carrier_density(self):
+    #     """Electron carrier density from Fermi level using Boltzmann approximation [m⁻³]"""
+    #     nc = 2 * (2 * np.pi * self.effective_electron_dos_mass * k_B * self.temp / h_planck**2) ** 1.5
+    #     return nc * np.exp(self.fermi_level / (k_B * self.temp))
+
+    # def effective_electron_mfp(self):
+    #     """Effective electron MFP combining phonon and impurity scattering via Matthiessen's rule"""
+    #     if self.fermi_level is None:
+    #         return self.phonon_limited_electron_mfp
+    #     n = self.carrier_density()
+    #     mu = self._ct_mu_min + (self._ct_mu_max - self._ct_mu_min) / (1 + (n / self._ct_n_ref) ** self._ct_alpha)
+    #     return self.phonon_limited_electron_mfp * mu / self._ct_mu_max
 
     def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
@@ -220,6 +273,13 @@ class SiGe(Material):
     Effective masses – linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
 
+    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
+    # phonon_limited_electron_mfp = 7e-9  # [m] estimate; alloy scattering reduces from pure Si
+    # def effective_electron_mfp(self):
+    #     """Phonon-limited only — CT params not established for SiGe alloy"""
+    #     return self.phonon_limited_electron_mfp
+    # ---------------------------------------------------------------------------------
+
     def __init__(self, temp, num_points=1000):
         self.name = "SiGe"
         self.default_speed = 3700   # [m/s] – average LA/TA
@@ -274,6 +334,13 @@ class Diamond(Material):
     Physical properties of diamond
     Dispersion - Ref. PRB 58 12899 (1998)
     """
+
+    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
+    # phonon_limited_electron_mfp = 20e-9  # [m] estimate; CT params for n-type diamond not established
+    # def effective_electron_mfp(self):
+    #     """Phonon-limited only — CT params for n-type diamond not established"""
+    #     return self.phonon_limited_electron_mfp
+    # ---------------------------------------------------------------------------------
 
     def __init__(self, temp, num_points=1000):
         self.name = "Diamond"
