@@ -103,11 +103,11 @@ class ElectronPostComputation:
     def compute_seebeck(self):
         """Compute Seebeck coefficient with respect to fermi-level"""
         integrand = self.true_tdf[:,1][:,None] * (-self.fermi_prime_dist) * self.eta
-        self.true_seebeck = (elementary_charge * k / self.true_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
+        self.true_seebeck = -(elementary_charge * k / self.true_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
         self.true_seebeck = np.column_stack((self.fermi_levels, self.true_seebeck))
 
         integrand = self.Sigma * (-self.fermi_prime_dist) * self.eta
-        self.seebeck_coeff = (elementary_charge * k / self.electron_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
+        self.seebeck_coeff = -(elementary_charge * k / self.electron_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
         self.seebeck_coeff = np.column_stack((self.fermi_levels, self.seebeck_coeff))
 
     def compute_power_factor(self):
