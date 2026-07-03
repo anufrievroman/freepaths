@@ -55,8 +55,9 @@ class ElectronPostComputation:
 
     def compute_physical_functions(self):
         """Compute physical functions used for others calculations"""
-        # Sweep -200 to +200 meV from conduction band minimum, matching the range in Priyadarshi et al. 2023 Fig. 4
-        self.fermi_levels = np.linspace(-0.2*electron_volt, 0.2*electron_volt, 200)
+        n_points = round((cf.fermi_level_upper_bound - cf.fermi_level_lower_bound) / 0.010)
+        self.fermi_levels = np.linspace(cf.fermi_level_lower_bound * electron_volt,
+                                        cf.fermi_level_upper_bound * electron_volt, n_points)
 
         # η = (E - Ef) / kT: dimensionless energy measured from the Fermi level, used in transport integrals
         self.eta = np.subtract.outer(self.energies_unique, self.fermi_levels) / (k*cf.temp) # shape = (energies_unique, fermi_levels)

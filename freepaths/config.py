@@ -69,6 +69,8 @@ class Config:
         self.electron_mfp = ELECTRON_MFP
         self.mean_mapping_constant = MEAN_MAPPING_CONSTANT
         self.is_carrier_electron = IS_CARRIER_ELECTRON
+        self.fermi_level_lower_bound = FERMI_LEVEL_LOWER_BOUND
+        self.fermi_level_upper_bound = FERMI_LEVEL_UPPER_BOUND
 
         # Animation:
         self.output_path_animation = OUTPUT_PATH_ANIMATION

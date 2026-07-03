@@ -32,6 +32,9 @@ ENERGY_STEP                      = 5e-3
 ELECTRON_MFP                     = 10e-9 # [m]
 MEAN_MAPPING_CONSTANT            = 5e-6 # [m²]
 
+FERMI_LEVEL_LOWER_BOUND          = -0.2  # [eV] lower end of post-processing Fermi level sweep
+FERMI_LEVEL_UPPER_BOUND          =  0.2  # [eV] upper end of post-processing Fermi level sweep
+
 
 # Animation:
 OUTPUT_PATH_ANIMATION            = False
