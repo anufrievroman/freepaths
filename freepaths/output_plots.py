@@ -56,73 +56,6 @@ def distribution_calculation(filename, data_range, number_of_nodes):
     distribution[:, 1], _ = np.histogram(data[data != 0], number_of_nodes, range=(0, data_range))
     return distribution
 
-# --- Helper: binning 2D avec moyenne de la transmission ---
-
-def _bin_average_2d(x, y, z, nx=200, ny=100, min_count=1, x_range=None, y_range=None): #add 22/08
-    """
-    Moyenne z dans une grille (x,y).
-    Retourne des points agrégés (x_c, y_c), z_mean et le count par bin.
-    """
-    x = np.asarray(x); y = np.asarray(y); z = np.asarray(z)
-
-    if x_range is None: x_range = (np.nanmin(x), np.nanmax(x))
-    if y_range is None: y_range = (np.nanmin(y), np.nanmax(y))
-
-    xb = np.linspace(x_range[0], x_range[1], nx + 1)
-    yb = np.linspace(y_range[0], y_range[1], ny + 1)
-
-    ix = np.digitize(x, xb) - 1
-    iy = np.digitize(y, yb) - 1
-
-    mask = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & np.isfinite(z)
-    ix = ix[mask]; iy = iy[mask]; z = z[mask]
-
-    sumz = np.zeros((nx, ny), dtype=float)
-    cnt  = np.zeros((nx, ny), dtype=int)
-    np.add.at(sumz, (ix, iy), z)
-    np.add.at(cnt,  (ix, iy), 1)
-
-    mean = np.zeros_like(sumz); nonzero = cnt > 0
-    mean[nonzero] = sumz[nonzero] / cnt[nonzero]
-
-    xc = 0.5 * (xb[:-1] + xb[1:])
-    yc = 0.5 * (yb[:-1] + yb[1:])
-
-    I, J = np.where(cnt >= min_count)
-    return xc[I], yc[J], mean[I, J], cnt[I, J]
-
-# --- Helper: binning 1D avec moyenne ---
-def _bin_average_1d(x, y, nbins=120, min_count=1, x_range=None): # add 22/08
-    """
-    Moyenne y dans des bins de x.
-    Retourne: x_centers, mean(y), std(y), count par bin (filtré par min_count).
-    """
-    x = np.asarray(x); y = np.asarray(y)
-
-    if x_range is None:
-        x_range = (np.nanmin(x), np.nanmax(x))
-
-    edges = np.linspace(x_range[0], x_range[1], nbins + 1)
-    idx = np.digitize(x, edges) - 1
-
-    mask = (idx >= 0) & (idx < nbins) & np.isfinite(y)
-    idx = idx[mask]; y = y[mask]
-
-    sumy  = np.zeros(nbins); sumy2 = np.zeros(nbins); cnt = np.zeros(nbins, dtype=int)
-    np.add.at(sumy,  idx, y)
-    np.add.at(sumy2, idx, y*y)
-    np.add.at(cnt,   idx, 1)
-
-    mean = np.full(nbins, np.nan); std = np.full(nbins, np.nan)
-    nz = cnt > 0
-    mean[nz] = sumy[nz] / cnt[nz]
-    var = np.maximum(sumy2[nz] / cnt[nz] - mean[nz]**2, 0.0)
-    std[nz]  = np.sqrt(var)
-
-    centers = 0.5 * (edges[:-1] + edges[1:])
-    keep = cnt >= min_count
-    return centers[keep], mean[keep], std[keep], cnt[keep]
-
 
 def angle_distribution_calculation():
     """Analyse measured particle angles and create their distribution"""
@@ -136,23 +69,6 @@ def angle_distribution_calculation():
     return distribution
 
 
-def interfaces_transmission_angles_calculation():
-    all_exit_angles = np.loadtxt("Data/All exit angles.csv", dtype='float', encoding='utf-8')
-    initial_angles = np.loadtxt("Data/All initial angles.csv", dtype='float', encoding='utf-8')
-    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8')
-    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8')
-    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((360, 6))
-    distribution[:, 0] = range(-180, 180)
-    exit_angles = all_exit_angles[all_exit_angles != 0]
-    distribution[:, 1], _ = np.histogram(np.degrees(exit_angles), 360, range=(-180, 180))
-    distribution[:, 2], _ = np.histogram(np.degrees(initial_angles), 360, range=(-180, 180))
-    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180))
-    distribution[:, 4], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180))
-    distribution[:, 5], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180))
-    return distribution
-
-
 def scattering_angle_distribution_calculation():
     """Analyse scattering particle angles and create their distribution"""
     hole_diff_angles = np.loadtxt("Data/All hole diffuse scattering angles.csv", dtype='float', encoding='utf-8')
@@ -163,17 +79,6 @@ def scattering_angle_distribution_calculation():
     distribution[:, 2], _ = np.histogram(np.degrees(hole_spec_angles), 360, range=(-180, 180))
     return distribution
 
-
-def scattering_interfaces_angles_distribution_calculation():
-    interfaces_transmission_specular_angles = np.loadtxt("Data/All interfaces transmission specular.csv", dtype='float', encoding='utf-8')
-    interfaces_transmission_diffuse_angles = np.loadtxt("Data/All interfaces transmission diffuse.csv", dtype='float', encoding='utf-8')
-    interfaces_angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
-    distribution = np.zeros((360, 4))
-    distribution[:, 0] = range(-180, 180)
-    distribution[:, 1], _ = np.histogram(np.degrees(interfaces_transmission_specular_angles), 360, range=(-180, 180))
-    distribution[:, 2], _ = np.histogram(np.degrees(interfaces_transmission_diffuse_angles), 360, range=(-180, 180))
-    distribution[:, 3], _ = np.histogram(np.degrees(interfaces_angles), 360, range=(-180, 180))
-    return distribution
 
 def wavelength_distribution_calculation(number_of_nodes):
     """Calculate particle wavelength distribution from their frequencies and velocities"""
@@ -198,13 +103,6 @@ def cumulative_conductivity_calculation():
     cumulative_thermal_conductivity = np.cumsum(sorted_kappa)
     return sorted_mfp, cumulative_thermal_conductivity
 
-def interpolate_property(energy_levels: np.ndarray,
-                         property_values: np.ndarray,
-                         fermi_level: float) -> float:
-    """
-    Interpolate the material property at a given Fermi level.
-    """
-    return np.interp(fermi_level, energy_levels, property_values)
 
 def plot_cumulative_thermal_conductivity(mfp_sampling):
     """Plot distribution cumulative thermal conductivity vs mean free path"""
@@ -252,195 +150,6 @@ def plot_scattering_angle_distribution():
     fig.savefig("Distribution of hole scattering angles.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of hole scattering angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
-
-def plot_interfaces_angles_distribution():
-    """Plot distribution of interfaces angles"""
-    angle_distributions = scattering_interfaces_angles_distribution_calculation()
-    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-    ax.grid(zorder=0)
-    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 'royalblue', label="Diffuse", zorder=2)
-    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 1], 0, alpha=0.2, zorder=2)
-    ax.plot(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 'deeppink', label="Specular", zorder=3)
-    ax.fill_between(np.deg2rad(angle_distributions[:, 0]), angle_distributions[:, 2], 0, alpha=0.2, zorder=3)
-    ax.set_theta_zero_location('N')
-    ax.set_theta_direction(-1)
-    ax.legend(facecolor='white', framealpha=1, ncols=2, loc="lower center", bbox_to_anchor=(0.5, -0.17))
-    ax.set_title('Number of transmitted phonons per angle')
-    fig.savefig("Distribution of interfaces angles.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-    np.savetxt('Data/Distribution of interfaces angles.csv', angle_distributions, fmt='%1.3e', delimiter=",")
-
-
-def plot_transmission_vs_angle():
-    try:
-        angles = np.loadtxt("Data/All interfaces angles.csv", dtype='float', encoding='utf-8')
-        angles_degrees = np.degrees(angles)
-        transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
-        modes = np.loadtxt("Data/All interfaces mode.csv", dtype='int', encoding='utf-8')
-
-        if not (len(angles) == len(transmission_factor) == len(modes)):
-            raise ValueError("Data arrays (angles, transmission, modes) must have the same length.")
-
-        fig, ax = plt.subplots(figsize=(8, 5))
-        mode_colors = {0: 'red', 1: 'blue', 2: 'green'}
-        mode_labels = {0: 'LA', 1: 'TA1', 2: 'TA2'}
-
-        for mode_number in [0, 1, 2]:
-            mask = (modes == mode_number)
-            if np.any(mask):
-                ax.scatter(
-                    angles_degrees[mask],
-                    transmission_factor[mask],
-                    alpha=0.5,
-                    s=10,
-                    c=mode_colors[mode_number],
-                    label=mode_labels[mode_number],
-                    edgecolors='none',
-                    rasterized=True,
-                )
-
-        ax.set_xlabel('Angle (degree)')
-        ax.set_ylabel('Transmission factor')
-        ax.set_title('Transmission factor vs Angle (colored by mode)')
-        ax.legend()
-        ax.set_xlim(0, 90)
-        ax.set_ylim(0, 1)
-        ax.grid(True, linestyle='--', alpha=0.5)
-        fig.tight_layout()
-
-        out_pdf = "Transmission coefficient vs angle.pdf"
-        fig.savefig(out_pdf, dpi=220, format='pdf', bbox_inches="tight")  # dpi = résolution
-        plt.close(fig)
-
-    except Exception as e:
-        print(f"[ERROR] plot_transmission_vs_angle: {e}")
-
-def plot_transmission_vs_wavelength():
-    """Plot transmission vs wavelength"""
-    wavelength = np.loadtxt("Data/All interfaces wavelength.csv", dtype='float', encoding='utf-8')
-    transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
-
-    # check the size correspondance and if there are data
-    if len(wavelength) == 0 or len(wavelength) != len(transmission_factor):
-        return
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-
-    # convert wavelength to nm for better readability
-    ax.scatter(wavelength * 1e9, transmission_factor, alpha=0.7, s=10)
-
-    # labels
-    ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Transmission factor')
-
-    # axes limits (nm)
-    wl_min_nm = np.min(wavelength) * 1e9
-    wl_max_nm = np.max(wavelength) * 1e9
-    if wl_min_nm == wl_max_nm:
-        # if all lambda are identical
-        if wl_min_nm == 0:
-            ax.set_xlim(0, 100) # random plage
-        else:
-            margin = wl_min_nm * 0.1
-            ax.set_xlim(wl_min_nm - margin, wl_max_nm + margin)
-    else:
-         ax.set_xlim(0.8 * wl_min_nm, 1.2 * wl_max_nm)
-
-    ax.set_ylim(0, 1)
-    ax.grid(True, linestyle='--', alpha=0.5)
-    fig.tight_layout()
-    fig.savefig("Transmission factor vs wavelength.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-
-    # save the brut data
-    output_data = np.column_stack((wavelength * 1e9, transmission_factor))
-    header = "Wavelength_nm,Transmission_Factor"
-    np.savetxt('Data/Distribution of interfaces wavelength.csv', output_data, fmt='%.6f,%.6f', delimiter=",", header=header, comments='')
-
-def plot_transmission_vs_frequency():
-    """Plot transmission vs frequency"""
-    frequency = np.loadtxt("Data/All interfaces frequency.csv", dtype='float', encoding='utf-8')
-    transmission_factor = np.loadtxt("Data/All interfaces transmission factor.csv", dtype='float', encoding='utf-8')
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.scatter(frequency, transmission_factor, alpha=0.5, s=1, c='blue', label='Événements')
-    ax.set_xlabel('Frequency (THz)')
-    ax.set_ylabel('Transmission factor')
-    ax.legend()
-    # axes limits (en nm)
-    wl_min = np.min(frequency)
-    wl_max = np.max(frequency)
-    if wl_min == wl_max:
-        # if all lambda are identical
-        if wl_min == 0:
-            ax.set_xlim(0, 100) # random plage
-        else:
-            margin = wl_min * 0.1
-            ax.set_xlim(wl_min - margin, wl_max + margin)
-    else:
-         ax.set_xlim(0.8 * wl_min, 1.2 * wl_max)
-
-    ax.set_ylim(0, 1)
-    ax.grid(True, linestyle='--', alpha=0.5)
-    fig.tight_layout()
-    fig.savefig("Transmission coefficient vs frequency.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-    np.savetxt('Data/Distribution of frequency.csv', frequency, fmt='%1.3e', delimiter=",")
-
-def plot_transmission_heatmaps_by_mode():
-    """
-    Génère un PDF multipage : 1 page par mode (LA, TA1, TA2).
-    Les nuages sont rasterisés pour un PDF léger.
-    Ouvre automatiquement le PDF avec MuPDF à la fin.
-    """
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_pdf import PdfPages
-
-    # --- loading data ---
-    freq  = np.loadtxt("Data/All interfaces frequency.csv", dtype=float, encoding="utf-8")
-    ang   = np.loadtxt("Data/All interfaces angles.csv",    dtype=float, encoding="utf-8")
-    T     = np.loadtxt("Data/All interfaces transmission factor.csv", dtype=float, encoding="utf-8")
-    modes = np.loadtxt("Data/All interfaces mode.csv",      dtype=int,   encoding="utf-8")
-
-    if not (len(freq) == len(ang) == len(T) == len(modes)):
-        raise ValueError("The files does not have the same length.")
-
-    ang_deg = np.degrees(ang)
-
-    x_min, x_max = np.nanmin(freq), np.nanmax(freq)
-    y_min, y_max = 0.0, 90.0
-    vmin, vmax = 0.0, 1.0  # transmission e [0,1]
-
-    mode_labels = {0: "LA", 1: "TA1", 2: "TA2"}
-    pdf_filename = "Transmission_heatmaps_all_modes.pdf"
-
-    with PdfPages(pdf_filename) as pdf:
-        for m in (0, 1, 2):
-            mask = (modes == m) & np.isfinite(freq) & np.isfinite(ang_deg) & np.isfinite(T)
-
-            fig, ax = plt.subplots(figsize=(8, 6))
-            if np.any(mask):
-                sc = ax.scatter(
-                    freq[mask], ang_deg[mask],
-                    c=T[mask], cmap="jet", vmin=vmin, vmax=vmax,
-                    s=10, edgecolors="none", rasterized=True  # << RASTER
-                )
-                cbar = plt.colorbar(sc, ax=ax)
-                cbar.set_label("Transmission factor")
-            else:
-                ax.text(0.5, 0.5, "No data for this mode", ha="center", va="center", transform=ax.transAxes)
-
-            ax.set_xlabel("Frequency (THz)")
-            ax.set_ylabel("Incident angle (degrees)")
-            ax.set_title(f"Transmission vs Frequency and Angle — Mode {mode_labels[m]}")
-            ax.set_xlim(x_min, x_max)
-            ax.set_ylim(y_min, y_max)
-            fig.tight_layout()
-
-            # one page per mode
-            pdf.savefig(fig, dpi=220, bbox_inches="tight")
-            plt.close(fig)
 
 
 def plot_free_path_distribution():
@@ -519,6 +228,7 @@ def plot_velocity_distribution():
     fig.savefig('Group velocities.pdf', format='pdf', bbox_inches="tight")
     plt.close(fig)
 
+
 def plot_energy_distribution():
     """Plot distribution of energy"""
     fig, ax = plt.subplots()
@@ -529,216 +239,6 @@ def plot_energy_distribution():
     fig.savefig("Distribution of energy.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
-def plot_travel_time_vs_energy():
-    """Plot mean travel time vs energy, slope on log-log and linear regression fit."""
-    # Load data
-    energy, travel_time = np.genfromtxt(
-        "Data/Mean travel time vs energy.csv",
-        unpack=True,
-        delimiter=',',
-        usecols=(0, 1),
-        skip_header=1
-    )
-
-    # Convert to plotting units
-    x = energy * 1e3 / electron_volt  # Energy in meV
-    y = travel_time * 1e9             # Travel time in ns
-
-    # Compute log values
-    logx = np.log(x)
-    logy = np.log(y)
-
-    # Linear regression in log-log space: fit log(y) = m*log(x) + b
-    m, b = np.polyfit(logx, logy, 1)
-    # Regression line in original scale: y_fit = exp(b) * x**m
-    y_fit = np.exp(b) * x**m
-
-
-    # Set up figure and primary axis
-    fig, ax1 = plt.subplots()
-    ax1.loglog(x, y, '-o', markersize=2, c='royalblue', label='τ(E)')
-    ax1.loglog(x, y_fit, '-', c='green', linewidth=1.5,
-               label=f'Regression: y as x^{m:.2f}')
-    ax1.set_xlabel('Energy (meV)')
-    ax1.set_ylabel('Mean travel time (ns)')
-    ax1.grid(True, linestyle='--', alpha=0.7)
-
-    # Combine legends
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(lines1, labels1, loc='best')
-
-    # Save and close
-    fig.savefig("Travel time vs energy.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-
-def plot_transport_function():
-    """Plot transport distribution function vs energy with regression and slope."""
-    # Load computed and theoretical TDF
-    e1, tdf1 = np.genfromtxt(
-        "Data/Transport distribution function.csv",
-        unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
-    e2, tdf2 = np.genfromtxt(
-        "Data/True transport distribution function.csv",
-        unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
-
-    # Convert units
-    x = e1 * 1e3 / electron_volt                  # Energy in meV
-    y1 = tdf1 * electron_volt * 1e-25             # Computed TDF in 10^25 m^-1 s^-1 eV^-1
-    y2 = tdf2 * electron_volt * 1e-25             # Theoretical TDF
-
-    # Log variables for computed TDF
-    logx = np.log(x)
-    logy1 = np.log(y1)
-
-    # Regression log(y1) = m*log(x) + b
-    m, b = np.polyfit(logx, logy1, 1)
-    y1_fit = np.exp(b) * x**m
-
-
-    # Plotting
-    fig, ax1 = plt.subplots()
-    ax1.loglog(x, y1, '-o', markersize=2, c='royalblue', label='Computed TDF')
-    ax1.loglog(x, y1_fit, '-', c='green', linewidth=1.5,
-               label=f'Regression: TDF as E^{m:.2f}')
-    ax1.loglog(x, y2, '-o', markersize=2, c='darkorange', label='Theoretical TDF')
-    ax1.set_xlabel('Energy (meV)')
-    ax1.set_ylabel('TDF, Ξ ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-1}$)', color='black')
-    ax1.grid(True, linestyle='--', alpha=0.7)
-
-
-    # Legends
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(lines1, labels1, loc='best')
-
-    # Save
-    fig.savefig("Transport distribution function.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_electron_conductivity():
-    """Plot electron conductivity with respect to fermi-level"""
-    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
-    fig, ax = plt.subplots()
-    fermi_levels, conductivity, theorical_conductivity = np.genfromtxt("Data/Electron conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_levels * 1e3 / electron_volt, conductivity * 1e-3, '-o', markersize=2, c='royalblue', label="Computed")
-    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_conductivity * 1e-3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Electron conductivity (kS/m)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    material_conductivity = interpolate_property(fermi_levels, conductivity, material.fermi_level)
-    ax.axhline(
-        y=material_conductivity * 1e-3,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-        label=f"σ = {material_conductivity * 1e-3:.2f} kS/m at {material.fermi_level*1e3 / electron_volt:.2e} meV"
-    )
-    ax.axvline(
-        x=material.fermi_level * 1e3 / electron_volt,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-        # label=f"x = {material.fermi_level*1e3 / electron_volt:.2e}"
-    )
-    plt.legend()
-    fig.savefig("Electron conductivity.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_seebeck_coefficient():
-    """Plot the Seebeck coefficient with respect to fermi-level"""
-    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
-    fig, ax = plt.subplots()
-    fermi_levels, seebeck, theorical_seebeck = np.genfromtxt("Data/Seebeck coefficient.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_levels * 1e3 / electron_volt, seebeck * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
-    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_seebeck * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Seebeck coefficient (mV/K)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    material_seebeck = interpolate_property(fermi_levels, seebeck, material.fermi_level) * 1e3
-    ax.axhline(
-        y=material_seebeck,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-        label=f"S = {material_seebeck:.2f} mV/K at {material.fermi_level * 1e3 / electron_volt:.2e} meV"
-    )
-    ax.axvline(
-        x=material.fermi_level * 1e3 / electron_volt,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-    )
-    plt.legend()
-    fig.savefig("Seebeck coefficient.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_power_factor():
-    """Plot the thermoelectric power factor with respect to fermi-level"""
-    fig, ax = plt.subplots()
-    fermi_levels, power_factor, theorical_power_factor = np.genfromtxt("Data/Power factor.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_levels * 1e3 / electron_volt, power_factor * 1e3, '-o', markersize=2, c='royalblue', label="Computed")
-    # ax.plot(fermi_levels * 1e3 / electron_volt, theorical_power_factor * 1e3, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Power factor (mW/m.$K^{2}$)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
-    fig.savefig("Power factor.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_mapping_constant():
-    """Plot mapping constant with respect to fermi level"""
-    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
-    fig, ax = plt.subplots()
-    fermi_level, mapping_constant = np.genfromtxt("Data/Mapping constant.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
-    material_constant = interpolate_property(fermi_level, mapping_constant, material.fermi_level)
-    ax.plot(fermi_level * 1e3 / electron_volt, mapping_constant, '-o', markersize=2, c='royalblue', label='Computed')
-    ax.axhline(
-        y=material_constant,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-        label=f"C = {material_constant:.4e} m² at {material.fermi_level * 1e3 / electron_volt:.2e} meV"
-    )
-    ax.axvline(
-        x=material.fermi_level * 1e3 / electron_volt,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-    )
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Mapping constant (m²)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
-    fig.savefig("Mapping constant.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
-
-def plot_electron_thermal_conductivity():
-    """Plot electron thermal conductivity with respect to fermi-level"""
-    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
-    fig, ax = plt.subplots()
-    fermi_level, thermal_conductivity, theorical_thermal_conductivity = np.genfromtxt("Data/Electron thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0,1,2), skip_header=1)
-    ax.plot(fermi_level * 1e3 / electron_volt, thermal_conductivity, '-o', markersize=2, c='royalblue', label="Computed")
-    # ax.plot(fermi_level * 1e3 / electron_volt, theorical_thermal_conductivity, '-o', markersize=2, c='darkorange', label="Bulk/Analytical")
-    ax.set_xlabel('Fermi-level (meV)')
-    ax.set_ylabel('Thermal conductivity (W/m·K)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    material_kappa = interpolate_property(fermi_level, thermal_conductivity, material.fermi_level)
-    ax.axhline(
-        y=material_kappa,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-        label=f"κ_e = {material_kappa:.4f} W/m·K at {material.fermi_level * 1e3 / electron_volt:.2e} meV"
-    )
-    ax.axvline(
-        x=material.fermi_level * 1e3 / electron_volt,
-        color='gray',
-        linestyle='--',
-        linewidth=1,
-    )
-    plt.legend()
-    fig.savefig("Electron thermal conductivity.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
 
 def plot_time_in_segments():
     """Plot time spent in segments"""
@@ -808,6 +308,7 @@ def plot_temperature_profile():
     fig.savefig("Temperature profile.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
+
 def plot_heat_flux_profile():
     """Plot profile of heat flux for each time segment"""
 
@@ -839,6 +340,7 @@ def plot_heat_flux_profile():
     fig.savefig("Heat flux profile material.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
+
 def plot_thermal_map():
     """Plot thermal map as color map"""
     fig = plt.figure()
@@ -855,6 +357,7 @@ def plot_thermal_map():
     fig.savefig("Thermal map.pdf", bbox_inches="tight")
     plt.close(fig)
 
+
 def plot_pixel_volumes():
     """Plot the pixel volumes as 2D map"""
     fig = plt.figure()
@@ -866,6 +369,7 @@ def plot_pixel_volumes():
     plt.ylabel('y (μm)')
     fig.savefig("Pixel volumes.pdf", bbox_inches="tight")
     plt.close(fig)
+
 
 def plot_heat_flux_map(file, label, units="a.u."):
     """Plot heat flux map as color map"""
@@ -1004,18 +508,6 @@ def plot_scattering_statistics():
     avg_data = np.array([np.mean(rate) for rate in all_scattering_rates])
     np.savetxt("Data/Scattering rates averaged.csv", avg_data.reshape(1, -1), fmt='%1.2e', delimiter=",", header=avg_header)
 
-def plot_scattering_rate_vs_energy():
-    fig, ax = plt.subplots()
-    energies, scattering_rate = np.genfromtxt("Data/Scattering rate vs energy.csv", unpack=True, delimiter=',', usecols=(0,1), skip_header=1)
-
-    ax.plot(energies * 1e3 / electron_volt, scattering_rate, '-o', markersize=2, c='royalblue')
-    ax.axhline(y=cf.timestep, color='gray', linestyle='--', linewidth=1, label='Timestep')
-    ax.set_xlabel('Energy (meV)')
-    ax.set_ylabel('Internal scattering rate (s)')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
-    fig.savefig("Scattering rate vs energy.pdf", format="pdf", bbox_inches="tight")
-    plt.close(fig)
 
 def plot_structure():
     """Plot the structure with all the elements"""
@@ -1037,6 +529,7 @@ def plot_structure():
     ax.set_ylim(0, cf.length*1e6)
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
+
 
 def plot_material_properties():
     """Plot phonon dispersion and display some other material properties"""
@@ -1102,6 +595,17 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
             ])
 
 
+    from freepaths.output_electron_plots import (
+        plot_travel_time_vs_energy,
+        plot_transport_function,
+        plot_electron_conductivity,
+        plot_seebeck_coefficient,
+        plot_power_factor,
+        plot_mapping_constant,
+        plot_electron_thermal_conductivity,
+        plot_scattering_rate_vs_energy,
+    )
+
     # Defines what will be plotted after the electron simulations:
     electron_function_list = [
         plot_structure,
@@ -1120,10 +624,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_electron_thermal_conductivity,
         plot_scattering_rate_vs_energy,
         plot_time_in_segments,
-        # plot_thermal_conductivity,
-        # plot_temperature_profile,
-        # plot_heat_flux_profile,
-        # plot_thermal_map,
         plot_pixel_volumes,
         plot_scattering_statistics,
         plot_scattering_map,

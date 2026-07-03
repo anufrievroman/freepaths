@@ -9,6 +9,9 @@ from freepaths.config import cf
 class ElectronPostComputation:
     """Handle computations for electrons"""
 
+    # Exponent in Ξ(E) = C × (1/⟨ToF⟩)^exponent × g(E); 1.0 matches the BTE (Priyadarshi et al. 2023, Eq. 3)
+    TRANSPORT_EXPONENT = 1.0
+
     def __init__(self, general_data: GeneralData):
         """General_data must have collected data from workers before initialization"""
         self.electron_data = np.column_stack((general_data.initial_energies, general_data.travel_times))
@@ -18,12 +21,11 @@ class ElectronPostComputation:
         self.energies_unique = None
         self.energies_inv_index = None
         self.mean_travel_times = None
-        self.transport_function = None
-        self.electron_conductivity = None
-        self.seebeck_coeff = None
-        self.power_factor = None
-        self.electron_thermal_conductivity = None
-        self.figure_of_merit = None
+        self.mc_tdf = None
+        self.mc_conductivity = None
+        self.mc_seebeck = None
+        self.mc_power_factor = None
+        self.mc_thermal_conductivity = None
         self.mapping_constant = None
 
         material_class = get_media_class(cf.media)
@@ -36,12 +38,11 @@ class ElectronPostComputation:
         self.fermi_prime_dist = None
         self.density_of_states = None
         self.eta = None
-        self.true_tdf = None
-        self.true_conductivity = None
-        self.true_seebeck = None
-        self.true_power_factor = None
-        self.true_thermal_conductivity = None
-        self.true_figure_of_merit = None
+        self.bte_tdf = None
+        self.bte_conductivity = None
+        self.bte_seebeck = None
+        self.bte_power_factor = None
+        self.bte_thermal_conductivity = None
         self.mean_mapping_constant = None
 
     def compute_unique_values(self):
@@ -54,10 +55,16 @@ class ElectronPostComputation:
 
     def compute_physical_functions(self):
         """Compute physical functions used for others calculations"""
-        self.fermi_levels = np.linspace(self.material.fermi_level - 0.03*electron_volt, self.material.fermi_level + 0.03*electron_volt, 200)
-        # Suppose energy null at minimum of conduction band
+        # Sweep -200 to +200 meV from conduction band minimum, matching the range in Priyadarshi et al. 2023 Fig. 4
+        self.fermi_levels = np.linspace(-0.2*electron_volt, 0.2*electron_volt, 200)
+
+        # η = (E - Ef) / kT: dimensionless energy measured from the Fermi level, used in transport integrals
         self.eta = np.subtract.outer(self.energies_unique, self.fermi_levels) / (k*cf.temp) # shape = (energies_unique, fermi_levels)
+
+        # Fermi-Dirac distribution: f(E) = 1 / (1 + exp(η))
         self.fermi_dist = 1.0/(1.0 + np.exp(self.eta))
+
+        # Energy derivative of f: ∂f/∂E = -f(1-f) / kT (acts as a window around Ef)
         self.fermi_prime_dist = (- self.fermi_dist * (1-self.fermi_dist) / (k*cf.temp))
 
         if cf.is_carrier_electron:
@@ -67,10 +74,11 @@ class ElectronPostComputation:
             self.effective_dos_mass = self.material.effective_hole_dos_mass
             self.effective_conduction_mass = self.material.effective_hole_mass
 
+        # 3D parabolic band DoS: g(E) = (1/2π²) × (2m*/ℏ²)^(3/2) × √E
         self.density_of_states = (1/(2*(np.pi**2))) * ((2*self.effective_dos_mass/(hbar**2))**(3/2)) * np.sqrt(self.energies_unique)
 
     def compute_mean_travel_times(self):
-        """Compute mean travel times with respect to initial energy"""
+        """Compute mean travel times with respect to initial energy (Priyadarshi et al. 2023, Eq. 1)"""
         travel_times = self.electron_data[self.cold_side_mask, 1]
 
         # Sum together travel_times for the same energy
@@ -80,105 +88,102 @@ class ElectronPostComputation:
         means = sums/counts
         self.mean_travel_times = np.column_stack((self.energies_unique, means))
 
-    def compute_transport_function(self):
-        """Compute the transport distribution function with respect to initial energy"""
+    def compute_bte_tdf(self):
+        """Compute analytical BTE TDF for pristine material with constant MFP"""
+        mfp = cf.electron_mfp
+        # From BTE: Ξ_BTE = (1/3)τv²g; the 1/3 is the 3D angular average ⟨v_x²/v²⟩; with τ = mfp/v: Ξ_BTE = (mfp/3)·v(E)·g(E)
+        self.bte_tdf = np.column_stack((self.energies_unique, (mfp/3) * (2*self.energies_unique/(self.effective_conduction_mass))**0.5 * self.density_of_states))
+
+    def compute_mapping_constant(self):
+        # C = σ_BTE(Ef) / σ_MC_raw(Ef): calibrates the MC flux to physical units at the material's Fermi level
+        mc_raw_tdf = (1.0 / self.mean_travel_times[:,1]) ** self.TRANSPORT_EXPONENT * self.density_of_states
+
+        integrand = self.bte_tdf[:,1][:,None] * (-self.fermi_prime_dist)
+        bte_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
+
+        integrand = mc_raw_tdf[:,None] * (-self.fermi_prime_dist)
+        mc_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
+
+        C = bte_conductivity / mc_conductivity
+
+        self.mapping_constant = np.column_stack((self.fermi_levels, C))
+        self.mean_mapping_constant = np.mean(C)
+
+    def compute_mc_tdf(self):
+        """Compute the transport distribution function with respect to initial energy (Priyadarshi et al. 2023, Eq. 3)"""
         if cf.mean_mapping_constant is not None:
             area_constant = cf.mean_mapping_constant # in m^2
         else:
             area_constant = self.mean_mapping_constant
-        self.transport_function = np.column_stack((self.energies_unique, area_constant * (1/self.mean_travel_times[:,1])**(0.25) * self.density_of_states))
+        # Ξ(E) = C × F(E) × g(E), where F(E) = 1/⟨ToF(E)⟩ is the electron flux per simulated particle
+        self.mc_tdf = np.column_stack((self.energies_unique, area_constant * (1/self.mean_travel_times[:,1])**self.TRANSPORT_EXPONENT * self.density_of_states))
 
-        self.Sigma = self.transport_function[:, 1][:, None] # Shape = (energies_unique, 1)
+        self.mc_tdf_vals = self.mc_tdf[:, 1][:, None] # Shape = (energies_unique, 1)
 
-    def compute_electron_conductivity(self):
-        """Compute electron conductivity with respect to fermi-level"""
-        integrand = self.true_tdf[:,1][:,None] * (-self.fermi_prime_dist)
-        self.true_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
-        self.true_conductivity = np.column_stack((self.fermi_levels, self.true_conductivity))
+    def compute_conductivity(self):
+        """Compute electron conductivity with respect to fermi-level (Priyadarshi et al. 2023, Eq. 4)"""
+        # σ = e² ∫ Ξ(E) × (-∂f/∂E) dE
+        integrand = self.bte_tdf[:,1][:,None] * (-self.fermi_prime_dist)
+        self.bte_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
+        self.bte_conductivity = np.column_stack((self.fermi_levels, self.bte_conductivity))
 
-        integrand = self.Sigma * (-self.fermi_prime_dist)
-        self.electron_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
-        self.electron_conductivity = np.column_stack((self.fermi_levels, self.electron_conductivity))
+        integrand = self.mc_tdf_vals * (-self.fermi_prime_dist)
+        self.mc_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
+        self.mc_conductivity = np.column_stack((self.fermi_levels, self.mc_conductivity))
 
     def compute_seebeck(self):
-        """Compute Seebeck coefficient with respect to fermi-level"""
-        integrand = self.true_tdf[:,1][:,None] * (-self.fermi_prime_dist) * self.eta
-        self.true_seebeck = -(elementary_charge * k / self.true_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
-        self.true_seebeck = np.column_stack((self.fermi_levels, self.true_seebeck))
+        """Compute Seebeck coefficient with respect to fermi-level (Priyadarshi et al. 2023, Eq. 5)"""
+        # S = -(e·kB/σ) ∫ Ξ(E) × (-∂f/∂E) × η dE; negative sign gives S < 0 for n-type carriers
+        integrand = self.bte_tdf[:,1][:,None] * (-self.fermi_prime_dist) * self.eta
+        self.bte_seebeck = -(elementary_charge * k / self.bte_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
+        self.bte_seebeck = np.column_stack((self.fermi_levels, self.bte_seebeck))
 
-        integrand = self.Sigma * (-self.fermi_prime_dist) * self.eta
-        self.seebeck_coeff = -(elementary_charge * k / self.electron_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
-        self.seebeck_coeff = np.column_stack((self.fermi_levels, self.seebeck_coeff))
+        integrand = self.mc_tdf_vals * (-self.fermi_prime_dist) * self.eta
+        self.mc_seebeck = -(elementary_charge * k / self.mc_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
+        self.mc_seebeck = np.column_stack((self.fermi_levels, self.mc_seebeck))
 
     def compute_power_factor(self):
-        """Compute the thermoelectric Power Factor"""
-        self.true_power_factor = np.column_stack((self.fermi_levels, self.true_conductivity[:,1] * (self.true_seebeck[:,1]**2)))
-        self.power_factor = np.column_stack((self.fermi_levels, self.electron_conductivity[:,1] * (self.seebeck_coeff[:,1]**2)))
+        """Compute the thermoelectric Power Factor (Priyadarshi et al. 2023, Eq. 6): PF = σS²"""
+        self.bte_power_factor = np.column_stack((self.fermi_levels, self.bte_conductivity[:,1] * (self.bte_seebeck[:,1]**2)))
+        self.mc_power_factor = np.column_stack((self.fermi_levels, self.mc_conductivity[:,1] * (self.mc_seebeck[:,1]**2)))
 
-    def compute_electronic_thermal_conductivity(self):
-        """Compute the electronic thermal conductivity with respect to fermi-level"""
-        integrand = self.true_tdf[:,1][:,None] * (-self.fermi_prime_dist) * (self.eta * k*cf.temp)**2
-        self.true_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.true_power_factor[:,1]*cf.temp
-        self.true_thermal_conductivity = np.column_stack((self.fermi_levels, self.true_thermal_conductivity))
+    def compute_thermal_conductivity(self):
+        """Compute the electronic thermal conductivity with respect to fermi-level (Priyadarshi et al. 2023, Eq. 7)"""
+        # κe = (1/T) ∫ Ξ(E) × (-∂f/∂E) × (E - Ef)² dE - S²σT; (E - Ef) = η·kT
+        integrand = self.bte_tdf[:,1][:,None] * (-self.fermi_prime_dist) * (self.eta * k*cf.temp)**2
+        self.bte_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.bte_power_factor[:,1]*cf.temp
+        self.bte_thermal_conductivity = np.column_stack((self.fermi_levels, self.bte_thermal_conductivity))
 
-
-        integrand = self.Sigma * (-self.fermi_prime_dist) * (self.eta * k*cf.temp)**2
-        self.electron_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.power_factor[:,1]*cf.temp
-        self.electron_thermal_conductivity = np.column_stack((self.fermi_levels, self.electron_thermal_conductivity))
-
-    # def compute_effective_mfp(self):
-    #     """Resolve electron MFP: use config override if set, otherwise ask the material class"""
-    #     if cf.electron_mfp is not None:
-    #         self.effective_mfp = cf.electron_mfp
-    #     else:
-    #         self.effective_mfp = self.material.effective_electron_mfp()
-
-    def compute_true_tdf(self):
-        """Compute true tdf for a pristine material, not correct in most other cases"""
-        mfp = cf.electron_mfp
-        self.true_tdf = np.column_stack((self.energies_unique, mfp * (2*self.energies_unique/(self.effective_conduction_mass))**0.5 * self.density_of_states))
-
-
-    def compute_mapping_constant(self):
-        raw_tdf  = (1.0 / self.mean_travel_times[:,1]) ** (0.25) * self.density_of_states
-
-        integrand = self.true_tdf[:,1][:,None] * (-self.fermi_prime_dist)
-        true_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
-
-        integrand = raw_tdf[:,None] * (-self.fermi_prime_dist)
-        electron_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
-
-        C = true_conductivity / electron_conductivity
-
-        self.mapping_constant = np.column_stack((self.fermi_levels, C))
-        self.mean_mapping_constant = np.interp(self.material.fermi_level, self.mapping_constant[:,0], self.mapping_constant[:,1])
+        integrand = self.mc_tdf_vals * (-self.fermi_prime_dist) * (self.eta * k*cf.temp)**2
+        self.mc_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.mc_power_factor[:,1]*cf.temp
+        self.mc_thermal_conductivity = np.column_stack((self.fermi_levels, self.mc_thermal_conductivity))
 
     def compute_scattering_rate(self):
+        # τ(E) = mfp / v(E): relaxation time from constant MFP and parabolic-band group velocity
         self.speeds = ((2 * self.energies_unique) / (self.effective_conduction_mass)) ** 0.5
         self.scattering_rates = cf.electron_mfp / self.speeds
         self.scattering_rates = np.column_stack((self.energies_unique, self.scattering_rates))
 
-
     def write_into_file(self):
         np.savetxt("Data/Mean travel time vs energy.csv", self.mean_travel_times, fmt='%2.4e', header="Energy [J], Travel time [s]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Transport distribution function.csv", self.transport_function, fmt='%2.4e', header="Energy [J], Transport distribution function [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Electron conductivity.csv", np.column_stack((self.electron_conductivity, self.true_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], Conductivity [S/m], Theorical Conductivity [S/m]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Seebeck coefficient.csv", np.column_stack((self.seebeck_coeff, self.true_seebeck[:,1])), fmt='%2.4e', header="Fermi-level [J], Seebeck coefficient [V/K], Theorical Seebeck coefficient [V/K]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Power factor.csv", np.column_stack((self.power_factor, self.true_power_factor[:,1])), fmt='%2.4e', header="Fermi-level [J], Power factor [W/m/K^2], Theorical Power factor [W/m/K^2]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/True transport distribution function.csv", self.true_tdf, fmt='%2.4e', header="Energy [J], True TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Transport distribution function.csv", self.mc_tdf, fmt='%2.4e', header="Energy [J], Transport distribution function [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Electron conductivity.csv", np.column_stack((self.mc_conductivity, self.bte_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Conductivity [S/m], BTE Conductivity [S/m]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Seebeck coefficient.csv", np.column_stack((self.mc_seebeck, self.bte_seebeck[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Seebeck coefficient [V/K], BTE Seebeck coefficient [V/K]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Power factor.csv", np.column_stack((self.mc_power_factor, self.bte_power_factor[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Power factor [W/m/K^2], BTE Power factor [W/m/K^2]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/True transport distribution function.csv", self.bte_tdf, fmt='%2.4e', header="Energy [J], BTE TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Electron thermal conductivity.csv", np.column_stack((self.electron_thermal_conductivity, self.true_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], Electron thermal conductivity [W/m/K], Theorical Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Electron thermal conductivity.csv", np.column_stack((self.mc_thermal_conductivity, self.bte_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Electron thermal conductivity [W/m/K], BTE Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Scattering rate vs energy.csv", self.scattering_rates, fmt='%2.4e', header="Energy [J], Scattering rate [s]", encoding='utf-8', delimiter=',')
 
     def compute(self):
         self.compute_unique_values()
         self.compute_physical_functions()
         self.compute_mean_travel_times()
-        self.compute_true_tdf()
+        self.compute_bte_tdf()
         self.compute_mapping_constant()
-        self.compute_transport_function()
-        self.compute_electron_conductivity()
+        self.compute_mc_tdf()
+        self.compute_conductivity()
         self.compute_seebeck()
         self.compute_power_factor()
-        self.compute_electronic_thermal_conductivity()
+        self.compute_thermal_conductivity()
         self.compute_scattering_rate()
