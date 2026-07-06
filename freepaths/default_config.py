@@ -25,7 +25,7 @@ NUMBER_OF_STABILIZATION_TIMEFRAMES = 5
 
 # Electron parameters [eV]
 IS_CARRIER_ELECTRON              = True
-ENERGY_UPPER_BOUND               = 500e-3
+ENERGY_UPPER_BOUND               = 350e-3
 ENERGY_LOWER_BOUND               = 0
 ENERGY_STEP                      = 5e-3
 

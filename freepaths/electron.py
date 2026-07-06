@@ -1,6 +1,6 @@
 """This module provides electron class which generates and moves an electron"""
 
-from random import choice
+from random import choice, random
 from scipy.constants import h, electron_volt
 from freepaths.config import cf
 from freepaths.particle import Particle
@@ -72,6 +72,4 @@ class Electron(Particle):
         Considering only elasctic scattering between electrons and phonons and thus a constant MFP.
         """
         mfp = cf.electron_mfp
-        self.time_of_internal_scattering = mfp / self.speed
-
-        # self.time_of_internal_scattering = -np.log(random()) * (mfp/self.speed)
+        self.time_of_internal_scattering = -np.log(random()) * (mfp / self.speed)
