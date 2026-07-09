@@ -280,10 +280,12 @@ def main(input_file, particle_type):
     sys.stdout.write("\rSaving raw data...")
     general_stats.write_into_files()
     scatter_stats.write_into_files()
-    places_stats.write_into_files()
+    if cf.holes:
+        places_stats.write_into_files()
     segment_stats.write_into_files()
     thermal_maps.write_into_files()
-    scatter_maps.write_into_files()
+    if cf.output_scattering_map:
+        scatter_maps.write_into_files()
     path_stats.write_into_files()
     if particle_type is ParticleType.ELECTRON:
         electron_computations.write_into_file()

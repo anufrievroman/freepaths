@@ -159,11 +159,11 @@ class ElectronPostComputation:
         self.mc_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.mc_power_factor[:,1]*cf.temp
         self.mc_thermal_conductivity = np.column_stack((self.fermi_levels, self.mc_thermal_conductivity))
 
-    def compute_scattering_rate(self):
+    def compute_relaxation_time(self):
         # τ(E) = mfp / v(E): relaxation time from constant MFP and parabolic-band group velocity
         self.speeds = ((2 * self.energies_unique) / (self.effective_conduction_mass)) ** 0.5
-        self.scattering_rates = cf.electron_mfp / self.speeds
-        self.scattering_rates = np.column_stack((self.energies_unique, self.scattering_rates))
+        self.relaxation_times = cf.electron_mfp / self.speeds
+        self.relaxation_times = np.column_stack((self.energies_unique, self.relaxation_times))
 
     def write_into_file(self):
         np.savetxt("Data/Mean travel time vs energy.csv", self.mean_travel_times, fmt='%2.4e', header="Energy [J], Travel time [s]", encoding='utf-8', delimiter=',')
@@ -174,7 +174,7 @@ class ElectronPostComputation:
         np.savetxt("Data/True transport distribution function.csv", self.bte_tdf, fmt='%2.4e', header="Energy [J], BTE TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Electron thermal conductivity.csv", np.column_stack((self.mc_thermal_conductivity, self.bte_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Electron thermal conductivity [W/m/K], BTE Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Scattering rate vs energy.csv", self.scattering_rates, fmt='%2.4e', header="Energy [J], Scattering rate [s]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Scattering rate vs energy.csv", self.relaxation_times, fmt='%2.4e', header="Energy [J], Relaxation time [s]", encoding='utf-8', delimiter=',')
 
     def compute(self):
         self.compute_unique_values()
@@ -187,4 +187,4 @@ class ElectronPostComputation:
         self.compute_seebeck()
         self.compute_power_factor()
         self.compute_thermal_conductivity()
-        self.compute_scattering_rate()
+        self.compute_relaxation_time()

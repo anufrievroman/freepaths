@@ -11,7 +11,8 @@ def output_general_information(start_time):
     """This function outputs the simulation information into the Information.txt file"""
     print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
+    n_total = len(travel_times)
+    percentage = int(100 * np.count_nonzero(travel_times) / n_total) if n_total > 0 else 0
 
     info = [
             f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
@@ -150,7 +151,8 @@ def output_parameter_warnings(particle_type):
 
     # Check how many particles reached the cold side during simulation:
     travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    percentage = int(100 * np.count_nonzero(travel_times) / cf.number_of_particles)
+    n_total = len(travel_times)
+    percentage = int(100 * np.count_nonzero(travel_times) / n_total) if n_total > 0 else 0
     if percentage < 95:
         logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")
 

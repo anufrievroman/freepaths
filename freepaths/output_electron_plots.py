@@ -63,10 +63,13 @@ def plot_transport_function():
 
     ef_mev = ef * 1e3 / electron_volt
 
+    import matplotlib as mpl
+    _green = mpl.cm.viridis(0.55)
+
     fig, ax1 = plt.subplots()
     ax1.axvline(x=ef_mev, color='gray', linestyle='--', linewidth=1, zorder=1, label=f'$E_F$ = {ef_mev:.0f} meV')
-    ax1.plot(x, y2, '-', c='deeppink', linewidth=0.8, label='BTE', zorder=2)
-    ax1.plot(x, y1, '-o', markersize=3, c='royalblue', linewidth=0.8, label='MC', zorder=3)
+    ax1.plot(x, y2, '--', c='deeppink', linewidth=0.8, label='BTE', zorder=2)
+    ax1.plot(x, y1, 'o', markersize=3, c='royalblue', linewidth=0.8, label='MC', zorder=3)
     ax1.set_xlabel('Energy (meV)')
     ax1.set_ylabel('TDF, Ξ ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-1}$)')
     ax1.set_xlim(left=0)
@@ -74,10 +77,10 @@ def plot_transport_function():
     ax1.legend(loc='best')
 
     ax2 = ax1.twinx()
-    ax2.plot(x, prod2, '-', c='deeppink', linewidth=0.8, alpha=0.5, zorder=2)
-    ax2.plot(x, prod1, '-o', markersize=3, c='royalblue', linewidth=0.8, alpha=0.5, zorder=3)
-    ax2.set_ylabel('Ξ × (−$\\partial f/\\partial E$) ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-2}$)', color='grey')
-    ax2.tick_params(axis='y', labelcolor='grey')
+    ax2.plot(x, prod2, '--', c=_green, linewidth=0.8, alpha=0.5, zorder=1)
+    ax2.plot(x, prod1, 'o', markersize=3, c=_green, alpha=0.5, zorder=2)
+    ax2.set_ylabel('Ξ × (−$\\partial f/\\partial E$) ($10^{25}$ m$^{-1}$ s$^{-1}$ eV$^{-2}$)', color=_green)
+    ax2.tick_params(axis='y', labelcolor=_green)
     ax2.set_ylim(bottom=0)
 
     fig.savefig("Transport distribution function.pdf", format="pdf", bbox_inches="tight")
@@ -99,9 +102,9 @@ def plot_electron_conductivity():
                      f"at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, true_conductivity * 1e-3,
-            '-', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
+            '--', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
     ax.plot(fermi_levels * 1e3 / electron_volt, conductivity * 1e-3,
-            '-o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
+            'o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
     ax.set_xlabel('Fermi level (meV)')
     ax.set_ylabel('Electron conductivity (kS/m)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -123,9 +126,9 @@ def plot_seebeck_coefficient():
                label=f"|S| = {material_seebeck:.2f} mV/K at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, np.abs(true_seebeck) * 1e3,
-            '-', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
+            '--', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
     ax.plot(fermi_levels * 1e3 / electron_volt, np.abs(seebeck) * 1e3,
-            '-o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
+            'o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
     ax.set_xlabel('Fermi level (meV)')
     ax.set_ylabel('|Seebeck coefficient| (mV/K)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -147,9 +150,9 @@ def plot_power_factor():
                label=f"PF = {material_pf:.2f} mW/m·K² at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)
     ax.plot(fermi_levels * 1e3 / electron_volt, true_power_factor * 1e3,
-            '-', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
+            '--', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
     ax.plot(fermi_levels * 1e3 / electron_volt, power_factor * 1e3,
-            '-o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
+            'o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
     ax.set_xlabel('Fermi level (meV)')
     ax.set_ylabel('Power factor (mW/m·$K^{2}$)')
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -190,8 +193,10 @@ def plot_electron_thermal_conductivity():
     ax.axhline(y=material_kappa, color='gray', linestyle='--', linewidth=1,
                label=f"κ_e = {material_kappa:.4f} W/m·K at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1)
+    ax.plot(fermi_level * 1e3 / electron_volt, true_thermal_conductivity,
+            '--', c='deeppink', linewidth=0.8, label="BTE", zorder=2)
     ax.plot(fermi_level * 1e3 / electron_volt, thermal_conductivity,
-            '-o', markersize=2, c='royalblue', label="MC")
+            'o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
     ax.set_xlabel('Fermi level (meV)')
     ax.set_ylabel('Thermal conductivity (W/m·K)')
     ax.grid(True, linestyle='--', alpha=0.7)

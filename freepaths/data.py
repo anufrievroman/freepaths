@@ -66,12 +66,6 @@ class GeneralData(Data):
         self.travel_times = []
         self.mean_free_paths = []
         self.thermal_conductivity = []
-        self.interfaces_angles = []
-        self.interfaces_transmission_factor = []
-        self.interfaces_wavelength = []
-        self.interfaces_frequency = []
-        self.interfaces_mode = []
-
     def save_particle_data(self, pt):
         """Add information about the particle to the dataset"""
         self.frequencies.append(pt.f)
@@ -89,11 +83,6 @@ class GeneralData(Data):
         self.travel_times.append(flight.travel_time)
         self.mean_free_paths.append(flight.mean_free_path)
         self.thermal_conductivity.append(flight.thermal_conductivity)
-        self.interfaces_angles.extend(flight.interfaces_angles)
-        self.interfaces_transmission_factor.extend(flight.interfaces_transmission_factor)
-        self.interfaces_wavelength.extend(flight.interfaces_wavelength)
-        self.interfaces_frequency.extend(flight.interfaces_frequency)
-        self.interfaces_mode.extend(flight.interfaces_mode)
 
 
     def write_into_files(self):
@@ -105,20 +94,15 @@ class GeneralData(Data):
             np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', header="L [m]", encoding='utf-8')
         np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
         np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All hole specular scattering angles.csv", self.hole_spec_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+        if cf.holes:
+            np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+            np.savetxt("Data/All hole specular scattering angles.csv", self.hole_spec_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
         np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', header="Travel time [s]", encoding='utf-8')
         np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', header="MFPs [m]", encoding='utf-8')
         np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
         np.savetxt("Data/All initial energies.csv", self.initial_energies, fmt='%2.4e', header="Energy [J]", encoding='utf-8')
-        np.savetxt("Data/All interfaces angles.csv", self.interfaces_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All interfaces transmission factor.csv", self.interfaces_transmission_factor, fmt='%2.4e', header="Transmission factor [%]", encoding='utf-8')
-        np.savetxt("Data/All interfaces wavelength.csv", self.interfaces_wavelength, fmt='%.18f', header="Interfaces wavelength [m]", encoding='utf-8')
-        np.savetxt("Data/All interfaces frequency.csv", self.interfaces_frequency, fmt='%.18f', header="Interfaces frequency [THz]", encoding='utf-8')
-        np.savetxt("Data/All interfaces mode.csv", self.interfaces_mode, fmt='%d', header="Interfaces mode", encoding='utf-8')
-
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
@@ -133,11 +117,6 @@ class GeneralData(Data):
             'mean_free_paths': self.mean_free_paths,
             'thermal_conductivity': self.thermal_conductivity,
             'initial_energies': self.initial_energies,
-            'interfaces_angles': self.interfaces_angles,
-            'interfaces_transmission_factor': self.interfaces_transmission_factor,
-            'interfaces_wavelength': self.interfaces_wavelength,
-            'interfaces_frequency': self.interfaces_frequency,
-            'interfaces_mode': self.interfaces_mode,
         }
 
 
@@ -298,11 +277,9 @@ class SegmentData(Data):
 
     def record_time_in_segment(self, coordinate):
         """Record how long particle stays in different segments"""
-        for segment_number in range(cf.number_of_length_segments):
-            segment_beginning = segment_number * (cf.length / cf.number_of_length_segments)
-            segment_end = (segment_number + 1)*(cf.length / cf.number_of_length_segments)
-            if segment_beginning <= coordinate < segment_end:
-                self.time_spent[segment_number] += cf.timestep * 1e6
+        segment = int(coordinate // (cf.length / cf.number_of_length_segments))
+        if 0 <= segment < cf.number_of_length_segments:
+            self.time_spent[segment] += cf.timestep * 1e9
 
     def write_into_files(self):
         """Write data into files"""

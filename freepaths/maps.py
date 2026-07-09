@@ -119,6 +119,8 @@ class ThermalMaps(Maps):
 
     def calculate_pixel_volumes(self, number_of_pixels_x, number_of_pixels_y):
         """Calculate a map showing if the pixel contains material (1) or a hole (0)"""
+        if not cf.holes:
+            return np.ones((number_of_pixels_y, number_of_pixels_x))
         pixel_volume_ratios = np.zeros((number_of_pixels_y, number_of_pixels_x))
         for x_index in range(number_of_pixels_x):
             for y_index in range(number_of_pixels_y):

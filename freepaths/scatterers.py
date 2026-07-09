@@ -756,13 +756,6 @@ class RectangularBulk(Bulk):
         T = self.transmission_probability(pt, cf)
 
         theta_i = np.pi/2 - pt.theta
-        if hasattr(pt, 'flight'):
-            pt.flight.save_interfaces_angles(abs(theta_i))
-            pt.flight.save_interfaces_transmission_factor(T)
-            pt.flight.save_interfaces_wavelength(pt.wavelength)
-            pt.flight.save_interfaces_frequency(pt.f)
-            pt.flight.save_interfaces_mode(pt.branch_number)
-
         # inside or not
         inside0 = self.is_inside(pt.x, pt.y, pt.z, cf)
 
@@ -933,15 +926,6 @@ class VerticalPlane(Interface):
         # Crossing the interface:
         transmission = self.transmission_probability(cf, pt)
         theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
-
-        if hasattr(pt, 'flight'):
-            pt.flight.save_interfaces_angles(abs(theta_i))
-            pt.flight.save_interfaces_transmission_factor(transmission)
-            # wavelength and branch mode are phonon-only quantities; skip for electrons
-            if hasattr(pt, 'branch_number'):
-                pt.flight.save_interfaces_wavelength()
-                pt.flight.save_interfaces_frequency()
-                pt.flight.save_interfaces_mode()
 
         # else:
         if random() < transmission:

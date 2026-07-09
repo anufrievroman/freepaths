@@ -109,11 +109,17 @@ def plot_cumulative_thermal_conductivity(mfp_sampling):
     if not mfp_sampling:
         return
     mfp, kappa = cumulative_conductivity_calculation()
+
+    total_kappa = np.genfromtxt("Data/Thermal conductivity from MFP.csv", skip_header=1)
+
     fig, ax = plt.subplots()
     ax.plot(mfp * 1e6, kappa, 'royalblue')
+    ax.axhline(total_kappa, color='royalblue', linestyle='--', linewidth=1,
+               label=f'κ = {total_kappa:.2f} W/m·K')
     ax.set_xlabel('Mean free path (μm)')
     ax.set_ylabel('Cumulative thermal conductivity (W/m·K)')
     ax.set_xscale('log')
+    ax.legend()
     fig.savefig("Distribution of thermal conductivity.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of thermal conductivity.csv', np.vstack((mfp, kappa)).T, fmt='%1.3e', delimiter=",")
@@ -229,6 +235,21 @@ def plot_velocity_distribution():
     plt.close(fig)
 
 
+def plot_scattering_rate_vs_frequency():
+    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency"""
+    mfps = np.loadtxt("Data/All mean free paths.csv")
+    frequencies = np.loadtxt("Data/All initial frequencies.csv")
+    speeds = np.loadtxt("Data/All group velocities.csv")
+    mask = mfps > 0
+    scattering_rates = speeds[mask] / mfps[mask]
+    fig, ax = plt.subplots()
+    ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='royalblue')
+    ax.set_xlabel('Frequency (THz)')
+    ax.set_ylabel(r'Scattering rate (ns$^{-1}$)')
+    fig.savefig('Scattering rate vs frequency.pdf', format='pdf', bbox_inches="tight")
+    plt.close(fig)
+
+
 def plot_energy_distribution():
     """Plot distribution of energy"""
     fig, ax = plt.subplots()
@@ -297,8 +318,10 @@ def plot_temperature_profile():
     data = np.genfromtxt("Data/Temperature profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     coords = data[0]
     n_timeframes = len(data) - 1
+    colors = plt.cm.viridis(np.linspace(0, 0.8, n_timeframes))
     for timeframe_num in range(n_timeframes):
-        ax.plot(coords[1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+        ax.plot(coords[1:], data[timeframe_num + 1][1:], linewidth=1,
+                color=colors[timeframe_num], label=f'Time frame {timeframe_num+1}')
     # Linear fit of the last timeframe (same algorithm as thermal conductivity calculation)
     slope, intercept = np.polyfit(coords, data[n_timeframes], 1)
     ax.plot(coords[1:], slope * coords[1:] + intercept, '--', color='gray', linewidth=1, label='Linear fit (last frame)')
@@ -315,10 +338,13 @@ def plot_heat_flux_profile():
     data = np.genfromtxt("Data/Heat flux profiles y.csv", unpack=True, delimiter=',', skip_header=1, encoding='utf-8')
     n_timeframes = (len(data) - 1) // 2
 
+    colors = plt.cm.viridis(np.linspace(0, 0.8, n_timeframes))
+
     # Effective heat flux:
     fig, ax = plt.subplots()
     for timeframe_num in range(n_timeframes):
-        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+        ax.plot(data[0][1:], data[timeframe_num + 1][1:], linewidth=1,
+                color=colors[timeframe_num], label=f'Time frame {timeframe_num+1}')
     # Mean of the last timeframe, skipping first pixel (same as thermal conductivity calculation)
     mean_flux = np.mean(data[n_timeframes][1:])
     ax.axhline(mean_flux, color='gray', linestyle='--', linewidth=1, label='Mean (last frame)')
@@ -331,7 +357,8 @@ def plot_heat_flux_profile():
     # Material heat flux:
     fig, ax = plt.subplots()
     for timeframe_num in range(n_timeframes):
-        ax.plot(data[0][1:], data[2*timeframe_num + 1][1:], linewidth=1, label=f'Time frame {timeframe_num+1}')
+        ax.plot(data[0][1:], data[2*timeframe_num + 1][1:], linewidth=1,
+                color=colors[timeframe_num], label=f'Time frame {timeframe_num+1}')
     mean_flux_mat = np.mean(data[2*n_timeframes - 1][1:])
     ax.axhline(mean_flux_mat, color='gray', linestyle='--', linewidth=1, label='Mean (last frame)')
     ax.set_xlabel('Y (μm)')
@@ -479,7 +506,7 @@ def plot_scattering_statistics():
         ax.plot(segments, scattering_rate,  '-o', markersize=2)
 
     ax.set_xlabel('Y (μm)')
-    ax.set_ylabel('Scattering rate (1/ns)')
+    ax.set_ylabel('Average scattering rate (1/ns)')
     legend = ["Sidewalls diffuse", "Sidewalls specular", "Top & bottom diffuse", "Top & bottom specular",
               "Holes diffuse", "Holes specular", "Internal", "Pillars diffuse", "Pillars specular",
               "Interfaces diffuse", "Interfaces specular", "Interfaces transmission diffuse", "Interfaces transmission specular"]
@@ -644,6 +671,12 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
     if cf.low_memory_usage:
         function_list = [f for f in function_list if f not in (plot_trajectories, plot_free_path_distribution)]
 
+    # In MFP sampling mode, Fourier-law profiles, conductivity, and pixel volumes are meaningless:
+    if mfp_sampling:
+        function_list = [f for f in function_list if f not in (
+            plot_thermal_conductivity, plot_temperature_profile, plot_heat_flux_profile,
+            plot_thermal_map, plot_pixel_volumes)]
+
     # Run main functions and handle exceptions:
     for func in function_list:
         try:
@@ -654,7 +687,13 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
     # Run additional functions:
     if particle_type is ParticleType.PHONON:
         plot_cumulative_thermal_conductivity(mfp_sampling)
-        plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
-        plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
-        plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
+        if mfp_sampling:
+            try:
+                plot_scattering_rate_vs_frequency()
+            except Exception as e:
+                logging.warning(f"Function plot_scattering_rate_vs_frequency failed: {e}")
+        if not mfp_sampling:
+            plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
+            plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
+            plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")
 

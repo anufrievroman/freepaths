@@ -75,7 +75,8 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
 
 
         # Record presence of the particle at this timestep and move on:
-        thermal_maps.add_energy_to_maps(particle, step_number, material)
+        if thermal_maps is not None:
+            thermal_maps.add_energy_to_maps(particle, step_number, material)
         segment_stats.record_time_in_segment(particle.y)
         scattering_types.reset()
         triangle_scattering_places.reset()

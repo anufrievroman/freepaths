@@ -7,7 +7,7 @@ from colorama import Fore, Style
 
 from freepaths.particle_types import ParticleType
 
-__version__ = "2.3.2"
+__version__ = "2.3.3"
 
 colorama.init()
 
