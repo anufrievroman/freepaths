@@ -23,12 +23,14 @@ from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.materials import Si, SiC, Graphite, SiGe
 from freepaths.maps import ScatteringMap
+from freepaths.progress import Progress
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.output_plots import plot_data
 
 
 def _branch_worker(branch_number, shared_list):
-    """Process all phonons for one polarization branch and return results via shared_list."""
+    """Entry point for each worker process. Catches exceptions so they are logged
+    rather than silently swallowed by the multiprocessing machinery."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
         _run_branch(branch_number, shared_list)
@@ -37,7 +39,22 @@ def _branch_worker(branch_number, shared_list):
 
 
 def _run_branch(branch_number, shared_list):
+    """Run all phonons for one polarization branch and push results to shared_list.
 
+    Each call processes NUMBER_OF_PARTICLES phonons sampled uniformly across the
+    dispersion of the given branch.  The k-vector integration weight (d_k_vector)
+    is the width of the k-space interval assigned to each phonon, so the sum of
+    flight.thermal_conductivity over all phonons approximates the branch integral
+    in Phys. Rev. 132 2461 (1963).
+
+    Branch 0 also drives the shared progress bar; the other two run silently.
+    Results are appended to shared_list as a dict of dump_data() payloads so that
+    the main process can merge them with the standard read_data() mechanism.
+    """
+
+    # Each worker builds its own material instance so the dispersion is
+    # sampled with the correct number of points (number_of_particles + 1
+    # intervals → number_of_particles midpoints):
     if cf.media == "Si":
         material = Si(cf.temp, num_points=cf.number_of_particles + 1)
     elif cf.media == "SiGe":
@@ -50,6 +67,7 @@ def _run_branch(branch_number, shared_list):
         logging.error(f"Material {cf.media} is not supported")
         return
 
+    # Local data structures — merged into the global ones after all workers finish:
     scatter_stats = ScatteringData()
     general_stats = GeneralData()
     segment_stats = SegmentData()
@@ -58,20 +76,27 @@ def _run_branch(branch_number, shared_list):
     scatter_maps = ScatteringMap()
 
     total_thermal_conductivity = 0.0
+    progress = Progress() if branch_number == 0 else None
 
     for index in range(cf.number_of_particles):
+        if progress:
+            progress.render(index, cf.number_of_particles)
+
+        # Mid-point k-vector and integration weight for this phonon:
         k_vector = (material.dispersion[index + 1, 0] + material.dispersion[index, 0]) / 2
         d_k_vector = material.dispersion[index + 1, 0] - material.dispersion[index, 0]
 
+        # Initialise phonon at this k-point and run it through the geometry:
         phonon = Phonon(material, branch_number, index)
         flight = Flight(phonon)
-
         run_particle(phonon, flight, scatter_stats, places_stats, segment_stats, None, scatter_maps, material)
 
+        # Mode heat capacity (Ref. PRB 88 155318, 2013):
         omega = 2 * math.pi * phonon.f
         part = scipy.constants.hbar * omega / (scipy.constants.k * cf.temp)
         c_p = scipy.constants.k * part**2 * math.exp(part) / (math.exp(part) - 1)**2
 
+        # Thermal conductivity contribution from this k-point (Ref. Phys. Rev. 132 2461, 1963):
         mean_relax_time = flight.mean_free_path / phonon.speed
         flight.thermal_conductivity = (1 / (6 * math.pi**2)) * c_p * phonon.speed**2 * mean_relax_time * k_vector**2 * d_k_vector
         total_thermal_conductivity += flight.thermal_conductivity
@@ -82,6 +107,7 @@ def _run_branch(branch_number, shared_list):
         if index < cf.output_trajectories_of_first:
             path_stats.save_particle_path(flight)
 
+    # Push this branch's results to the shared list for the main process to collect:
     shared_list.append({
         'total_thermal_conductivity': total_thermal_conductivity,
         'scatter_stats': scatter_stats.dump_data(),
@@ -94,12 +120,14 @@ def _run_branch(branch_number, shared_list):
 
 
 def main(input_file, particle_type):
-    """This is the main function, which integrates phonon dispersion to get thermal conductivity"""
+    """Integrate the phonon dispersion over all three branches in parallel to get
+    the bulk thermal conductivity via the MFP-sampling method."""
 
     print(f'Mean free path sampling of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
     start_time = time.time()
 
-    # Spawn one worker process per polarization branch:
+    # Spawn one worker process per polarization branch (LA + 2×TA).
+    # All three run concurrently; branch 0 reports progress to stdout:
     manager = multiprocessing.Manager()
     shared_list = manager.list()
 
@@ -117,7 +145,7 @@ def main(input_file, particle_type):
             process.terminate()
         raise
 
-    # Collect and merge results from all three branches:
+    # Merge per-branch results into single data structures:
     scatter_stats = ScatteringData()
     general_stats = GeneralData()
     segment_stats = SegmentData()
@@ -143,7 +171,7 @@ def main(input_file, particle_type):
         shutil.copy(input_file, "Results/" + cf.output_folder_name)
     os.chdir("Results/" + cf.output_folder_name)
 
-    # Save data into files:
+    # Save data and generate plots:
     general_stats.write_into_files()
     scatter_stats.write_into_files()
     segment_stats.write_into_files()

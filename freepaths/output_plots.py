@@ -236,16 +236,25 @@ def plot_velocity_distribution():
 
 
 def plot_scattering_rate_vs_frequency():
-    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency"""
+    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency with theoretical internal rate"""
     mfps = np.loadtxt("Data/All mean free paths.csv")
     frequencies = np.loadtxt("Data/All initial frequencies.csv")
     speeds = np.loadtxt("Data/All group velocities.csv")
     mask = mfps > 0
     scattering_rates = speeds[mask] / mfps[mask]
+
+    # Theoretical internal scattering rate from material model:
+    material = get_media_class(cf.media)(cf.temp)
+    f_range = np.linspace(frequencies[mask].min(), frequencies[mask].max(), 500)
+    omega_range = 2 * np.pi * f_range
+    tau_internal = np.array([material.phonon_relaxation_time(w) for w in omega_range])
+
     fig, ax = plt.subplots()
-    ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='royalblue')
+    ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='royalblue', label='MC total')
+    ax.plot(f_range * 1e-12, 1e-9 / tau_internal, '--', linewidth=0.8, c='deeppink', label='Internal (theory)')
     ax.set_xlabel('Frequency (THz)')
     ax.set_ylabel(r'Scattering rate (ns$^{-1}$)')
+    ax.legend()
     fig.savefig('Scattering rate vs frequency.pdf', format='pdf', bbox_inches="tight")
     plt.close(fig)
 
