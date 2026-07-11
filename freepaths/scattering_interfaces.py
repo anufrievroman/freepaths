@@ -4,7 +4,7 @@ from math import pi, cos, sin, tan, exp, atan, asin, acos
 from random import random
 from numpy import sign
 
-from freepaths.particle_types import ParticleType
+from freepaths.options import ParticleType
 from freepaths.move import move
 from freepaths.scattering_types import Scattering
 from freepaths.materials import Si, SiGe

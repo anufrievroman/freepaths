@@ -7,7 +7,7 @@ from scipy.constants import k, hbar, h
 import numpy as np
 
 from freepaths.config import cf
-from freepaths.particle_types import ParticleType
+from freepaths.options import ParticleType
 from freepaths.particle import Particle
 import freepaths.move
 

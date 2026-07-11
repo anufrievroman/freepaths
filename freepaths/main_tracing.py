@@ -17,7 +17,7 @@ from freepaths.run_particle import run_particle
 from freepaths.electron import Electron
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
-from freepaths.particle_types import ParticleType
+from freepaths.options import SimulationMode
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
@@ -35,7 +35,7 @@ class ParticleSimulator:
     It is meant to be used as a worker for multiprocessing
     """
 
-    def __init__(self, worker_id, particle_type: ParticleType, total_particles, shared_list, output_trajectories_of):
+    def __init__(self, worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of):
 
         # Initialize the material:
         if cf.media == "Si":
@@ -53,7 +53,7 @@ class ParticleSimulator:
         # Save some general information about the process:
         self.worker_id = worker_id
         self.total_particles = total_particles
-        self.particle_type = particle_type
+        self.mode = mode
         self.result_queue = shared_list
         self.creation_time = time.time()
         self.output_trajectories_of = output_trajectories_of
@@ -66,7 +66,7 @@ class ParticleSimulator:
         self.path_stats = PathData()
         self.places_stats = TriangleScatteringData()
         self.scatter_maps = ScatteringMap()
-        self.thermal_maps = ThermalMaps() if particle_type is ParticleType.PHONON else None
+        self.thermal_maps = ThermalMaps() if mode is SimulationMode.PHONON_TRACING else None
 
         self.total_thermal_conductivity = 0.0
         self.interfaces_transmission_specular = 0
@@ -75,10 +75,10 @@ class ParticleSimulator:
 
     def simulate_particle(self, index):
         # Initiate a particle and its flight:
-        if self.particle_type is ParticleType.PHONON:
-            particle = Phonon(self.material)
-        else:
+        if self.mode is SimulationMode.ELECTRON:
             particle = Electron(self.material)
+        else:
+            particle = Phonon(self.material)
         flight = Flight(particle)
         particle.flight = flight
 
@@ -86,8 +86,8 @@ class ParticleSimulator:
         run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
 
         # Record the properties returned for this particle:
-        self.general_stats.save_particle_data(particle, self.particle_type)
-        self.general_stats.save_flight_data(flight, self.particle_type)
+        self.general_stats.save_particle_data(particle, self.mode)
+        self.general_stats.save_flight_data(flight, self.mode)
 
         # Record trajectories of the first N particles:
         if index < self.output_trajectories_of:
@@ -127,11 +127,11 @@ class ParticleSimulator:
         self.result_queue.append(collected_data)
 
 
-def worker_process(worker_id, particle_type: ParticleType,total_particles, shared_list, output_trajectories_of, finished_workers):
+def worker_process(worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of, finished_workers):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
         # Create a particle simulator and run the simulation:
-        simulator = ParticleSimulator(worker_id, particle_type, total_particles, shared_list, output_trajectories_of)
+        simulator = ParticleSimulator(worker_id, mode, total_particles, shared_list, output_trajectories_of)
         simulator.simulate_particles(render_progress=1 if worker_id == 0 else 0)
 
         # Declare that the calculation is finished:
@@ -162,7 +162,7 @@ def display_workers_finished(finished_workers):
         pass
 
 
-def main(input_file, particle_type):
+def main(input_file, mode: SimulationMode):
     """
     This is the main function.
     It should be used to simulate electron paths or phonon paths at low temperatures.
@@ -193,7 +193,7 @@ def main(input_file, particle_type):
     for i in range(cf.num_workers):
         worker_particles = workload_per_worker + (1 if i < remaining_particles else 0)
         output_trajectory_of = output_trajectories_per_worker + (1 if i < remaining_output_trajectories else 0)
-        process = multiprocessing.Process(target=worker_process, args=(i, particle_type, worker_particles, shared_list, output_trajectory_of, finished_workers))
+        process = multiprocessing.Process(target=worker_process, args=(i, mode, worker_particles, shared_list, output_trajectory_of, finished_workers))
         processes.append(process)
         process.start()
 
@@ -223,7 +223,7 @@ def main(input_file, particle_type):
     segment_stats = SegmentData()
     path_stats = PathData()
     scatter_maps = ScatteringMap()
-    thermal_maps = ThermalMaps() if particle_type is ParticleType.PHONON else None
+    thermal_maps = ThermalMaps() if mode is SimulationMode.PHONON_TRACING else None
 
     # Collect the results:
     sys.stdout.write('\nCollecting data from workers...\r')
@@ -253,17 +253,13 @@ def main(input_file, particle_type):
         sys.stdout.write(f'Shortest process execution time: {round(min(execution_time_list))}s\n')
         sys.stdout.write(f'Longest process execution time: {round(max(execution_time_list))}s\n')
 
-    # Check if the total number of returned particles from the workers corresponds with the number of particles to be simulated:
-    if len(general_stats.travel_times) != cf.number_of_particles:
-        sys.stdout.write(f'WARNING: {cf.number_of_particles} were meant to be simulated but only {len(general_stats.initial_angles)} particles were collected from the workers\n')
-
     # Run thermal calculations:
     if thermal_maps is not None:
         thermal_maps.calculate_thermal_conductivity()
         thermal_maps.calculate_heat_flux_modulus()
 
     # Run calculations on electrons if needed:
-    if particle_type is ParticleType.ELECTRON:
+    if mode is SimulationMode.ELECTRON:
 
         electron_computations = ElectronPostComputation(general_stats)
         electron_computations.compute()
@@ -279,7 +275,7 @@ def main(input_file, particle_type):
     os.chdir("Results/" + cf.output_folder_name)
 
     # Try to load pre-computed phonon thermal conductivity to enable ZT calculation:
-    if particle_type is ParticleType.ELECTRON:
+    if mode is SimulationMode.ELECTRON:
         kappa_ph = None
         if os.path.isfile("Data/Thermal conductivity from MFP.csv"):
             try:
@@ -297,17 +293,17 @@ def main(input_file, particle_type):
 
     # Save data into files:
     sys.stdout.write("\rSaving raw data...")
-    general_stats.write_into_files(particle_type)
+    general_stats.write_into_files(mode)
     scatter_stats.write_into_files()
     if cf.holes:
         places_stats.write_into_files()
     segment_stats.write_into_files()
     if thermal_maps is not None:
-        thermal_maps.write_into_files(particle_type)
+        thermal_maps.write_into_files(mode)
     if cf.output_scattering_map:
         scatter_maps.write_into_files()
     path_stats.write_into_files()
-    if particle_type is ParticleType.ELECTRON:
+    if mode is SimulationMode.ELECTRON:
         electron_computations.write_into_file()
 
     # Generate animation of particle paths:
@@ -316,14 +312,14 @@ def main(input_file, particle_type):
 
     # Analyze and plot the data:
     sys.stdout.write("\rAnalyzing the data...")
-    plot_data(particle_type, cf)
+    plot_data(mode, cf)
 
     # Output general information:
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
-    if particle_type is ParticleType.ELECTRON:
+    if mode is SimulationMode.ELECTRON:
         output_electron_information(electron_computations)
-    output_parameter_warnings(particle_type)
+    output_parameter_warnings(mode)
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")

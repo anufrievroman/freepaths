@@ -19,7 +19,7 @@ from freepaths.config import cf
 from freepaths.run_particle import run_particle
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
-from freepaths.particle_types import ParticleType
+from freepaths.options import SimulationMode
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.materials import Si, SiC, Graphite, SiGe
 from freepaths.maps import ScatteringMap
@@ -126,8 +126,8 @@ def _run_branch(branch_number, shared_list, shared_progress):
         flight.thermal_conductivity = (1 / (6 * math.pi**2)) * c_p * phonon.speed**2 * mean_relax_time * k_vector**2 * d_k_vector
         total_thermal_conductivity += flight.thermal_conductivity
 
-        general_stats.save_particle_data(phonon, mfp_sampling=True)
-        general_stats.save_flight_data(flight, mfp_sampling=True)
+        general_stats.save_particle_data(phonon, SimulationMode.PHONON_MFP_SAMPLING)
+        general_stats.save_flight_data(flight, SimulationMode.PHONON_MFP_SAMPLING)
 
         if index < cf.output_trajectories_of_first:
             path_stats.save_particle_path(flight)
@@ -144,7 +144,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
     })
 
 
-def main(input_file, particle_type):
+def main(input_file, mode: SimulationMode):
     """Integrate the phonon dispersion over all three branches in parallel to get
     the bulk thermal conductivity via the MFP-sampling method."""
 
@@ -208,7 +208,7 @@ def main(input_file, particle_type):
     os.chdir("Results/" + cf.output_folder_name)
 
     # Save data and generate plots:
-    general_stats.write_into_files(mfp_sampling=True)
+    general_stats.write_into_files(mode)
     scatter_stats.write_into_files()
     segment_stats.write_into_files()
     if cf.output_scattering_map:
@@ -221,11 +221,11 @@ def main(input_file, particle_type):
     np.savetxt("Data/Thermal conductivity from MFP.csv", np.array([total_thermal_conductivity]), fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
 
     sys.stdout.write("\rAnalyzing the data...")
-    plot_data(particle_type, cf, mfp_sampling=True)
+    plot_data(mode, cf)
 
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
-    output_parameter_warnings(ParticleType.PHONON, mfp_sampling=True)
+    output_parameter_warnings(mode)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")

@@ -4,7 +4,7 @@ from math import cos, sin
 from scipy.constants import hbar, pi
 import numpy as np
 from freepaths.config import cf
-from freepaths.particle_types import ParticleType
+from freepaths.options import SimulationMode
 
 class Maps:
     """Parent maps class with functions common to all classes below"""
@@ -204,8 +204,10 @@ class ThermalMaps(Maps):
             self.std_material_thermal_conductivity = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
 
 
-    def write_into_files(self, particle_type=None):
+    def write_into_files(self, mode=None):
         """Write thermal maps into files"""
+        if mode is not SimulationMode.PHONON_TRACING:
+            return
 
         # Create coordinate array [um]
         num_of_points_y = self.temperature_profile_y.shape[0]
@@ -222,19 +224,18 @@ class ThermalMaps(Maps):
         data_av_tc = np.vstack((self.av_effective_thermal_conductivity, self.av_material_thermal_conductivity,
                                 self.std_effective_thermal_conductivity, self.std_material_thermal_conductivity, av_start, av_end)).T
 
-        if particle_type is not ParticleType.ELECTRON:
-            t_headers = ', '.join([f'T (K) [step{i+1}]' for i in range(cf.number_of_timeframes)])
-            np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), " + t_headers, encoding='utf-8')
-            j_headers = ', '.join([f'J_eff (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)] + [f'J_mat (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)])
-            np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), " + j_headers, encoding='utf-8')
-            np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K_eff (W/mK), K_mat (W/mK)", encoding='utf-8')
-            np.savetxt("Data/Average thermal conductivity.csv", data_av_tc, fmt='%1.3e', delimiter=",",
-                       header="K_eff (W/mK), K_mat (W/mK), error_eff (W/mK), error_mat (W/mK), Av. start (ns), Av. end (ns)", encoding='utf-8')
-            np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1i', delimiter=",", encoding='utf-8')
-            np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
-            np.savetxt("Data/Heat flux map xy.csv", self.heat_flux_map_xy, fmt='%1.2e', delimiter=",", encoding='utf-8')
-            np.savetxt("Data/Heat flux map x.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
-            np.savetxt("Data/Heat flux map y.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        t_headers = ', '.join([f'T (K) [step{i+1}]' for i in range(cf.number_of_timeframes)])
+        np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), " + t_headers, encoding='utf-8')
+        j_headers = ', '.join([f'J_eff (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)] + [f'J_mat (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)])
+        np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), " + j_headers, encoding='utf-8')
+        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K_eff (W/mK), K_mat (W/mK)", encoding='utf-8')
+        np.savetxt("Data/Average thermal conductivity.csv", data_av_tc, fmt='%1.3e', delimiter=",",
+                   header="K_eff (W/mK), K_mat (W/mK), error_eff (W/mK), error_mat (W/mK), Av. start (ns), Av. end (ns)", encoding='utf-8')
+        np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1i', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Thermal map.csv", self.thermal_map, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map xy.csv", self.heat_flux_map_xy, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map x.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
+        np.savetxt("Data/Heat flux map y.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
 
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""

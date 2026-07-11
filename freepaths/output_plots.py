@@ -10,7 +10,7 @@ from matplotlib import font_manager
 from scipy.constants import electron_volt
 
 from freepaths.config import cf
-from freepaths.particle_types import ParticleType
+from freepaths.options import SimulationMode
 from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
 from freepaths.materials import Si, SiC, Graphite, SiGe
@@ -104,9 +104,9 @@ def cumulative_conductivity_calculation():
     return sorted_mfp, cumulative_thermal_conductivity
 
 
-def plot_cumulative_thermal_conductivity(mfp_sampling):
+def plot_cumulative_thermal_conductivity(mode):
     """Plot distribution cumulative thermal conductivity vs mean free path"""
-    if not mfp_sampling:
+    if mode is not SimulationMode.PHONON_MFP_SAMPLING:
         return
     mfp, kappa = cumulative_conductivity_calculation()
 
@@ -617,7 +617,7 @@ def plot_material_properties():
     plt.close(fig)
 
 
-def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
+def plot_data(mode: SimulationMode, cf):
     """Create plots of various distributions, maps, profiles, and other quantities"""
 
     # Defines what will be plotted after the phonon simulations:
@@ -646,7 +646,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         phonon_function_list.extend([
             plot_scattering_angle_distribution,
             ])
-
 
     from freepaths.output_electron_plots import (
         plot_travel_time_vs_energy,
@@ -682,18 +681,17 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_scattering_map,
     ]
 
-
-    if particle_type is ParticleType.PHONON:
-        function_list = phonon_function_list
-    else:
+    if mode is SimulationMode.ELECTRON:
         function_list = electron_function_list
+    else:
+        function_list = phonon_function_list
 
     # These plots require data files that are not saved in low memory mode:
     if cf.low_memory_usage:
         function_list = [f for f in function_list if f not in (plot_trajectories, plot_free_path_distribution)]
 
     # In MFP sampling mode, Fourier-law profiles, conductivity, thermal maps, and angle plots are not used:
-    if mfp_sampling:
+    if mode is SimulationMode.PHONON_MFP_SAMPLING:
         function_list = [f for f in function_list if f not in (
             plot_thermal_conductivity, plot_temperature_profile, plot_heat_flux_profile,
             plot_thermal_map, plot_angle_distribution, plot_scattering_angle_distribution)]
@@ -706,14 +704,14 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
             logging.warning(f"Function {func.__name__} failed: {e}")
 
     # Run additional functions:
-    if particle_type is ParticleType.PHONON:
-        plot_cumulative_thermal_conductivity(mfp_sampling)
-        if mfp_sampling:
+    if mode is not SimulationMode.ELECTRON:
+        plot_cumulative_thermal_conductivity(mode)
+        if mode is SimulationMode.PHONON_MFP_SAMPLING:
             try:
                 plot_scattering_rate_vs_frequency()
             except Exception as e:
                 logging.warning(f"Function plot_scattering_rate_vs_frequency failed: {e}")
-        if not mfp_sampling:
+        if mode is SimulationMode.PHONON_TRACING:
             plot_heat_flux_map(file="Data/Heat flux map xy.csv", label="Heat flux map", units="W/m²")
             plot_heat_flux_map(file="Data/Heat flux map x.csv", label="Heat flux map x", units="W/m²")
             plot_heat_flux_map(file="Data/Heat flux map y.csv", label="Heat flux map y", units="W/m²")

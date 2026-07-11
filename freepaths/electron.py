@@ -4,7 +4,7 @@ from random import choice, random
 from scipy.constants import h, electron_volt
 from freepaths.config import cf
 from freepaths.particle import Particle
-from freepaths.particle_types import ParticleType
+from freepaths.options import ParticleType
 
 import numpy as np
 

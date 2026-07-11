@@ -134,13 +134,13 @@ def output_scattering_information(scatter_stats):
                             f"mechanism fired simultaneously. Consider reducing TIMESTEP.")
 
 
-def output_parameter_warnings(particle_type, mfp_sampling=False):
+def output_parameter_warnings(mode):
     """Check if parameters used for this simulation made sense considering the simulation results"""
 
-    from freepaths.particle_types import ParticleType
+    from freepaths.options import SimulationMode
 
     # These checks are only relevant for phonon tracing simulations:
-    if particle_type is not ParticleType.ELECTRON and not mfp_sampling:
+    if mode is SimulationMode.PHONON_TRACING:
         travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
 
         total_time = cf.timestep * cf.number_of_timesteps
@@ -159,7 +159,7 @@ def output_parameter_warnings(particle_type, mfp_sampling=False):
         logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")
 
     # Pixel size checks are only relevant for phonon tracing mode:
-    if particle_type is not ParticleType.ELECTRON and not mfp_sampling:
+    if mode is SimulationMode.PHONON_TRACING:
         speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
         if max(speeds) * cf.timestep > cf.length / cf.number_of_pixels_y:
             logging.warning("Pixels in y direction are smaller than length of one step")
@@ -167,7 +167,7 @@ def output_parameter_warnings(particle_type, mfp_sampling=False):
             logging.warning("Pixels in x direction are smaller than length of one step")
 
     # Check electron scattering times against timestep:
-    if particle_type is ParticleType.ELECTRON:
+    if mode is SimulationMode.ELECTRON:
         scattering_times = np.genfromtxt("Data/Scattering time vs energy.csv", delimiter=',', skip_header=1)[:, 1]
         n_short = int(np.sum(scattering_times < cf.timestep))
         percentage = 100 * n_short / len(scattering_times)

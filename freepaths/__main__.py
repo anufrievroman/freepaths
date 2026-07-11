@@ -5,7 +5,7 @@ import argparse
 import colorama
 from colorama import Fore, Style
 
-from freepaths.particle_types import ParticleType
+from freepaths.options import SimulationMode
 
 __version__ = "2.3.4"
 
@@ -45,15 +45,15 @@ def run():
     try:
         if args.sampling:
             import freepaths.main_mfp_sampling
-            freepaths.main_mfp_sampling.main(args.input_file, ParticleType.PHONON)
+            freepaths.main_mfp_sampling.main(args.input_file, SimulationMode.PHONON_MFP_SAMPLING)
 
         elif args.electron:
             import freepaths.main_tracing
-            freepaths.main_tracing.main(args.input_file, ParticleType.ELECTRON)
+            freepaths.main_tracing.main(args.input_file, SimulationMode.ELECTRON)
 
         else:
             import freepaths.main_tracing
-            freepaths.main_tracing.main(args.input_file, ParticleType.PHONON)
+            freepaths.main_tracing.main(args.input_file, SimulationMode.PHONON_TRACING)
 
     except KeyboardInterrupt:
         print(f"\n{Fore.RED}Simulation interrupted by user.{Style.RESET_ALL}")

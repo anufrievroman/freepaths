@@ -5,7 +5,7 @@ After the run, we record various parameters of this run into flight object.
 from freepaths.config import cf
 from freepaths.scattering import internal_scattering, surface_scattering, reinitialization
 from freepaths.scattering_types import ScatteringTypes, ScatteringPlaces
-from freepaths.particle_types import ParticleType
+from freepaths.options import ParticleType
 
 def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material):
     """Run one particle through the system and record parameters of this run"""
