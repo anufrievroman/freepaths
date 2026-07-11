@@ -174,11 +174,11 @@ class ElectronPostComputation:
 
     def write_into_file(self):
         np.savetxt("Data/Mean travel time vs energy.csv", self.mean_travel_times, fmt='%2.4e', header="Energy [J], Travel time [s]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Transport distribution function.csv", self.mc_tdf, fmt='%2.4e', header="Energy [J], Transport distribution function [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
+        tdf_combined = np.column_stack((self.mc_tdf, self.bte_tdf[:, 1]))
+        np.savetxt("Data/Transport distribution function.csv", tdf_combined, fmt='%2.4e', header="Energy [J], MC TDF [s^-1 J^-1 m^-1], BTE TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Electron conductivity.csv", np.column_stack((self.mc_conductivity, self.bte_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Conductivity [S/m], BTE Conductivity [S/m]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Seebeck coefficient.csv", np.column_stack((self.mc_seebeck, self.bte_seebeck[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Seebeck coefficient [V/K], BTE Seebeck coefficient [V/K]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Power factor.csv", np.column_stack((self.mc_power_factor, self.bte_power_factor[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Power factor [W/m/K^2], BTE Power factor [W/m/K^2]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/True transport distribution function.csv", self.bte_tdf, fmt='%2.4e', header="Energy [J], BTE TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Thermal conductivity el.csv", np.column_stack((self.mc_thermal_conductivity, self.bte_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Electron thermal conductivity [W/m/K], BTE Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Scattering time vs energy.csv", self.relaxation_times, fmt='%2.4e', header="Energy [J], Scattering time [s]", encoding='utf-8', delimiter=',')

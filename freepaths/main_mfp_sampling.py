@@ -126,8 +126,8 @@ def _run_branch(branch_number, shared_list, shared_progress):
         flight.thermal_conductivity = (1 / (6 * math.pi**2)) * c_p * phonon.speed**2 * mean_relax_time * k_vector**2 * d_k_vector
         total_thermal_conductivity += flight.thermal_conductivity
 
-        general_stats.save_particle_data(phonon)
-        general_stats.save_flight_data(flight)
+        general_stats.save_particle_data(phonon, mfp_sampling=True)
+        general_stats.save_flight_data(flight, mfp_sampling=True)
 
         if index < cf.output_trajectories_of_first:
             path_stats.save_particle_path(flight)
@@ -208,7 +208,7 @@ def main(input_file, particle_type):
     os.chdir("Results/" + cf.output_folder_name)
 
     # Save data and generate plots:
-    general_stats.write_into_files()
+    general_stats.write_into_files(mfp_sampling=True)
     scatter_stats.write_into_files()
     segment_stats.write_into_files()
     if cf.output_scattering_map:

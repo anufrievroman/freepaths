@@ -3,6 +3,7 @@ Module that reads the user input file, provides default values,
 checks the validity of the parameters and converts the variables into enums
 """
 
+import os
 import sys
 import argparse
 import logging
@@ -32,8 +33,11 @@ args = parser.parse_args()
 
 # If a file is provided, overwrite the default values:
 if args.input_file:
+    input_path = args.input_file
+    if not os.path.isfile(input_path) and not input_path.endswith('.py') and os.path.isfile(input_path + '.py'):
+        input_path = input_path + '.py'
     try:
-        exec(open(args.input_file, encoding='utf-8').read(), globals())
+        exec(open(input_path, encoding='utf-8').read(), globals())
     except FileNotFoundError:
         logging.error("Input file does not exist. Check if you are in the right folder and the file name is correct.")
         sys.exit()

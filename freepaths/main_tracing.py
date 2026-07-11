@@ -66,7 +66,7 @@ class ParticleSimulator:
         self.path_stats = PathData()
         self.places_stats = TriangleScatteringData()
         self.scatter_maps = ScatteringMap()
-        self.thermal_maps = ThermalMaps()
+        self.thermal_maps = ThermalMaps() if particle_type is ParticleType.PHONON else None
 
         self.total_thermal_conductivity = 0.0
         self.interfaces_transmission_specular = 0
@@ -86,8 +86,8 @@ class ParticleSimulator:
         run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
 
         # Record the properties returned for this particle:
-        self.general_stats.save_particle_data(particle) # FIXME: change method's name
-        self.general_stats.save_flight_data(flight)
+        self.general_stats.save_particle_data(particle, self.particle_type)
+        self.general_stats.save_flight_data(flight, self.particle_type)
 
         # Record trajectories of the first N particles:
         if index < self.output_trajectories_of:
@@ -119,7 +119,7 @@ class ParticleSimulator:
             'segment_stats': self.segment_stats.dump_data(),
             'path_stats': self.path_stats.dump_data(),
             'scatter_maps': self.scatter_maps.dump_data(),
-            'thermal_maps': self.thermal_maps.dump_data(),
+            'thermal_maps': self.thermal_maps.dump_data() if self.thermal_maps is not None else {},
             'execution_time': time.time() - self.creation_time,
         }
 
@@ -223,7 +223,7 @@ def main(input_file, particle_type):
     segment_stats = SegmentData()
     path_stats = PathData()
     scatter_maps = ScatteringMap()
-    thermal_maps = ThermalMaps()
+    thermal_maps = ThermalMaps() if particle_type is ParticleType.PHONON else None
 
     # Collect the results:
     sys.stdout.write('\nCollecting data from workers...\r')
@@ -244,7 +244,8 @@ def main(input_file, particle_type):
         segment_stats.read_data(collected_data['segment_stats'])
         path_stats.read_data(collected_data['path_stats'])
         scatter_maps.read_data(collected_data['scatter_maps'])
-        thermal_maps.read_data(collected_data['thermal_maps'])
+        if thermal_maps is not None:
+            thermal_maps.read_data(collected_data['thermal_maps'])
         execution_time_list.append(collected_data['execution_time'])
 
     # Give some info about the variability in the worker calculation time:
@@ -253,13 +254,13 @@ def main(input_file, particle_type):
         sys.stdout.write(f'Longest process execution time: {round(max(execution_time_list))}s\n')
 
     # Check if the total number of returned particles from the workers corresponds with the number of particles to be simulated:
-    if len(general_stats.initial_angles) != cf.number_of_particles:
+    if len(general_stats.travel_times) != cf.number_of_particles:
         sys.stdout.write(f'WARNING: {cf.number_of_particles} were meant to be simulated but only {len(general_stats.initial_angles)} particles were collected from the workers\n')
 
     # Run thermal calculations:
-    thermal_maps.calculate_thermal_conductivity()
-    thermal_maps.calculate_weighted_flux()
-    thermal_maps.calculate_heat_flux_modulus()
+    if thermal_maps is not None:
+        thermal_maps.calculate_thermal_conductivity()
+        thermal_maps.calculate_heat_flux_modulus()
 
     # Run calculations on electrons if needed:
     if particle_type is ParticleType.ELECTRON:
@@ -296,12 +297,13 @@ def main(input_file, particle_type):
 
     # Save data into files:
     sys.stdout.write("\rSaving raw data...")
-    general_stats.write_into_files()
+    general_stats.write_into_files(particle_type)
     scatter_stats.write_into_files()
     if cf.holes:
         places_stats.write_into_files()
     segment_stats.write_into_files()
-    thermal_maps.write_into_files(particle_type)
+    if thermal_maps is not None:
+        thermal_maps.write_into_files(particle_type)
     if cf.output_scattering_map:
         scatter_maps.write_into_files()
     path_stats.write_into_files()

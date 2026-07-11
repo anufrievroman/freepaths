@@ -664,7 +664,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
     electron_function_list = [
         plot_structure,
         plot_trajectories,
-        plot_angle_distribution,
         plot_free_path_distribution,
         plot_travel_time_distribution,
         plot_mean_free_path_distribution,
@@ -683,11 +682,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_scattering_map,
     ]
 
-    # If there are holes, plot scattering statistics:
-    if cf.holes:
-        electron_function_list.extend([
-            plot_scattering_angle_distribution,
-            ])
 
     if particle_type is ParticleType.PHONON:
         function_list = phonon_function_list
@@ -698,11 +692,11 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
     if cf.low_memory_usage:
         function_list = [f for f in function_list if f not in (plot_trajectories, plot_free_path_distribution)]
 
-    # In MFP sampling mode, Fourier-law profiles, conductivity, and thermal maps are meaningless:
+    # In MFP sampling mode, Fourier-law profiles, conductivity, thermal maps, and angle plots are not used:
     if mfp_sampling:
         function_list = [f for f in function_list if f not in (
             plot_thermal_conductivity, plot_temperature_profile, plot_heat_flux_profile,
-            plot_thermal_map)]
+            plot_thermal_map, plot_angle_distribution, plot_scattering_angle_distribution)]
 
     # Run main functions and handle exceptions:
     for func in function_list:

@@ -66,43 +66,56 @@ class GeneralData(Data):
         self.travel_times = []
         self.mean_free_paths = []
         self.thermal_conductivity = []
-    def save_particle_data(self, pt):
+    def save_particle_data(self, pt, particle_type=None, mfp_sampling=False):
         """Add information about the particle to the dataset"""
-        self.frequencies.append(pt.f)
-        self.group_velocities.append(pt.speed)
-        self.initial_energies.append(pt.energy)
+        from freepaths.particle_types import ParticleType
+        if particle_type is not ParticleType.ELECTRON:
+            self.frequencies.append(pt.f)
+            self.group_velocities.append(pt.speed)
+        else:
+            self.initial_energies.append(pt.energy)
 
-    def save_flight_data(self, flight):
+    def save_flight_data(self, flight, particle_type=None, mfp_sampling=False):
         """Add information about the particle flight to the dataset"""
+        from freepaths.particle_types import ParticleType
+        skip_angles = (particle_type is ParticleType.ELECTRON) or mfp_sampling
         if not cf.low_memory_usage:
             self.free_paths.extend(flight.free_paths)
-        self.initial_angles.append(flight.initial_theta)
-        self.exit_angles.append(flight.exit_theta)
-        self.hole_diff_scattering_angles.extend(flight.hole_diff_scattering_angles)
-        self.hole_spec_scattering_angles.extend(flight.hole_spec_scattering_angles)
+        if not skip_angles:
+            self.initial_angles.append(flight.initial_theta)
+            self.exit_angles.append(flight.exit_theta)
+            self.hole_diff_scattering_angles.extend(flight.hole_diff_scattering_angles)
+            self.hole_spec_scattering_angles.extend(flight.hole_spec_scattering_angles)
         self.travel_times.append(flight.travel_time)
         self.mean_free_paths.append(flight.mean_free_path)
-        self.thermal_conductivity.append(flight.thermal_conductivity)
+        if mfp_sampling:
+            self.thermal_conductivity.append(flight.thermal_conductivity)
 
-
-    def write_into_files(self):
+    def write_into_files(self, particle_type=None, mfp_sampling=False):
         import os
+        from freepaths.particle_types import ParticleType
         if not os.path.exists("Data"):
             os.makedirs("Data")
         """Write all the data into files"""
+        is_electron = (particle_type is ParticleType.ELECTRON)
+        skip_angles = is_electron or mfp_sampling
         if not cf.low_memory_usage:
             np.savetxt("Data/All free paths.csv", self.free_paths, fmt='%2.4e', header="L [m]", encoding='utf-8')
-        np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
-        np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-        if cf.holes:
-            np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-            np.savetxt("Data/All hole specular scattering angles.csv", self.hole_spec_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
-        np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
+        if not is_electron:
+            np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
+            np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
+        if not skip_angles:
+            np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+            np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+            if cf.holes:
+                np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+                np.savetxt("Data/All hole specular scattering angles.csv", self.hole_spec_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
         np.savetxt("Data/All travel times.csv", self.travel_times, fmt='%2.4e', header="Travel time [s]", encoding='utf-8')
         np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', header="MFPs [m]", encoding='utf-8')
-        np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
-        np.savetxt("Data/All initial energies.csv", self.initial_energies, fmt='%2.4e', header="Energy [J]", encoding='utf-8')
+        if is_electron:
+            np.savetxt("Data/All initial energies.csv", self.initial_energies, fmt='%2.4e', header="Energy [J]", encoding='utf-8')
+        if mfp_sampling:
+            np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {

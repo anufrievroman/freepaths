@@ -35,12 +35,10 @@ def plot_travel_time_vs_energy():
 
 def plot_transport_function():
     """Plot transport distribution function vs energy (Priyadarshi et al. 2023, Fig. 3)."""
-    e1, tdf1 = np.genfromtxt(
+    e1, tdf1, tdf2 = np.genfromtxt(
         "Data/Transport distribution function.csv",
-        unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
-    e2, tdf2 = np.genfromtxt(
-        "Data/True transport distribution function.csv",
-        unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
+        unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
+    e2 = e1
 
     x  = e1 * 1e3 / electron_volt       # Energy in meV
     y1 = tdf1 * electron_volt * 1e-25   # MC TDF in 10^25 m^-1 s^-1 eV^-1
