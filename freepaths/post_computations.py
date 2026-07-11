@@ -26,6 +26,7 @@ class ElectronPostComputation:
         self.mc_seebeck = None
         self.mc_power_factor = None
         self.mc_thermal_conductivity = None
+        self.mc_zt = None
         self.mapping_constant = None
 
         material_class = get_media_class(cf.media)
@@ -159,6 +160,12 @@ class ElectronPostComputation:
         self.mc_thermal_conductivity = (1/cf.temp) * simpson(integrand, x=self.energies_unique, axis=0) - self.mc_power_factor[:,1]*cf.temp
         self.mc_thermal_conductivity = np.column_stack((self.fermi_levels, self.mc_thermal_conductivity))
 
+    def compute_zt(self, kappa_ph):
+        """Compute ZT vs Fermi level: ZT = S²σT / (κₑ + κ_ph)"""
+        kappa_total = self.mc_thermal_conductivity[:, 1] + kappa_ph
+        zt = self.mc_power_factor[:, 1] * cf.temp / kappa_total
+        self.mc_zt = np.column_stack((self.fermi_levels, zt))
+
     def compute_relaxation_time(self):
         # τ(E) = mfp / v(E): relaxation time from constant MFP and parabolic-band group velocity
         self.speeds = ((2 * self.energies_unique) / (self.effective_conduction_mass)) ** 0.5
@@ -173,8 +180,10 @@ class ElectronPostComputation:
         np.savetxt("Data/Power factor.csv", np.column_stack((self.mc_power_factor, self.bte_power_factor[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Power factor [W/m/K^2], BTE Power factor [W/m/K^2]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/True transport distribution function.csv", self.bte_tdf, fmt='%2.4e', header="Energy [J], BTE TDF [s^-1 J^-1 m^-1]", encoding='utf-8', delimiter=',')
         np.savetxt("Data/Mapping constant.csv", self.mapping_constant, fmt='%2.4e', header="Fermi-level [J], Mapping constant [m^2]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Electron thermal conductivity.csv", np.column_stack((self.mc_thermal_conductivity, self.bte_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Electron thermal conductivity [W/m/K], BTE Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
-        np.savetxt("Data/Scattering rate vs energy.csv", self.relaxation_times, fmt='%2.4e', header="Energy [J], Relaxation time [s]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Thermal conductivity el.csv", np.column_stack((self.mc_thermal_conductivity, self.bte_thermal_conductivity[:,1])), fmt='%2.4e', header="Fermi-level [J], MC Electron thermal conductivity [W/m/K], BTE Electron thermal conductivity [W/m/K]", encoding='utf-8', delimiter=',')
+        np.savetxt("Data/Scattering time vs energy.csv", self.relaxation_times, fmt='%2.4e', header="Energy [J], Scattering time [s]", encoding='utf-8', delimiter=',')
+        if self.mc_zt is not None:
+            np.savetxt("Data/ZT.csv", self.mc_zt, fmt='%2.4e', header="Fermi-level [J], ZT", encoding='utf-8', delimiter=',')
 
     def compute(self):
         self.compute_unique_values()

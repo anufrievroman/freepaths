@@ -23,22 +23,45 @@ from freepaths.particle_types import ParticleType
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.materials import Si, SiC, Graphite, SiGe
 from freepaths.maps import ScatteringMap
-from freepaths.progress import Progress
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
+from freepaths.materials import get_media_class
 from freepaths.output_plots import plot_data
 
 
-def _branch_worker(branch_number, shared_list):
+def display_all_progress(shared_progress, finished_branches, branch_names):
+    """Render a live progress percentage for each branch on its own line."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    n = len(branch_names)
+    width = max(len(name) for name in branch_names)
+    try:
+        for name in branch_names:
+            sys.stdout.write(f'  {name.ljust(width)}:   0%\n')
+        sys.stdout.flush()
+        while True:
+            sys.stdout.write(f'\033[{n}A')
+            for i, name in enumerate(branch_names):
+                sys.stdout.write(f'\r  {name.ljust(width)}: {shared_progress[i]:3d}%\n')
+            sys.stdout.flush()
+            if finished_branches.value == n:
+                break
+            time.sleep(0.1)
+    except Exception:
+        pass
+
+
+def _branch_worker(branch_number, shared_list, finished_branches, shared_progress):
     """Entry point for each worker process. Catches exceptions so they are logged
     rather than silently swallowed by the multiprocessing machinery."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
-        _run_branch(branch_number, shared_list)
+        _run_branch(branch_number, shared_list, shared_progress)
+        shared_progress[branch_number] = 100
+        finished_branches.value += 1
     except Exception:
         logging.exception("Branch worker %d crashed", branch_number)
 
 
-def _run_branch(branch_number, shared_list):
+def _run_branch(branch_number, shared_list, shared_progress):
     """Run all phonons for one polarization branch and push results to shared_list.
 
     Each call processes NUMBER_OF_PARTICLES phonons sampled uniformly across the
@@ -47,7 +70,7 @@ def _run_branch(branch_number, shared_list):
     flight.thermal_conductivity over all phonons approximates the branch integral
     in Phys. Rev. 132 2461 (1963).
 
-    Branch 0 also drives the shared progress bar; the other two run silently.
+    Branch 2 (TA) drives the shared progress bar; the other two run silently.
     Results are appended to shared_list as a dict of dump_data() payloads so that
     the main process can merge them with the standard read_data() mechanism.
     """
@@ -76,11 +99,13 @@ def _run_branch(branch_number, shared_list):
     scatter_maps = ScatteringMap()
 
     total_thermal_conductivity = 0.0
-    progress = Progress() if branch_number == 0 else None
+    last_pct = -1
 
     for index in range(cf.number_of_particles):
-        if progress:
-            progress.render(index, cf.number_of_particles)
+        pct = 100 * index // cf.number_of_particles
+        if pct > last_pct:
+            shared_progress[branch_number] = pct
+            last_pct = pct
 
         # Mid-point k-vector and integration weight for this phonon:
         k_vector = (material.dispersion[index + 1, 0] + material.dispersion[index, 0]) / 2
@@ -126,17 +151,25 @@ def main(input_file, particle_type):
     print(f'Mean free path sampling of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
     start_time = time.time()
 
-    # Spawn one worker process per polarization branch (LA + 2×TA).
-    # All three run concurrently; branch 0 reports progress to stdout:
+    branch_names = get_media_class(cf.media).branch_names
+    n_branches = len(branch_names)
+
+    # Spawn one worker process per polarization branch, all running concurrently:
     manager = multiprocessing.Manager()
     shared_list = manager.list()
+    finished_branches = manager.Value('i', 0)
+    shared_progress = manager.list([0] * n_branches)
 
     processes = [
-        multiprocessing.Process(target=_branch_worker, args=(branch_number, shared_list))
-        for branch_number in range(3)
+        multiprocessing.Process(target=_branch_worker, args=(branch_number, shared_list, finished_branches, shared_progress))
+        for branch_number in range(n_branches - 1, -1, -1)
     ]
     for process in processes:
         process.start()
+
+    display_process = multiprocessing.Process(target=display_all_progress, args=(shared_progress, finished_branches, branch_names))
+    display_process.start()
+
     try:
         for process in processes:
             process.join()
@@ -144,6 +177,9 @@ def main(input_file, particle_type):
         for process in processes:
             process.terminate()
         raise
+
+    display_process.join(timeout=3)
+    display_process.terminate()
 
     # Merge per-branch results into single data structures:
     scatter_stats = ScatteringData()

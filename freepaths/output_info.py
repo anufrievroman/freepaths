@@ -3,8 +3,10 @@
 import time
 import logging
 import numpy as np
+from scipy.constants import electron_volt
 
 from freepaths.config import cf
+from freepaths.materials import get_media_class
 
 
 def output_general_information(start_time):
@@ -162,3 +164,27 @@ def output_parameter_warnings(particle_type):
         logging.warning("Pixels in y direction are smaller than length of one step")
     if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
         logging.warning("Pixels in x direction are smaller than length of one step")
+
+    # Check electron scattering times against timestep:
+    if particle_type is ParticleType.ELECTRON:
+        scattering_times = np.genfromtxt("Data/Scattering time vs energy.csv", delimiter=',', skip_header=1)[:, 1]
+        n_short = int(np.sum(scattering_times < cf.timestep))
+        percentage = 100 * n_short / len(scattering_times)
+        if percentage > 10:
+            logging.warning(f"{percentage:.0f}% of scattering times are shorter than TIMESTEP. Consider reducing it.")
+
+
+def output_electron_information(electron_computations):
+    """Print transport properties at the chosen Fermi level."""
+    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
+    ef_J = material.fermi_level
+    ef_meV = ef_J * 1e3 / electron_volt
+
+    def at_ef(array_2col):
+        return np.interp(ef_J, array_2col[:, 0], array_2col[:, 1])
+
+    sigma = at_ef(electron_computations.mc_conductivity)
+
+    print(f"For requested Fermi energy of {ef_meV:.1f} meV, σ = {sigma * 1e-3:.2f} kS/m")
+    if electron_computations.mc_zt is None:
+        print("Phonon thermal conductivity was not pre-computed, so ZT was not calculated.")

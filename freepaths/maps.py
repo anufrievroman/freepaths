@@ -4,6 +4,7 @@ from math import cos, sin
 from scipy.constants import hbar, pi
 import numpy as np
 from freepaths.config import cf
+from freepaths.particle_types import ParticleType
 
 class Maps:
     """Parent maps class with functions common to all classes below"""
@@ -227,7 +228,7 @@ class ThermalMaps(Maps):
             self.std_material_thermal_conductivity = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
 
 
-    def write_into_files(self):
+    def write_into_files(self, particle_type=None):
         """Write thermal maps into files"""
 
         # Create coordinate arrays [um]
@@ -255,9 +256,10 @@ class ThermalMaps(Maps):
         j_headers = ', '.join([f'J_eff (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)] + [f'J_mat (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)])
         np.savetxt("Data/Heat flux profiles x.csv", data_flux_x, fmt='%1.3e', delimiter=",", header="Y (um), " + j_headers, encoding='utf-8')
         np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), " + j_headers, encoding='utf-8')
-        np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K_eff (W/mK), K_mat (W/mK)", encoding='utf-8')
-        np.savetxt("Data/Average thermal conductivity.csv", data_av_tc, fmt='%1.3e', delimiter=",",
-                   header="K_eff (W/mK), K_mat (W/mK), error_eff (W/mK), error_mat (W/mK), Av. start (ns), Av. end (ns)", encoding='utf-8')
+        if particle_type is not ParticleType.ELECTRON:
+            np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K_eff (W/mK), K_mat (W/mK)", encoding='utf-8')
+            np.savetxt("Data/Average thermal conductivity.csv", data_av_tc, fmt='%1.3e', delimiter=",",
+                       header="K_eff (W/mK), K_mat (W/mK), error_eff (W/mK), error_mat (W/mK), Av. start (ns), Av. end (ns)", encoding='utf-8')
 
         # Saving thermal maps:
         np.savetxt("Data/Pixel volumes.csv", self.vol_pixel_ratio, fmt='%1i', delimiter=",", encoding='utf-8')

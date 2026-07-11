@@ -213,11 +213,16 @@ def plot_travel_time_distribution():
 def plot_mean_free_path_distribution():
     """Plot distribution of MFP per particle"""
     mean_free_path_distribution = distribution_calculation("Data/All mean free paths.csv", None, cf.number_of_nodes)
+    x = mean_free_path_distribution[:, 0] * 1e9
+    y = mean_free_path_distribution[:, 1]
     fig, ax = plt.subplots()
-    ax.plot(mean_free_path_distribution[:, 0] * 1e9, mean_free_path_distribution[:, 1], 'royalblue')
+    ax.plot(x, y, 'royalblue')
     ax.set_xscale('log')
     ax.set_xlabel('Mean free path (nm)')
     ax.set_ylabel('Number of particles')
+    nonzero = x[(y > 0) & (x > 0)]
+    if len(nonzero) > 0:
+        ax.set_xlim(nonzero.min() * 0.5, nonzero.max() * 2)
     fig.savefig("Distribution of MFPs.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
@@ -639,7 +644,8 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_power_factor,
         plot_mapping_constant,
         plot_electron_thermal_conductivity,
-        plot_scattering_rate_vs_energy,
+        plot_scattering_time_vs_energy,
+        plot_zt,
     )
 
     # Defines what will be plotted after the electron simulations:
@@ -658,7 +664,8 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_power_factor,
         plot_mapping_constant,
         plot_electron_thermal_conductivity,
-        plot_scattering_rate_vs_energy,
+        plot_zt,
+        plot_scattering_time_vs_energy,
         plot_time_in_segments,
         plot_pixel_volumes,
         plot_scattering_statistics,

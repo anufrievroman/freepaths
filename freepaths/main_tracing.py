@@ -8,6 +8,7 @@ import signal
 import multiprocessing
 import traceback
 import logging
+import numpy as np
 from colorama import Fore, Style
 
 # Modules:
@@ -22,7 +23,7 @@ from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
 from freepaths.materials import Si, SiC, Graphite, SiGe
 from freepaths.maps import ScatteringMap, ThermalMaps
-from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
+from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings, output_electron_information
 from freepaths.animation import create_animation
 from freepaths.output_plots import plot_data
 from freepaths.scattering import surface_scattering
@@ -276,6 +277,23 @@ def main(input_file, particle_type):
         shutil.copy(input_file, "Results/" + cf.output_folder_name)
     os.chdir("Results/" + cf.output_folder_name)
 
+    # Try to load pre-computed phonon thermal conductivity to enable ZT calculation:
+    if particle_type is ParticleType.ELECTRON:
+        kappa_ph = None
+        if os.path.isfile("Data/Thermal conductivity from MFP.csv"):
+            try:
+                kappa_ph = float(np.genfromtxt("Data/Thermal conductivity from MFP.csv", skip_header=1))
+            except Exception:
+                pass
+        elif os.path.isfile("Data/Average thermal conductivity.csv"):
+            try:
+                data = np.genfromtxt("Data/Average thermal conductivity.csv", delimiter=',', skip_header=1)
+                kappa_ph = float(np.atleast_1d(data)[1])  # column 1 = av_mat_tc
+            except Exception:
+                pass
+        if kappa_ph is not None:
+            electron_computations.compute_zt(kappa_ph)
+
     # Save data into files:
     sys.stdout.write("\rSaving raw data...")
     general_stats.write_into_files()
@@ -283,7 +301,7 @@ def main(input_file, particle_type):
     if cf.holes:
         places_stats.write_into_files()
     segment_stats.write_into_files()
-    thermal_maps.write_into_files()
+    thermal_maps.write_into_files(particle_type)
     if cf.output_scattering_map:
         scatter_maps.write_into_files()
     path_stats.write_into_files()
@@ -301,6 +319,8 @@ def main(input_file, particle_type):
     # Output general information:
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
+    if particle_type is ParticleType.ELECTRON:
+        output_electron_information(electron_computations)
     output_parameter_warnings(particle_type)
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')

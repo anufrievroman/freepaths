@@ -31,6 +31,7 @@ class Si(Material):
     Heat capacity - Desai P.D. Journal of Physical and Chemical Reference Data 15, 67 (1986)
     Effective mass - H.D. Barber, Effective mass and intrinsic concentration in silicon, Solid-State Electronics, Volume 10, Issue 11 (1967)
     """
+    branch_names = ['LA', 'TA1', 'TA2']
 
     def __init__(self, temp, num_points=1000, fermi_level=None):
         self.name = "Si"
@@ -130,6 +131,7 @@ class SiC:
     Relaxation time - Joshi et al, JAP 88, 265 (2000)
     Heat capacity - Collins et al. Journal of Applied Physics 68, 6510 (1990)
     """
+    branch_names = ['LA', 'TA1', 'TA2']
 
     # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
     # 4H-SiC electrical properties:
@@ -214,6 +216,7 @@ class Graphite(Material):
     Relaxation time - Ref. PRB 87, 115421 (2013)
     Heat capacity - Isaacs, L.L.; Wang, W.Y., Therm. Conduct. 17th, 55-61 (1981)
     """
+    branch_names = ['LA', 'TA', 'ZA']
 
     def __init__(self, temp, num_points=1000):
         self.name = "Graphite"
@@ -272,6 +275,7 @@ class SiGe(Material):
 
     Effective masses – linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
+    branch_names = ['LA', 'TA1', 'TA2']
 
     # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
     # phonon_limited_electron_mfp = 7e-9  # [m] estimate; alloy scattering reduces from pure Si

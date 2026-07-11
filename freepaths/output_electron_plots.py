@@ -185,7 +185,7 @@ def plot_electron_thermal_conductivity():
     """Plot electronic thermal conductivity vs Fermi level (Priyadarshi et al. 2023, Eq. 7)."""
     material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
     fermi_level, thermal_conductivity, true_thermal_conductivity = np.genfromtxt(
-        "Data/Electron thermal conductivity.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
+        "Data/Thermal conductivity el.csv", unpack=True, delimiter=',', usecols=(0, 1, 2), skip_header=1)
 
     material_kappa = interpolate_property(fermi_level, thermal_conductivity, material.fermi_level)
 
@@ -205,14 +205,44 @@ def plot_electron_thermal_conductivity():
     plt.close(fig)
 
 
-def plot_scattering_rate_vs_energy():
-    """Plot internal scattering relaxation time τ(E) = mfp/v(E) vs energy."""
-    energies, scattering_rate = np.genfromtxt(
-        "Data/Scattering rate vs energy.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
+def plot_zt():
+    """Plot ZT vs Fermi level, marking the chosen Ef."""
+    import os
+    if not os.path.isfile("Data/ZT.csv"):
+        return
+    material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
+    fermi_levels, zt = np.genfromtxt(
+        "Data/ZT.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
+
+    material_zt = interpolate_property(fermi_levels, zt, material.fermi_level)
 
     fig, ax = plt.subplots()
-    ax.plot(energies * 1e3 / electron_volt, scattering_rate * 1e12, '-o', markersize=2, c='royalblue')
+    ax.axhline(y=material_zt, color='gray', linestyle='--', linewidth=1, zorder=1,
+               label=f"ZT = {material_zt:.4f} at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
+    ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)
+    ax.plot(fermi_levels * 1e3 / electron_volt, zt,
+            'o', markersize=3, c='royalblue', linewidth=0.8, label="MC", zorder=3)
+    ax.set_xlabel('Fermi level (meV)')
+    ax.set_ylabel('ZT')
+    ax.set_ylim(bottom=0)
+    ax.grid(True, linestyle='--', alpha=0.7)
+    ax.legend()
+    fig.savefig("ZT.pdf", format="pdf", bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_scattering_time_vs_energy():
+    """Plot internal scattering time τ(E) = mfp/v(E) vs energy, with timestep marked."""
+    energies, scattering_time = np.genfromtxt(
+        "Data/Scattering time vs energy.csv", unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
+
+    fig, ax = plt.subplots()
+    ax.axhline(y=cf.timestep * 1e12, color='gray', linestyle='--', linewidth=1,
+               label=f'Timestep = {cf.timestep * 1e12:.2f} ps')
+    ax.plot(energies * 1e3 / electron_volt, scattering_time * 1e12, '-o', markersize=2, c='royalblue',
+            label='τ(E)')
     ax.set_xlabel('Energy (meV)')
-    ax.set_ylabel('Relaxation time (ps)')
-    fig.savefig("Scattering rate vs energy.pdf", format="pdf", bbox_inches="tight")
+    ax.set_ylabel('Scattering time (ps)')
+    ax.legend()
+    fig.savefig("Distribution of scattering times.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)
