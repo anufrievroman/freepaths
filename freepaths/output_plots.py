@@ -201,10 +201,15 @@ def plot_travel_time_distribution():
     """Plot distribution of wavelength"""
     travel_time_distribution = distribution_calculation("Data/All travel times.csv", None, cf.number_of_nodes)
     fig, ax = plt.subplots()
-    ax.plot(travel_time_distribution[:, 0] * 1e9, travel_time_distribution[:, 1], 'royalblue')
+    x = travel_time_distribution[:, 0] * 1e9
+    y = travel_time_distribution[:, 1]
+    ax.plot(x, y, 'royalblue')
     ax.set_xscale('log')
     ax.set_xlabel('Travel time (ns)')
     ax.set_ylabel('Number of particles')
+    nonzero = x[(y > 0) & (x > 0)]
+    if len(nonzero) > 0:
+        ax.set_xlim(nonzero.min() * 0.5, nonzero.max() * 2)
     fig.savefig("Distribution of travel times.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
@@ -254,13 +259,18 @@ def plot_scattering_rate_vs_frequency():
     omega_range = 2 * np.pi * f_range
     tau_internal = np.array([material.phonon_relaxation_time(w) for w in omega_range])
 
+    step_rate_ns = 1e-9 / cf.timestep  # 1/TIMESTEP in ns⁻¹
+
     fig, ax = plt.subplots()
     ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='royalblue', label='MC total')
     ax.plot(f_range * 1e-12, 1e-9 / tau_internal, '--', linewidth=0.8, c='deeppink', label='Internal (theory)')
     ax.set_xlabel('Frequency (THz)')
     ax.set_ylabel(r'Scattering rate (ns$^{-1}$)')
     ax.legend()
-    fig.savefig('Scattering rate vs frequency.pdf', format='pdf', bbox_inches="tight")
+    ax.text(0.98, 0.04, f'Step rate = {step_rate_ns:.1f} ns$^{{-1}}$',
+            transform=ax.transAxes, ha='right', va='bottom',
+            fontsize=7, color='gray')
+    fig.savefig('Distribution of phonon scattering rates.pdf', format='pdf', bbox_inches="tight")
     plt.close(fig)
 
 
@@ -271,7 +281,7 @@ def plot_energy_distribution():
     ax.plot(energy_distribution[:, 0] / (electron_volt*1e-3), energy_distribution[:, 1], 'royalblue') # Convert J to meV
     ax.set_xlabel('Energy (meV)')
     ax.set_ylabel('Number of particles')
-    fig.savefig("Distribution of energy.pdf", format='pdf', bbox_inches="tight")
+    fig.savefig("Distribution of electron energy.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
 
@@ -399,18 +409,6 @@ def plot_thermal_map():
     plt.close(fig)
 
 
-def plot_pixel_volumes():
-    """Plot the pixel volumes as 2D map"""
-    fig = plt.figure()
-    pixel_volumes = np.genfromtxt("Data/Pixel volumes.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
-    pixel_volumes = np.flipud(pixel_volumes)
-    boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
-    plt.imshow(pixel_volumes, cmap='hot', interpolation='none', extent=boundaries)
-    plt.xlabel('x (μm)')
-    plt.ylabel('y (μm)')
-    fig.savefig("Pixel volumes.pdf", bbox_inches="tight")
-    plt.close(fig)
-
 
 def plot_heat_flux_map(file, label, units="a.u."):
     """Plot heat flux map as color map"""
@@ -527,7 +525,7 @@ def plot_scattering_statistics():
     ax.legend(legend, loc='lower center', ncol=2, fancybox=True)
     plt.yscale('log')
     ax.set_ylim(bottom=1.0)
-    fig.savefig("Scattering rates.pdf", format='pdf', bbox_inches="tight")
+    fig.savefig("Scattering rate profile.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
 
     # Save the file:
@@ -568,6 +566,15 @@ def plot_structure():
     ax.set_aspect('equal')
     ax.set_xlim(0.8*-cf.width*1e6, 0.8*cf.width*1e6)
     ax.set_ylim(0, cf.length*1e6)
+
+    # Overlay pixel grid:
+    x_edges = np.linspace(-cf.width/2*1e6, cf.width/2*1e6, cf.number_of_pixels_x + 1)
+    y_edges = np.linspace(0, cf.length*1e6, cf.number_of_pixels_y + 1)
+    for x in x_edges:
+        ax.axvline(x, color='white', linewidth=0.3, alpha=0.5)
+    for y in y_edges:
+        ax.axhline(y, color='white', linewidth=0.3, alpha=0.5)
+
     fig.savefig("Structure XY.pdf", dpi=600, format='pdf', bbox_inches="tight")
     plt.close(fig)
 
@@ -589,9 +596,15 @@ def plot_material_properties():
         sys.exit()
 
     # Plot phonon dispersion:
+    n_branches = material.dispersion.shape[1] - 1
+    branch_colors = ['royalblue'] + [mpl.cm.viridis(0.55 - 0.2 * i) for i in range(n_branches - 1)]
+    branch_names = material.branch_names
     fig, ax = plt.subplots()
-    for index in range(material.dispersion.shape[1] - 1):
-        ax.plot(material.dispersion[:,0], material.dispersion[:,index + 1] * 1e-12, linewidth=1, label=f'{index}')
+    for index in range(n_branches):
+        label = branch_names[index] if index < len(branch_names) else str(index)
+        ax.plot(material.dispersion[:, 0], material.dispersion[:, index + 1] * 1e-12,
+                linewidth=1, color=branch_colors[index], label=label)
+    ax.legend(loc='upper left')
     ax.set_xlabel('Wavevector (1/m)')
     ax.set_ylabel('Frequency (THz)')
     ax.set_ylim(bottom=0)
@@ -623,7 +636,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_temperature_profile,
         plot_heat_flux_profile,
         plot_thermal_map,
-        plot_pixel_volumes,
         plot_scattering_statistics,
         plot_scattering_map,
         plot_material_properties,
@@ -667,7 +679,6 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
         plot_zt,
         plot_scattering_time_vs_energy,
         plot_time_in_segments,
-        plot_pixel_volumes,
         plot_scattering_statistics,
         plot_scattering_map,
     ]
@@ -687,11 +698,11 @@ def plot_data(particle_type: ParticleType, cf, mfp_sampling=False):
     if cf.low_memory_usage:
         function_list = [f for f in function_list if f not in (plot_trajectories, plot_free_path_distribution)]
 
-    # In MFP sampling mode, Fourier-law profiles, conductivity, and pixel volumes are meaningless:
+    # In MFP sampling mode, Fourier-law profiles, conductivity, and thermal maps are meaningless:
     if mfp_sampling:
         function_list = [f for f in function_list if f not in (
             plot_thermal_conductivity, plot_temperature_profile, plot_heat_flux_profile,
-            plot_thermal_map, plot_pixel_volumes)]
+            plot_thermal_map)]
 
     # Run main functions and handle exceptions:
     for func in function_list:

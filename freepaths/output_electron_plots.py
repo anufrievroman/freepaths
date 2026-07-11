@@ -16,7 +16,7 @@ def interpolate_property(energy_levels: np.ndarray,
 
 
 def plot_travel_time_vs_energy():
-    """Plot mean travel time vs energy on log-log with linear regression fit."""
+    """Plot mean travel time vs energy."""
     energy, travel_time = np.genfromtxt(
         "Data/Mean travel time vs energy.csv",
         unpack=True, delimiter=',', usecols=(0, 1), skip_header=1)
@@ -24,19 +24,12 @@ def plot_travel_time_vs_energy():
     x = energy * 1e3 / electron_volt  # Energy in meV
     y = travel_time * 1e9             # Travel time in ns
 
-    logx = np.log(x)
-    logy = np.log(y)
-    m, b = np.polyfit(logx, logy, 1)
-    y_fit = np.exp(b) * x**m
-
     fig, ax = plt.subplots()
-    ax.loglog(x, y, '-o', markersize=2, c='royalblue', label='τ(E)')
-    ax.loglog(x, y_fit, '-', c='green', linewidth=1.5, label=f'Linear fit: y ~ x^{m:.2f}')
+    ax.loglog(x, y, '-o', markersize=2, c='royalblue')
     ax.set_xlabel('Energy (meV)')
     ax.set_ylabel('Mean travel time (ns)')
     ax.grid(True, linestyle='--', alpha=0.7)
-    ax.legend(loc='best')
-    fig.savefig("Travel time vs energy.pdf", format="pdf", bbox_inches="tight")
+    fig.savefig("Electron travel time spectrum.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)
 
 
@@ -244,5 +237,5 @@ def plot_scattering_time_vs_energy():
     ax.set_xlabel('Energy (meV)')
     ax.set_ylabel('Scattering time (ps)')
     ax.legend()
-    fig.savefig("Distribution of scattering times.pdf", format="pdf", bbox_inches="tight")
+    fig.savefig("Distribution of electron scattering times.pdf", format="pdf", bbox_inches="tight")
     plt.close(fig)

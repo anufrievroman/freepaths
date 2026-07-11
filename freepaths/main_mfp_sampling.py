@@ -225,7 +225,7 @@ def main(input_file, particle_type):
 
     output_general_information(start_time)
     output_scattering_information(scatter_stats)
-    output_parameter_warnings(ParticleType.PHONON)
+    output_parameter_warnings(ParticleType.PHONON, mfp_sampling=True)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")

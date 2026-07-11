@@ -134,13 +134,13 @@ def output_scattering_information(scatter_stats):
                             f"mechanism fired simultaneously. Consider reducing TIMESTEP.")
 
 
-def output_parameter_warnings(particle_type):
+def output_parameter_warnings(particle_type, mfp_sampling=False):
     """Check if parameters used for this simulation made sense considering the simulation results"""
 
     from freepaths.particle_types import ParticleType
 
-    # These checks are only relevant for phonon simulations:
-    if particle_type is not ParticleType.ELECTRON:
+    # These checks are only relevant for phonon tracing simulations:
+    if particle_type is not ParticleType.ELECTRON and not mfp_sampling:
         travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
 
         total_time = cf.timestep * cf.number_of_timesteps
@@ -158,12 +158,13 @@ def output_parameter_warnings(particle_type):
     if percentage < 95:
         logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")
 
-    # Check if pixel size is too small:
-    speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
-    if max(speeds) * cf.timestep > cf.length / cf.number_of_pixels_y:
-        logging.warning("Pixels in y direction are smaller than length of one step")
-    if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
-        logging.warning("Pixels in x direction are smaller than length of one step")
+    # Pixel size checks are only relevant for phonon tracing mode:
+    if particle_type is not ParticleType.ELECTRON and not mfp_sampling:
+        speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
+        if max(speeds) * cf.timestep > cf.length / cf.number_of_pixels_y:
+            logging.warning("Pixels in y direction are smaller than length of one step")
+        if max(speeds) * cf.timestep > cf.width / cf.number_of_pixels_x:
+            logging.warning("Pixels in x direction are smaller than length of one step")
 
     # Check electron scattering times against timestep:
     if particle_type is ParticleType.ELECTRON:
