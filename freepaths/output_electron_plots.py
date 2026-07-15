@@ -78,6 +78,15 @@ def plot_transport_function():
     plt.close(fig)
 
 
+def mark_band_edge(ax):
+    """Mark the band edge (Ef = 0) with a vertical line labeled with the band name:
+    the band into which the Fermi level enters at Ef > 0 for the chosen carrier."""
+    band_name = "CB" if cf.is_carrier_electron else "VB"
+    ax.axvline(x=0.0, color='black', linestyle=':', linewidth=1, zorder=1)
+    ax.text(3, 0.04, band_name, rotation=90, color='black', fontsize=8,
+            ha='left', va='bottom', transform=ax.get_xaxis_transform())
+
+
 def plot_electron_conductivity():
     """Plot electron conductivity vs Fermi level (Priyadarshi et al. 2023, Eq. 4)."""
     material = get_media_class(cf.media)(cf.temp, fermi_level=cf.media_fermi_level)
@@ -87,6 +96,7 @@ def plot_electron_conductivity():
     material_conductivity = interpolate_property(fermi_levels, conductivity, material.fermi_level)
 
     fig, ax = plt.subplots()
+    mark_band_edge(ax)
     ax.axhline(y=material_conductivity * 1e-3, color='gray', linestyle='--', linewidth=1, zorder=1,
                label=f"σ = {material_conductivity * 1e-3:.2f} kS/m "
                      f"({material_conductivity / 100:.2f} $\\Omega^{{-1}}$cm$^{{-1}}$) "
@@ -113,6 +123,7 @@ def plot_seebeck_coefficient():
     material_seebeck = abs(interpolate_property(fermi_levels, seebeck, material.fermi_level) * 1e3)
 
     fig, ax = plt.subplots()
+    mark_band_edge(ax)
     ax.axhline(y=material_seebeck, color='gray', linestyle='--', linewidth=1, zorder=1,
                label=f"|S| = {material_seebeck:.2f} mV/K at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)
@@ -137,6 +148,7 @@ def plot_power_factor():
     material_pf = interpolate_property(fermi_levels, power_factor, material.fermi_level) * 1e3
 
     fig, ax = plt.subplots()
+    mark_band_edge(ax)
     ax.axhline(y=material_pf, color='gray', linestyle='--', linewidth=1, zorder=1,
                label=f"PF = {material_pf:.2f} mW/m·K² at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)
@@ -208,6 +220,7 @@ def plot_zt():
     material_zt = interpolate_property(fermi_levels, zt, material.fermi_level)
 
     fig, ax = plt.subplots()
+    mark_band_edge(ax)
     ax.axhline(y=material_zt, color='gray', linestyle='--', linewidth=1, zorder=1,
                label=f"ZT = {material_zt:.4f} at {material.fermi_level * 1e3 / electron_volt:.2e} meV")
     ax.axvline(x=material.fermi_level * 1e3 / electron_volt, color='gray', linestyle='--', linewidth=1, zorder=1)

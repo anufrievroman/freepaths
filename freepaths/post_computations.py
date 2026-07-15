@@ -9,9 +9,6 @@ from freepaths.config import cf
 class ElectronPostComputation:
     """Handle computations for electrons"""
 
-    # Exponent in Ξ(E) = C × (1/⟨ToF⟩)^exponent × g(E); 1.0 matches the BTE (Priyadarshi et al. 2023, Eq. 3)
-    TRANSPORT_EXPONENT = 1.0
-
     def __init__(self, general_data: GeneralData):
         """General_data must have collected data from workers before initialization"""
         self.electron_data = np.column_stack((general_data.initial_energies, general_data.travel_times))
@@ -56,7 +53,8 @@ class ElectronPostComputation:
 
     def compute_physical_functions(self):
         """Compute physical functions used for others calculations"""
-        n_points = round((cf.fermi_level_upper_bound - cf.fermi_level_lower_bound) / 0.010)
+        # Resolution of the Fermi level sweep follows the electron energy step:
+        n_points = round((cf.fermi_level_upper_bound - cf.fermi_level_lower_bound) / cf.energy_step)
         self.fermi_levels = np.linspace(cf.fermi_level_lower_bound * electron_volt,
                                         cf.fermi_level_upper_bound * electron_volt, n_points)
 
@@ -98,7 +96,7 @@ class ElectronPostComputation:
 
     def compute_mapping_constant(self):
         # C = σ_BTE(Ef) / σ_MC_raw(Ef): calibrates the MC flux to physical units at the material's Fermi level
-        mc_raw_tdf = (1.0 / self.mean_travel_times[:,1]) ** self.TRANSPORT_EXPONENT * self.density_of_states
+        mc_raw_tdf = (1.0 / self.mean_travel_times[:,1]) * self.density_of_states
 
         integrand = self.bte_tdf[:,1][:,None] * (-self.fermi_prime_dist)
         bte_conductivity = elementary_charge**2 * simpson(integrand, x=self.energies_unique, axis=0)
@@ -118,7 +116,7 @@ class ElectronPostComputation:
         else:
             area_constant = self.mean_mapping_constant
         # Ξ(E) = C × F(E) × g(E), where F(E) = 1/⟨ToF(E)⟩ is the electron flux per simulated particle
-        self.mc_tdf = np.column_stack((self.energies_unique, area_constant * (1/self.mean_travel_times[:,1])**self.TRANSPORT_EXPONENT * self.density_of_states))
+        self.mc_tdf = np.column_stack((self.energies_unique, area_constant * (1/self.mean_travel_times[:,1]) * self.density_of_states))
 
         self.mc_tdf_vals = self.mc_tdf[:, 1][:, None] # Shape = (energies_unique, 1)
 
@@ -135,13 +133,15 @@ class ElectronPostComputation:
 
     def compute_seebeck(self):
         """Compute Seebeck coefficient with respect to fermi-level (Priyadarshi et al. 2023, Eq. 5)"""
-        # S = -(e·kB/σ) ∫ Ξ(E) × (-∂f/∂E) × η dE; negative sign gives S < 0 for n-type carriers
+        # S = ∓(e·kB/σ) ∫ Ξ(E) × (-∂f/∂E) × η dE; the sign follows the carrier charge:
+        # negative for electrons (n-type), positive for holes (p-type)
+        sign = -1.0 if cf.is_carrier_electron else 1.0
         integrand = self.bte_tdf[:,1][:,None] * (-self.fermi_prime_dist) * self.eta
-        self.bte_seebeck = -(elementary_charge * k / self.bte_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
+        self.bte_seebeck = sign * (elementary_charge * k / self.bte_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
         self.bte_seebeck = np.column_stack((self.fermi_levels, self.bte_seebeck))
 
         integrand = self.mc_tdf_vals * (-self.fermi_prime_dist) * self.eta
-        self.mc_seebeck = -(elementary_charge * k / self.mc_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
+        self.mc_seebeck = sign * (elementary_charge * k / self.mc_conductivity[:,1]) * simpson(integrand, x=self.energies_unique, axis=0)
         self.mc_seebeck = np.column_stack((self.fermi_levels, self.mc_seebeck))
 
     def compute_power_factor(self):
