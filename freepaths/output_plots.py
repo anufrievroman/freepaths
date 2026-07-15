@@ -80,9 +80,23 @@ def scattering_angle_distribution_calculation():
     return distribution
 
 
+def launch_exit_frequency_distribution_calculation(number_of_nodes):
+    """Analyse particle frequencies at launch and at cold-side exit, and build their distributions"""
+    launch_frequencies = np.loadtxt("Data/All launch frequencies.csv", encoding='utf-8')
+    exit_frequencies = np.loadtxt("Data/All exit frequencies.csv", encoding='utf-8')
+    data_range = np.max(launch_frequencies)
+    distribution = np.zeros((number_of_nodes, 3))
+    distribution[:, 0] = np.linspace(0, data_range, number_of_nodes)
+    distribution[:, 1], _ = np.histogram(launch_frequencies, number_of_nodes, range=(0, data_range))
+    # Particles that never reached the cold side keep the 0.0 placeholder and are excluded:
+    exit_frequencies = exit_frequencies[exit_frequencies != 0]
+    distribution[:, 2], _ = np.histogram(exit_frequencies, number_of_nodes, range=(0, data_range))
+    return distribution
+
+
 def wavelength_distribution_calculation(number_of_nodes):
     """Calculate particle wavelength distribution from their frequencies and velocities"""
-    frequencies = np.loadtxt("Data/All initial frequencies.csv", encoding='utf-8')
+    frequencies = np.loadtxt("Data/All final frequencies.csv", encoding='utf-8')
     speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
     wavelengths = np.zeros((len(speeds)))
     wavelengths[:] = speeds[:] / frequencies[:]
@@ -110,12 +124,19 @@ def plot_cumulative_thermal_conductivity(mode):
         return
     mfp, kappa = cumulative_conductivity_calculation()
 
-    total_kappa = np.genfromtxt("Data/Thermal conductivity from MFP.csv", skip_header=1)
+    # Columns: K_material, porosity, Eucken factor, K_effective
+    # (older files contain a single value, which is then the material one):
+    kappa_data = np.atleast_1d(np.genfromtxt("Data/Thermal conductivity from MFP.csv",
+                                             delimiter=',', skip_header=1)).flatten()
+    total_kappa = kappa_data[0]
 
     fig, ax = plt.subplots()
     ax.plot(mfp * 1e6, kappa, 'royalblue')
     ax.axhline(total_kappa, color='royalblue', linestyle='--', linewidth=1,
-               label=f'κ = {total_kappa:.2f} W/m·K')
+               label=f'κ$_{{mat}}$ = {total_kappa:.2f} W/m·K')
+    if len(kappa_data) == 4 and kappa_data[1] > 0:
+        ax.axhline(kappa_data[3], color='deeppink', linestyle='--', linewidth=1,
+                   label=f'κ$_{{eff}}$ = {kappa_data[3]:.2f} W/m·K (Eucken)')
     ax.set_xlabel('Mean free path (μm)')
     ax.set_ylabel('Cumulative thermal conductivity (W/m·K)')
     ax.set_xscale('log')
@@ -162,27 +183,44 @@ def plot_free_path_distribution():
     """Plot distribution of free path"""
     filename = "Data/All free paths.csv"
     free_path_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
+    x = free_path_distribution[:, 0] * 1e6
+    y = free_path_distribution[:, 1]
     fig, ax = plt.subplots()
-    ax.plot(free_path_distribution[:, 0] * 1e6, free_path_distribution[:, 1], 'royalblue')
-    ax.set_xscale('log')
+    ax.plot(x, y, 'royalblue')
+    ax.set_yscale('log')
     ax.set_xlabel('Free flights (μm)')
     ax.set_ylabel('Number of flights')
+    ax.set_xlim(0, x.max())
     fig.savefig("Distribution of free paths.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
     np.savetxt('Data/Distribution of free paths.csv', free_path_distribution, fmt='%1.3e', delimiter=",")
 
 
-def plot_frequency_distribution():
-    """Plot distribution of frequencies"""
-    filename = "Data/All initial frequencies.csv"
+def plot_final_frequency_distribution():
+    """Plot distribution of the last-known frequency of each particle"""
+    filename = "Data/All final frequencies.csv"
     frequency_distribution = distribution_calculation(filename, None, cf.number_of_nodes)
     fig, ax = plt.subplots()
     ax.plot(frequency_distribution[:, 0] * 1e-12, frequency_distribution[:, 1], 'royalblue')
     ax.set_xlabel('Frequency (THz)')
     ax.set_ylabel('Number of particles')
-    fig.savefig("Distribution of initial frequencies.pdf", format='pdf', bbox_inches="tight")
+    fig.savefig("Distribution of final frequencies.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
-    np.savetxt('Data/Distribution of initial frequencies.csv', frequency_distribution, fmt='%1.3e', delimiter=",")
+    np.savetxt('Data/Distribution of final frequencies.csv', frequency_distribution, fmt='%1.3e', delimiter=",")
+
+
+def plot_launch_exit_frequency_distribution():
+    """Plot distribution of particle frequencies at launch vs. at cold-side exit"""
+    distribution = launch_exit_frequency_distribution_calculation(cf.number_of_nodes)
+    fig, ax = plt.subplots()
+    ax.plot(distribution[:, 0] * 1e-12, distribution[:, 1], 'royalblue', label='At launch')
+    ax.plot(distribution[:, 0] * 1e-12, distribution[:, 2], 'deeppink', label='At cold-side exit')
+    ax.set_xlabel('Frequency (THz)')
+    ax.set_ylabel('Number of particles')
+    ax.legend()
+    fig.savefig("Distribution of launch and exit frequencies.pdf", format='pdf', bbox_inches="tight")
+    plt.close(fig)
+    np.savetxt('Data/Distribution of launch and exit frequencies.csv', distribution, fmt='%1.3e', delimiter=",")
 
 
 def plot_wavelength_distribution():
@@ -215,29 +253,11 @@ def plot_travel_time_distribution():
     np.savetxt('Data/Distribution of travel times.csv', travel_time_distribution, fmt='%1.3e', delimiter=",")
 
 
-def plot_mean_free_path_distribution():
-    """Plot distribution of MFP per particle"""
-    mean_free_path_distribution = distribution_calculation("Data/All mean free paths.csv", None, cf.number_of_nodes)
-    x = mean_free_path_distribution[:, 0] * 1e9
-    y = mean_free_path_distribution[:, 1]
-    fig, ax = plt.subplots()
-    ax.plot(x, y, 'royalblue')
-    ax.set_xscale('log')
-    ax.set_xlabel('Mean free path (nm)')
-    ax.set_ylabel('Number of particles')
-    nonzero = x[(y > 0) & (x > 0)]
-    if len(nonzero) > 0:
-        ax.set_xlim(nonzero.min() * 0.5, nonzero.max() * 2)
-    fig.savefig("Distribution of MFPs.pdf", format='pdf', bbox_inches="tight")
-    plt.close(fig)
-    np.savetxt('Data/Distribution of MFPs.csv', mean_free_path_distribution, fmt='%1.3e', delimiter=",")
-
-
 def plot_velocity_distribution():
     """Plot distribution of group velocities"""
     fig, ax = plt.subplots()
     speeds = np.loadtxt("Data/All group velocities.csv")
-    frequencies = np.loadtxt("Data/All initial frequencies.csv")
+    frequencies = np.loadtxt("Data/All final frequencies.csv")
     ax.plot(frequencies, speeds, '.', markersize=2, c='royalblue')
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Group velocity (m/s)')
@@ -248,7 +268,7 @@ def plot_velocity_distribution():
 def plot_scattering_rate_vs_frequency():
     """Plot phonon scattering rate (1/τ = v/MFP) vs frequency with theoretical internal rate"""
     mfps = np.loadtxt("Data/All mean free paths.csv")
-    frequencies = np.loadtxt("Data/All initial frequencies.csv")
+    frequencies = np.loadtxt("Data/All final frequencies.csv")
     speeds = np.loadtxt("Data/All group velocities.csv")
     mask = mfps > 0
     scattering_rates = speeds[mask] / mfps[mask]
@@ -347,8 +367,11 @@ def plot_temperature_profile():
         ax.plot(coords[1:], data[timeframe_num + 1][1:], linewidth=1,
                 color=colors[timeframe_num], label=f'Time frame {timeframe_num+1}')
     # Linear fit of the last timeframe (same algorithm as thermal conductivity calculation)
-    slope, intercept = np.polyfit(coords, data[n_timeframes], 1)
-    ax.plot(coords[1:], slope * coords[1:] + intercept, '--', color='gray', linewidth=1, label='Linear fit (last frame)')
+    fit_start = int(cf.gradient_fit_range[0] * len(coords))
+    fit_end = max(int(cf.gradient_fit_range[1] * len(coords)), fit_start + 2)
+    slope, intercept = np.polyfit(coords[fit_start:fit_end], data[n_timeframes][fit_start:fit_end], 1)
+    ax.plot(coords[fit_start:fit_end], slope * coords[fit_start:fit_end] + intercept, '--', color='gray',
+            linewidth=1, label='Linear fit (last frame)')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Temperature (K)')
     ax.legend()
@@ -598,7 +621,7 @@ def plot_material_properties():
     # Plot phonon dispersion:
     n_branches = material.dispersion.shape[1] - 1
     branch_colors = ['royalblue'] + [mpl.cm.viridis(0.55 - 0.2 * i) for i in range(n_branches - 1)]
-    branch_names = material.branch_names
+    branch_names = material.dispersion_branch_names
     fig, ax = plt.subplots()
     for index in range(n_branches):
         label = branch_names[index] if index < len(branch_names) else str(index)
@@ -610,8 +633,18 @@ def plot_material_properties():
     ax.set_ylim(bottom=0)
     ax.set_xlim(left=0)
 
-    # Add material properties:
-    ax.set_title(f'{material.name},  T = {cf.temp} K,  C$_p$ = {material.heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
+    # Add material properties. Show whichever heat capacity is actually used for the
+    # temperature-profile conversion in maps.py (cf.use_dispersion_heat_capacity),
+    # not always the real experimental one, since the two differ substantially
+    # (dispersion-only excludes optical branches) and showing the unused one here
+    # would misrepresent what the simulation is doing:
+    if cf.use_dispersion_heat_capacity:
+        heat_capacity = material.dispersion_heat_capacity / material.density
+        heat_capacity_label = "C$_v$ (dispersion-only)"
+    else:
+        heat_capacity = material.heat_capacity
+        heat_capacity_label = "C$_p$ (experimental)"
+    ax.set_title(f'{material.name},  T = {cf.temp} K,  {heat_capacity_label} = {heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
 
     fig.savefig("Material properties.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)
@@ -626,10 +659,10 @@ def plot_data(mode: SimulationMode, cf):
         plot_trajectories,
         plot_angle_distribution,
         plot_free_path_distribution,
-        plot_frequency_distribution,
+        plot_final_frequency_distribution,
+        plot_launch_exit_frequency_distribution,
         plot_wavelength_distribution,
         plot_travel_time_distribution,
-        plot_mean_free_path_distribution,
         plot_velocity_distribution,
         plot_time_in_segments,
         plot_thermal_conductivity,
@@ -665,7 +698,6 @@ def plot_data(mode: SimulationMode, cf):
         plot_trajectories,
         plot_free_path_distribution,
         plot_travel_time_distribution,
-        plot_mean_free_path_distribution,
         plot_energy_distribution,
         plot_travel_time_vs_energy,
         plot_transport_function,
@@ -694,7 +726,8 @@ def plot_data(mode: SimulationMode, cf):
     if mode is SimulationMode.PHONON_MFP_SAMPLING:
         function_list = [f for f in function_list if f not in (
             plot_thermal_conductivity, plot_temperature_profile, plot_heat_flux_profile,
-            plot_thermal_map, plot_angle_distribution, plot_scattering_angle_distribution)]
+            plot_thermal_map, plot_angle_distribution, plot_scattering_angle_distribution,
+            plot_launch_exit_frequency_distribution)]
 
     # Run main functions and handle exceptions:
     for func in function_list:

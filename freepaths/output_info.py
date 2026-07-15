@@ -143,7 +143,7 @@ def output_parameter_warnings(mode):
     if mode is SimulationMode.PHONON_TRACING:
         travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
 
-        total_time = cf.timestep * cf.number_of_timesteps
+        total_time = cf.timestep * cf.number_of_virtual_timesteps
         time_of_stabilization = cf.number_of_stabilization_timeframes * total_time / cf.number_of_timeframes
         long_travel_times = travel_times[travel_times > time_of_stabilization]
         percentage = (len(long_travel_times) / len(travel_times)) * 100
@@ -151,12 +151,20 @@ def output_parameter_warnings(mode):
             logging.warning(f"Travel time of {percentage}% of particles was longer than the stabilization period.\n" +
                               "Increase stabilization period as the thermal conductivity might be incorrect.")
 
-    # Check how many particles reached the cold side during simulation:
-    travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    n_total = len(travel_times)
-    percentage = int(100 * np.count_nonzero(travel_times) / n_total) if n_total > 0 else 0
-    if percentage < 95:
-        logging.warning(f"Only {percentage}% of particles reached the cold side. Increase the number of timesteps.")
+    # Check how many particles reached the cold side during simulation.
+    # Irrelevant in MFP sampling mode, where free paths are measured along the way
+    # and reaching the cold side is not required:
+    if mode is not SimulationMode.PHONON_MFP_SAMPLING:
+        travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
+        n_total = len(travel_times)
+        percentage = int(100 * np.count_nonzero(travel_times) / n_total) if n_total > 0 else 0
+        if percentage < 95:
+            message = f"Only {percentage}% of particles reached the cold side. Increase NUMBER_OF_TIMESTEPS."
+            # The timeframe bias only concerns thermal profiles, i.e. phonon tracing mode:
+            if mode is SimulationMode.PHONON_TRACING:
+                message += ("\nParticles removed mid-flight are missing from later timeframes,\n" +
+                            "so temperature and heat flux profiles may be biased.")
+            logging.warning(message)
 
     # Pixel size checks are only relevant for phonon tracing mode:
     if mode is SimulationMode.PHONON_TRACING:

@@ -36,6 +36,7 @@ class Flight:
         self.initial_theta = self.particle.theta
         self.path = Path(self.particle.x, self.particle.y, self.particle.z)
         self.exit_theta = 0.0
+        self.exit_frequency = 0.0
         self.free_path = 0.0
         self.travel_time = 0.0
         self.time_since_previous_scattering = 0.0
@@ -76,6 +77,7 @@ class Flight:
     def finish(self, step, timestep):
         """Finish the flight and record final state"""
         self.exit_theta = self.particle.theta
+        self.exit_frequency = self.particle.f
         self.travel_time = step * timestep
 
     def add_step(self, timestep):

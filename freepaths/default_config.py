@@ -33,7 +33,9 @@ ELECTRON_MFP                     = 10e-9 # [m]
 MEAN_MAPPING_CONSTANT            = 5e-6 # [m²]
 
 FERMI_LEVEL_LOWER_BOUND          = -0.2  # [eV] lower end of post-processing Fermi level sweep
-FERMI_LEVEL_UPPER_BOUND          =  0.2  # [eV] upper end of post-processing Fermi level sweep
+FERMI_LEVEL_UPPER_BOUND          =  0.1  # [eV] upper end of post-processing Fermi level sweep;
+# far above the band edge the Fermi window leaves the sampled energy range and
+# the MC results become noisy, so there is little point in sweeping further
 
 
 # Animation:
@@ -44,6 +46,7 @@ OUTPUT_ANIMATION_FPS             = 24
 NUMBER_OF_PIXELS_X               = 7
 NUMBER_OF_PIXELS_Y               = 67
 IGNORE_FAULTY_PARTICLES          = False
+GRADIENT_FIT_RANGE               = (0.1, 0.9)
 
 # Material parameters:
 MEDIA                            = "Si"
@@ -53,6 +56,44 @@ MEDIA_FERMI_LEVEL                = None
 INCLUDE_INTERNAL_SCATTERING      = True
 USE_GRAY_APPROXIMATION_MFP       = False
 GRAY_APPROXIMATION_MFP           = None
+
+# Sample phonon frequencies and branches from the tabulated dispersion
+# (weight k^2 dk per bin, heat capacity weighting, group velocity weighting at
+# the source) instead of the legacy Debye-approximation rejection sampling.
+# The particles are then equal-energy bundles and the thermal maps record a
+# constant weight per phonon instead of h*w:
+SAMPLE_FROM_DISPERSION           = True
+
+# Re-draw phonon branch and frequency at internal scattering events from the
+# collision-rate-weighted distribution (Peraud & Hadjiconstantinou,
+# PRB 84, 205331 (2011)). This restores local thermal equilibrium of the phonon
+# population, which is required for correct Fourier-law thermal conductivity
+# when internal scattering dominates (e.g. bulk-like structures at room
+# temperature). Applies only to the phonon tracing mode; MFP sampling and
+# electron modes keep the particle identity by construction.
+RETHERMALIZE_INTERNAL_SCATTERING = True
+
+# Convert deposited particle energy into the temperature profile using the
+# dispersion-only heat capacity (Material.dispersion_heat_capacity, summed only
+# over the branches in the tabulated dispersion) instead of the experimental
+# heat capacity fit (Material.assign_heat_capacity). On by default because it
+# makes the reported temperature and kappa self-consistent with the
+# dispersion-based sampling/rethermalization scheme and the model's own RTA
+# integral. Set to False to use the real material heat capacity instead (e.g.
+# including optical branches absent from the tabulated dispersion):
+USE_DISPERSION_HEAT_CAPACITY     = True
+
+# MFP sampling mode only (no effect in phonon tracing, where particles must keep
+# going for the full budget to build the flux map): end a phonon's flight early
+# once it has accumulated this many free-path segments, instead of always running
+# to NUMBER_OF_TIMESTEPS. A short-tau, low-velocity phonon takes tiny hops and
+# diffuses so slowly that it essentially never reaches a domain boundary, but its
+# mean free path already converges after a modest number of scattering events, so
+# running it to the full timestep budget is wasted compute. 1000 is on by default,
+# since it was validated (bulk Si MFP-sampling convergence study, Data/BulkSi_Phonon_MFP/)
+# to give the same result as 5000 while being far cheaper. Set to None to disable
+# (run to the timestep budget or a boundary, as before):
+MAX_NUMBER_OF_SCATTERING_EVENTS  = 1000
 
 # System dimensions [m]:
 THICKNESS                        = 150e-9

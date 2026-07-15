@@ -2,10 +2,13 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
-from scipy.constants import electron_volt, electron_mass, k as k_B, h as h_planck
+from scipy.constants import electron_volt, electron_mass, k as k_B, hbar, pi
 
 
 class Material(ABC):
+
+    # Names of the branches in the dispersion table, in column order:
+    dispersion_branch_names = ['LA', 'TA1', 'TA2']
 
     @abstractmethod
     def assign_phonon_dispersion(self, num_points):
@@ -22,16 +25,150 @@ class Material(ABC):
         """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
         pass
 
+    def group_velocity(self, branch_number, f):
+        """
+        Group velocity dw/dk [m/s] at ordinary frequency f [Hz] on the given branch,
+        as a finite difference between the two tabulated points closest to f.
+        Nearest-point search rather than bisection because some branches are not
+        monotonic in frequency (e.g. the TA branches of SiC and Graphite).
+        """
+        f_branch = self.dispersion[:, branch_number + 1]
+        diffs = np.abs(f_branch - f)
+        nearest = diffs.argmin()
+        n = len(f_branch)
+        # Interval between the nearest point and whichever of its two neighbors
+        # is itself closer to f, so the difference is taken on the side f
+        # actually sits on. Using only "nearest - 1" here (as an earlier version
+        # did) makes two different phonons whose frequencies straddle the same
+        # nearest grid point collapse onto the same interval, giving them the
+        # exact same (wrong) velocity instead of two distinct, locally correct
+        # ones; comparing both neighbors and picking the closer one avoids that.
+        if nearest == 0:
+            point_num = 0
+        elif nearest == n - 1:
+            point_num = nearest - 1
+        elif diffs[nearest - 1] <= diffs[nearest + 1]:
+            point_num = nearest - 1
+        else:
+            point_num = nearest
+        d_omega = 2 * pi * abs(f_branch[point_num + 1] - f_branch[point_num])
+        d_k = abs(self.dispersion[point_num + 1, 0] - self.dispersion[point_num, 0])
+        return d_omega / d_k
+
+    def assign_phonon_sampling_tables(self):
+        """
+        Build the tables for random sampling of a phonon branch and frequency,
+        used both for particle emission and for rethermalization at internal
+        scattering (Peraud & Hadjiconstantinou, PRB 84, 205331 (2011)).
+
+        The dispersion k-grid is treated as bins; each bin is weighted by the number
+        of phonon modes in it (density of states k^2 dk) times the rate at which the
+        given process injects energy into those modes. Particles are equal-energy
+        bundles representing the deviation from equilibrium, so the per-mode weight
+        is built on the mode heat capacity C(w) = dn/dT * hw (not the energy
+        spectrum hw*n, which would overweight low frequencies):
+        - emission (weight D(w)*C(w)*v(w)): a hot wall emits into mode w at a rate
+          proportional to how fast that mode carries energy away, hence the extra
+          group-velocity factor (phonon analog of blackbody effusion);
+        - scattering (weight D(w)*C(w)/tau(w)): the collision bath re-emits into
+          mode w at its collision rate 1/tau, which ensures that phonons, spending
+          tau(w) at each drawn frequency, maintain the C(w)-shaped steady population.
+        Note that the tables use the actual dispersion, and NOT the Debye
+        approximation: the Debye density of states strongly underweights the slow
+        zone-edge phonons and overestimates the thermal conductivity.
+
+        Naming convention: attributes ending in _table hold physical quantities of
+        each dispersion bin; attributes ending in _probabilities hold cumulative
+        probabilities (probability of landing at or below the entry, hence each
+        array ends at exactly 1.0), used for inverse sampling: a single uniform
+        random number is mapped to a bin via binary search (np.searchsorted).
+
+        Assigned attributes (each a list of 3 per-branch arrays, except the
+        branch probabilities, which are single arrays of 3 cumulative values):
+        - frequencies_table: bin-midpoint frequency [Hz] of each dispersion bin;
+        - group_velocity_table: group velocity dw/dk [m/s] of each bin;
+        - emission_frequency_probabilities, scattering_frequency_probabilities:
+          cumulative probabilities of the frequency bins within each branch;
+        - emission_branch_probabilities, scattering_branch_probabilities:
+          cumulative probabilities of the branches (LA, TA1, TA2), for picking
+          a branch before picking a frequency.
+        """
+        self.frequencies_table = []
+        self.group_velocity_table = []
+        self.emission_frequency_probabilities = []
+        self.scattering_frequency_probabilities = []
+        emission_branch_weights = []
+        scattering_branch_weights = []
+        for branch in range(3):
+            # Wavevector and frequency grids for this branch
+            k_vec = self.dispersion[:, 0]
+            f_branch = self.dispersion[:, branch + 1]
+            # Bin-midpoint wavevector and bin width in k
+            k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+            d_k = np.diff(k_vec)
+            # Bin-midpoint frequency
+            freqs = (f_branch[1:] + f_branch[:-1]) / 2
+            # Bin-averaged group velocity dw/dk
+            group_velocity = 2 * pi * np.abs(np.diff(f_branch)) / d_k
+            # Drop the zero-frequency point at k=0
+            valid = freqs > 0
+            omegas = 2 * pi * freqs[valid]
+            # hw/kT
+            x = hbar * omegas / (k_B * self.temp)
+            # Mode heat capacity C(w)
+            heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
+            taus = np.array([self.phonon_relaxation_time(omega) for omega in omegas])
+            # Density of states weight k^2 dk
+            dos = k_mid[valid]**2 * d_k[valid]
+
+            self.frequencies_table.append(freqs[valid])
+            self.group_velocity_table.append(group_velocity[valid])
+
+            # Cumulative bin weights; the last element is the total weight of
+            # the branch, used for the branch probabilities below:
+            emission_cumulative = np.cumsum(dos * heat_capacity * group_velocity[valid])
+            scattering_cumulative = np.cumsum(dos * heat_capacity / taus)
+            self.emission_frequency_probabilities.append(emission_cumulative / emission_cumulative[-1])
+            self.scattering_frequency_probabilities.append(scattering_cumulative / scattering_cumulative[-1])
+            emission_branch_weights.append(emission_cumulative[-1])
+            scattering_branch_weights.append(scattering_cumulative[-1])
+
+        self.emission_branch_probabilities = np.cumsum(emission_branch_weights) / np.sum(emission_branch_weights)
+        self.scattering_branch_probabilities = np.cumsum(scattering_branch_weights) / np.sum(scattering_branch_weights)
+
+    def assign_dispersion_heat_capacity(self):
+        """
+        Volumetric heat capacity [J/K/m^3] summed over only the branches present in self.dispersion
+        mode C(w) = k*x^2*exp(x)/expm1(x)^2 weighted by the k^2 dk density of states.
+        Unlike the experimental fit in assign_heat_capacity, it excludes any physics not in
+        the tabulated dispersion (e.g. optical branches), which makes it self-consistent
+        with the dispersion-based sampling and the RTA integral.
+        """
+        k_vec = self.dispersion[:, 0]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        total = 0.0
+        for branch in range(1, self.dispersion.shape[1]):
+            freqs = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            valid = freqs > 0
+            omegas = 2 * pi * freqs[valid]
+            x = hbar * omegas / (k_B * self.temp)
+            mode_heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
+            dos = k_mid[valid]**2 * d_k[valid] / (2 * pi**2)
+            total += np.sum(dos * mode_heat_capacity)
+        self.dispersion_heat_capacity = total
+
 
 class Si(Material):
     """
     Physical properties of silicon.
-    Dispersion - Ref. APL 95 161901 (2009)
-    Relaxation time - Maire et al, Scientific Reports 7, 41794 (2017)
+    Dispersion - Ref. Hopkins et al., APL 95, 161902 (2009)
+    Relaxation time - impurity and Umklapp coefficients (A, B) fit to bulk
+      single-crystal kappa(T), Glassbrenner & Slack, Phys. Rev. 134, A1058
+      (1964); see Data/Fitting_BulkSi/ for the fit script and data.
     Heat capacity - Desai P.D. Journal of Physical and Chemical Reference Data 15, 67 (1986)
     Effective mass - H.D. Barber, Effective mass and intrinsic concentration in silicon, Solid-State Electronics, Volume 10, Issue 11 (1967)
     """
-    branch_names = ['LA', 'TA1', 'TA2']
 
     def __init__(self, temp, num_points=1000, fermi_level=None):
         self.name = "Si"
@@ -42,6 +179,8 @@ class Si(Material):
         self.assign_electrical_properties(fermi_level)
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
+        self.assign_dispersion_heat_capacity()
+        self.assign_phonon_sampling_tables()
 
     def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
@@ -58,8 +197,8 @@ class Si(Material):
     def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature"""
         deb_temp = 152.0  # Debye temperature normal constant calculated for Si
-        tau_impurity = 1 / (2.95e-45 * (omega ** 4))
-        tau_umklapp = 1 / (0.95e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
+        tau_impurity = 1 / (1.8516e-45 * (omega ** 4))
+        tau_umklapp = 1 / (1.1026e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
         return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
 
     def assign_heat_capacity(self):
@@ -75,16 +214,6 @@ class Si(Material):
             coeffs = above_50K_coeffs
         self.heat_capacity = np.polyval(coeffs, self.temp)
 
-    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
-    # Phonon-limited electron MFP at 300K, calibrated to match lightly doped Si literature
-    # phonon_limited_electron_mfp = 10e-9  # [m]
-    # Caughey-Thomas ionized-impurity parameters for electrons, Masetti et al. (1983)
-    # _ct_mu_max = 1417e-4   # [m²/V·s]
-    # _ct_mu_min = 52.2e-4   # [m²/V·s]
-    # _ct_n_ref  = 9.68e22   # [m⁻³]  (= 9.68e16 cm⁻³)
-    # _ct_alpha  = 0.680
-    # ---------------------------------------------------------------------------------
-
     def assign_electrical_properties(self, fermi_level):
         """Assign differents electrical properties to the material."""
         self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
@@ -97,17 +226,6 @@ class Si(Material):
             self.fermi_level = fermi_level
         else:
             self.fermi_level = -0.037 * electron_volt # [J]
-
-    # def carrier_density(self):
-    #     """Electron carrier density from Fermi level using Boltzmann approximation [m⁻³]"""
-    #     nc = 2 * (2 * np.pi * self.effective_electron_dos_mass * k_B * self.temp / h_planck**2) ** 1.5
-    #     return nc * np.exp(self.fermi_level / (k_B * self.temp))
-
-    # def effective_electron_mfp(self):
-    #     """Effective electron MFP combining phonon and impurity scattering via Matthiessen's rule"""
-    #     n = self.carrier_density()
-    #     mu = self._ct_mu_min + (self._ct_mu_max - self._ct_mu_min) / (1 + (n / self._ct_n_ref) ** self._ct_alpha)
-    #     return self.phonon_limited_electron_mfp * mu / self._ct_mu_max
 
 
 class Vacuum:
@@ -124,14 +242,13 @@ class Vacuum:
     def get_dispersion(self, branch_number):
         return None
 
-class SiC:
+class SiC(Material):
     """
     Physical properties of silicon carbide
     Dispersion - PRB 50 17054 (1994)
     Relaxation time - Joshi et al, JAP 88, 265 (2000)
     Heat capacity - Collins et al. Journal of Applied Physics 68, 6510 (1990)
     """
-    branch_names = ['LA', 'TA1', 'TA2']
 
     # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
     # 4H-SiC electrical properties:
@@ -151,6 +268,8 @@ class SiC:
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
+        self.assign_dispersion_heat_capacity()
+        self.assign_phonon_sampling_tables()
 
     # def assign_electrical_properties(self, fermi_level):
     #     """Assign electrical properties for 4H-SiC"""
@@ -216,7 +335,7 @@ class Graphite(Material):
     Relaxation time - Ref. PRB 87, 115421 (2013)
     Heat capacity - Isaacs, L.L.; Wang, W.Y., Therm. Conduct. 17th, 55-61 (1981)
     """
-    branch_names = ['LA', 'TA', 'ZA']
+    dispersion_branch_names = ['LA', 'TA', 'ZA']
 
     def __init__(self, temp, num_points=1000):
         self.name = "Graphite"
@@ -225,6 +344,8 @@ class Graphite(Material):
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
+        self.assign_dispersion_heat_capacity()
+        self.assign_phonon_sampling_tables()
 
     def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
@@ -260,29 +381,11 @@ class Graphite(Material):
 class SiGe(Material):
     """
     Physical properties of Si0.8Ge0.2 alloy.
-
-    Dispersion – Adapted from:
-        - M. Muta, H. Nakamura, and S. Yamanaka, *J. Alloys Compd.* **392**, 306–309 (2005)
-        - H. H. Li, *J. Phys. Chem. Ref. Data* **9**, 561 (1980)
-
-    Relaxation time – Adapted from:
-        - Maire et al., *Scientific Reports* **7**, 41794 (2017) for impurity and Umklapp models in semiconductors
-        - Callaway model-based simplification
-
-    Heat capacity – Fit based on:
-        - Desai P.D., *J. Phys. Chem. Ref. Data* **13**, 1069 (1984)
-        - W. Wunderlich, *Thermophysical Properties of Materials*, Springer (2005)
-
-    Effective masses – linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
+    Dispersion - Adapted from Muta et al, J. Alloys Compd. 392, 306 (2005) and Li, J. Phys. Chem. Ref. Data 9, 561 (1980)
+    Relaxation time - Adapted from Maire et al, Scientific Reports 7, 41794 (2017)
+    Heat capacity - Fit based on Desai P.D., J. Phys. Chem. Ref. Data 13, 1069 (1984) and Wunderlich, Thermophysical Properties of Materials, Springer (2005)
+    Effective masses - linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
-    branch_names = ['LA', 'TA1', 'TA2']
-
-    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
-    # phonon_limited_electron_mfp = 7e-9  # [m] estimate; alloy scattering reduces from pure Si
-    # def effective_electron_mfp(self):
-    #     """Phonon-limited only — CT params not established for SiGe alloy"""
-    #     return self.phonon_limited_electron_mfp
-    # ---------------------------------------------------------------------------------
 
     def __init__(self, temp, num_points=1000):
         self.name = "SiGe"
@@ -296,6 +399,8 @@ class SiGe(Material):
         self.effective_hole_mass = 0.19 * electron_mass          # [kg] light hole, linear interp. Si(0.23) and Ge(0.044)
         self.assign_phonon_dispersion(num_points)
         self.assign_heat_capacity()
+        self.assign_dispersion_heat_capacity()
+        self.assign_phonon_sampling_tables()
 
     def assign_phonon_dispersion(self, num_points):
         """Assign phonon dispersion"""
@@ -338,13 +443,6 @@ class Diamond(Material):
     Physical properties of diamond
     Dispersion - Ref. PRB 58 12899 (1998)
     """
-
-    # --- Impurity scattering via Matthiessen's rule (disabled; re-enable when ready) ---
-    # phonon_limited_electron_mfp = 20e-9  # [m] estimate; CT params for n-type diamond not established
-    # def effective_electron_mfp(self):
-    #     """Phonon-limited only — CT params for n-type diamond not established"""
-    #     return self.phonon_limited_electron_mfp
-    # ---------------------------------------------------------------------------------
 
     def __init__(self, temp, num_points=1000):
         self.name = "Diamond"

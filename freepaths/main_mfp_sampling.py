@@ -112,9 +112,9 @@ def _run_branch(branch_number, shared_list, shared_progress):
         d_k_vector = material.dispersion[index + 1, 0] - material.dispersion[index, 0]
 
         # Initialise phonon at this k-point and run it through the geometry:
-        phonon = Phonon(material, branch_number, index)
+        phonon = Phonon(material, SimulationMode.PHONON_MFP_SAMPLING, branch_number, index)
         flight = Flight(phonon)
-        run_particle(phonon, flight, scatter_stats, places_stats, segment_stats, None, scatter_maps, material)
+        run_particle(phonon, flight, scatter_stats, places_stats, segment_stats, None, scatter_maps, material, SimulationMode.PHONON_MFP_SAMPLING)
 
         # Mode heat capacity (Ref. PRB 88 155318, 2013):
         omega = 2 * math.pi * phonon.f
@@ -144,6 +144,21 @@ def _run_branch(branch_number, shared_list, shared_progress):
     })
 
 
+def calculate_porosity(grid_points=300):
+    """Calculate the porosity (hole area fraction) of the structure by sampling
+    the hole shapes on a regular grid. Holes partially outside the simulation
+    domain are accounted for with their inside part only."""
+    if not cf.holes:
+        return 0.0
+    xs = np.linspace(-cf.width / 2, cf.width / 2, grid_points)
+    ys = np.linspace(0, cf.length, grid_points)
+    inside = 0
+    for x in xs:
+        for y in ys:
+            inside += any(hole.is_inside(x, y, None, cf) for hole in cf.holes)
+    return inside / (grid_points * grid_points)
+
+
 def main(input_file, mode: SimulationMode):
     """Integrate the phonon dispersion over all three branches in parallel to get
     the bulk thermal conductivity via the MFP-sampling method."""
@@ -151,7 +166,7 @@ def main(input_file, mode: SimulationMode):
     print(f'Mean free path sampling of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}')
     start_time = time.time()
 
-    branch_names = get_media_class(cf.media).branch_names
+    branch_names = get_media_class(cf.media).dispersion_branch_names
     n_branches = len(branch_names)
 
     # Spawn one worker process per polarization branch, all running concurrently:
@@ -218,7 +233,19 @@ def main(input_file, mode: SimulationMode):
     if cf.output_path_animation:
         create_animation()
 
-    np.savetxt("Data/Thermal conductivity from MFP.csv", np.array([total_thermal_conductivity]), fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
+    # The MFP-sampling integral uses the bulk DoS with boundary-limited free paths,
+    # so total_thermal_conductivity is the conductivity of the solid material
+    # (MFP suppression only, no volume removed by the holes). To obtain the
+    # effective conductivity of the porous structure, it is scaled by the Eucken
+    # factor F = (1 - phi) / (1 + phi/2), where phi is the porosity:
+    porosity = calculate_porosity()
+    eucken_factor = (1 - porosity) / (1 + porosity / 2)
+    effective_thermal_conductivity = total_thermal_conductivity * eucken_factor
+
+    header = "K_material [W/mK], Porosity, Eucken factor, K_effective [W/mK]"
+    np.savetxt("Data/Thermal conductivity from MFP.csv",
+               np.array([[total_thermal_conductivity, porosity, eucken_factor, effective_thermal_conductivity]]),
+               fmt='%2.4e', delimiter=',', header=header, encoding='utf-8')
 
     sys.stdout.write("\rAnalyzing the data...")
     plot_data(mode, cf)
@@ -227,5 +254,8 @@ def main(input_file, mode: SimulationMode):
     output_scattering_information(scatter_stats)
     output_parameter_warnings(mode)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
-    sys.stdout.write(f"\rThermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
+    sys.stdout.write(f"\rMaterial thermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
+    if cf.holes:
+        sys.stdout.write(f"\rEffective thermal conductivity = {Fore.GREEN}{effective_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K "
+                         f"(porosity {porosity:.1%}, Eucken factor {eucken_factor:.3f})\n")
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")

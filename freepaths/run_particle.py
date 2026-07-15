@@ -5,9 +5,9 @@ After the run, we record various parameters of this run into flight object.
 from freepaths.config import cf
 from freepaths.scattering import internal_scattering, surface_scattering, reinitialization
 from freepaths.scattering_types import ScatteringTypes, ScatteringPlaces
-from freepaths.options import ParticleType
+from freepaths.options import ParticleType, SimulationMode
 
-def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material):
+def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, thermal_maps, scatter_maps, material, mode):
     """Run one particle through the system and record parameters of this run"""
 
     # Initialize object that will store scattering types:
@@ -55,9 +55,30 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if scattering_types.is_diffuse or scattering_types.is_internal:
             flight.save_free_paths()
             flight.restart()
+            # Internal (anharmonic) scattering rethermalizes the phonon: new branch and
+            # frequency are drawn from the collision-rate-weighted distribution.
+            # Applied only in the phonon tracing mode: in the MFP sampling mode each
+            # phonon must keep its mode identity. Not applied in the gray approximation:
+            if (scattering_types.is_internal
+                    and cf.rethermalize_internal_scattering
+                    and particle.type is ParticleType.PHONON
+                    and mode is SimulationMode.PHONON_TRACING
+                    and not cf.use_gray_approximation_mfp):
+                particle.rethermalize(material)
             particle.assign_internal_scattering_time(material)
             if cf.is_two_dimensional_material:
                 particle.phi = 0.0
+
+            # MFP sampling only: a short-tau, low-velocity phonon takes tiny hops and
+            # essentially never reaches a boundary, but its mean free path already
+            # converges after a modest number of scattering events, so stop early
+            # rather than burning the full timestep budget on diminishing returns.
+            # Tracing mode must keep going regardless, to build the flux/temperature map:
+            if (mode is SimulationMode.PHONON_MFP_SAMPLING
+                    and cf.max_number_of_scattering_events is not None
+                    and len(flight.free_paths) >= cf.max_number_of_scattering_events):
+                flight.finish(step_number, cf.timestep)
+                break
 
         # If hole scattering has occurred, record it:
         if triangle_scattering_places.is_scattered:

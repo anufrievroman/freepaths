@@ -57,10 +57,14 @@ class GeneralData(Data):
         """Initialize arrays for writing various properties"""
         self.initial_angles = []
         self.exit_angles = []
+        self.launch_frequencies = []
+        self.exit_frequencies = []
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
         self.free_paths = []
-        self.frequencies = []
+        # Last-known frequency of each particle, paired with group_velocities below
+        # (used for the frequency-velocity/MFP correlation plots, not a true launch value):
+        self.final_frequencies = []
         self.initial_energies = []
         self.group_velocities = []
         self.travel_times = []
@@ -72,7 +76,7 @@ class GeneralData(Data):
         if mode is SimulationMode.ELECTRON:
             self.initial_energies.append(pt.energy)
         else:
-            self.frequencies.append(pt.f)
+            self.final_frequencies.append(pt.f)
             self.group_velocities.append(pt.speed)
 
     def save_flight_data(self, flight, mode=None):
@@ -83,6 +87,8 @@ class GeneralData(Data):
         if mode is SimulationMode.PHONON_TRACING:
             self.initial_angles.append(flight.initial_theta)
             self.exit_angles.append(flight.exit_theta)
+            self.launch_frequencies.append(flight.initial_frequency)
+            self.exit_frequencies.append(flight.exit_frequency)
             self.hole_diff_scattering_angles.extend(flight.hole_diff_scattering_angles)
             self.hole_spec_scattering_angles.extend(flight.hole_spec_scattering_angles)
         self.travel_times.append(flight.travel_time)
@@ -101,11 +107,13 @@ class GeneralData(Data):
         if mode is SimulationMode.ELECTRON:
             np.savetxt("Data/All initial energies.csv", self.initial_energies, fmt='%2.4e', header="Energy [J]", encoding='utf-8')
         else:
-            np.savetxt("Data/All initial frequencies.csv", self.frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
+            np.savetxt("Data/All final frequencies.csv", self.final_frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
             np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
         if mode is SimulationMode.PHONON_TRACING:
             np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
             np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
+            np.savetxt("Data/All launch frequencies.csv", self.launch_frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
+            np.savetxt("Data/All exit frequencies.csv", self.exit_frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
             if cf.holes:
                 np.savetxt("Data/All hole diffuse scattering angles.csv", self.hole_diff_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
                 np.savetxt("Data/All hole specular scattering angles.csv", self.hole_spec_scattering_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
@@ -118,10 +126,12 @@ class GeneralData(Data):
         return {
             'initial_angles': self.initial_angles,
             'exit_angles': self.exit_angles,
+            'launch_frequencies': self.launch_frequencies,
+            'exit_frequencies': self.exit_frequencies,
             'hole_diff_scattering_angles': self.hole_diff_scattering_angles,
             'hole_spec_scattering_angles': self.hole_spec_scattering_angles,
             'free_paths': self.free_paths,
-            'frequencies': self.frequencies,
+            'final_frequencies': self.final_frequencies,
             'group_velocities': self.group_velocities,
             'travel_times': self.travel_times,
             'mean_free_paths': self.mean_free_paths,

@@ -78,12 +78,12 @@ class ParticleSimulator:
         if self.mode is SimulationMode.ELECTRON:
             particle = Electron(self.material)
         else:
-            particle = Phonon(self.material)
+            particle = Phonon(self.material, self.mode)
         flight = Flight(particle)
         particle.flight = flight
 
         # Run this particle through the structure:
-        run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material)
+        run_particle(particle, flight, self.scatter_stats, self.places_stats, self.segment_stats, self.thermal_maps, self.scatter_maps, self.material, self.mode)
 
         # Record the properties returned for this particle:
         self.general_stats.save_particle_data(particle, self.mode)
@@ -279,7 +279,11 @@ def main(input_file, mode: SimulationMode):
         kappa_ph = None
         if os.path.isfile("Data/Thermal conductivity from MFP.csv"):
             try:
-                kappa_ph = float(np.genfromtxt("Data/Thermal conductivity from MFP.csv", skip_header=1))
+                # Last column is the effective (porosity-corrected) conductivity,
+                # consistent with the effective electrical conductivity of the MC;
+                # in older single-value files it is the only value:
+                data = np.atleast_1d(np.genfromtxt("Data/Thermal conductivity from MFP.csv", delimiter=',', skip_header=1))
+                kappa_ph = float(data.flatten()[-1])
             except Exception:
                 pass
         elif os.path.isfile("Data/Average thermal conductivity.csv"):

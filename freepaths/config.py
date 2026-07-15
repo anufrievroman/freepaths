@@ -85,6 +85,7 @@ class Config:
         self.number_of_pixels_y = NUMBER_OF_PIXELS_Y
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
         self.ignore_faulty_particles = IGNORE_FAULTY_PARTICLES
+        self.gradient_fit_range = GRADIENT_FIT_RANGE
 
         # Material parameters:
         self.media = MEDIA
@@ -94,6 +95,10 @@ class Config:
         self.include_internal_scattering = INCLUDE_INTERNAL_SCATTERING
         self.use_gray_approximation_mfp = USE_GRAY_APPROXIMATION_MFP
         self.gray_approximation_mfp = GRAY_APPROXIMATION_MFP
+        self.sample_from_dispersion = SAMPLE_FROM_DISPERSION
+        self.rethermalize_internal_scattering = RETHERMALIZE_INTERNAL_SCATTERING
+        self.use_dispersion_heat_capacity = USE_DISPERSION_HEAT_CAPACITY
+        self.max_number_of_scattering_events = MAX_NUMBER_OF_SCATTERING_EVENTS
 
         # System dimensions:
         self.thickness = THICKNESS
@@ -156,6 +161,11 @@ class Config:
         """Check if various parameters are valid"""
         if self.number_of_particles < self.output_trajectories_of_first:
             self.output_trajectories_of_first = self.number_of_particles
+
+        if not (0.0 <= self.gradient_fit_range[0] < self.gradient_fit_range[1] <= 1.0):
+            logging.error("Parameter GRADIENT_FIT_RANGE must be a pair (start, end) with 0 <= start < end <= 1.\n" +
+                          f"See the documentation at {WEBSITE}")
+            sys.exit()
 
         if self.number_of_timeframes <= self.number_of_stabilization_timeframes:
             logging.error("Parameter NUMBER_OF_STABILIZATION_TIMEFRAMES exceeds or equal to NUMBER_OF_TIMEFRAMES.\n" +

@@ -1,7 +1,7 @@
 """Module that controls recording, calculation, and saving thermal and scattering maps"""
 
 from math import cos, sin
-from scipy.constants import hbar, pi
+from scipy.constants import hbar, pi, k as k_B
 import numpy as np
 from freepaths.config import cf
 from freepaths.options import SimulationMode
@@ -92,7 +92,9 @@ class ThermalMaps(Maps):
         self.heat_flux_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_xy = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        self.timesteps_per_timeframe = cf.number_of_timesteps // cf.number_of_timeframes
+        # Timeframes span the whole virtual time over which phonon emission is spread,
+        # so that every phonon contributes to the profiles regardless of its start time:
+        self.timesteps_per_timeframe = cf.number_of_virtual_timesteps // cf.number_of_timeframes
         self.effective_thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
         self.material_thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
 
@@ -150,8 +152,15 @@ class ThermalMaps(Maps):
             if vol_pixel_correction == 0 and cf.ignore_faulty_particles:
                 return
 
-            # Record energy h*w [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map:
-            energy = hbar * 2 * pi * pt.f
+            # Record energy [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map.
+            # With rethermalization, particles are equal-energy bundles (Peraud & Hadjiconstantinou,
+            # PRB 84, 205331 (2011)): the deposited weight must not depend on the current frequency,
+            # so that the ensemble energy is conserved when frequencies are re-drawn. The absolute
+            # value cancels in the thermal conductivity; k_B*T is used as a natural scale.
+            if cf.sample_from_dispersion:
+                energy = k_B * cf.temp
+            else:
+                energy = hbar * 2 * pi * pt.f
             self.thermal_map[index_y, index_x] += energy
             self.heat_flux_map_x[index_y, index_x] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
@@ -159,11 +168,16 @@ class ThermalMaps(Maps):
             # Calculate to which timeframe this timestep belongs:
             timeframe_number = (pt.first_timestep + timestep_number) // self.timesteps_per_timeframe
 
-            # Record temperature and heat flux into the corresponding time segment:
+            # Record temperature and heat flux into the corresponding time segment.
+            # By default, use the dispersion-only heat capacity, self-consistent with the
+            # dispersion-based phonon sampling; the real (experimental) heat capacity,
+            # which also counts branches absent from the dispersion, is optional:
+            volumetric_heat_capacity = (material.dispersion_heat_capacity if cf.use_dispersion_heat_capacity
+                                        else material.heat_capacity * material.density)
             if timeframe_number < cf.number_of_timeframes and vol_pixel_correction_y != 0:
                 self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y
                 self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y / vol_pixel_correction_y
-                self.temperature_profile_y[index_y, timeframe_number] += energy / (material.heat_capacity * material.density) / self.vol_cell_y / vol_pixel_correction_y
+                self.temperature_profile_y[index_y, timeframe_number] += energy / volumetric_heat_capacity / self.vol_cell_y / vol_pixel_correction_y
 
 
     def calculate_heat_flux_modulus(self):
@@ -175,6 +189,12 @@ class ThermalMaps(Maps):
         """Calculate the thermal conductivity for each time interval from heat flux
         and temperature profiles accumulated in that interval"""
 
+        # Restrict the fit to a fraction of the length (GRADIENT_FIT_RANGE) to exclude
+        # the quasi-ballistic contact regions near the hot and cold sides, where the
+        # temperature profile deviates from linear (temperature jumps at the contacts):
+        fit_start = int(cf.gradient_fit_range[0] * cf.number_of_pixels_y)
+        fit_end = max(int(cf.gradient_fit_range[1] * cf.number_of_pixels_y), fit_start + 2)
+
         # For each time interval calculate the thermal conductivity:
         for timeframe_number in range(cf.number_of_timeframes):
 
@@ -184,13 +204,15 @@ class ThermalMaps(Maps):
 
             # Temperature gradient obtained by linear fit of T(y):
             coordinates_y = np.arange(cf.number_of_pixels_y) * cf.length / cf.number_of_pixels_y
-            slope, _ = np.polyfit(coordinates_y, self.temperature_profile_y[:, timeframe_number], 1)
+            slope, _ = np.polyfit(coordinates_y[fit_start:fit_end],
+                                  self.temperature_profile_y[fit_start:fit_end, timeframe_number], 1)
             grad_T = -slope
 
-            # Average heat flux (skip first pixel — it has a spurious spike due to
-            # rethermalization being applied before map recording in the time-step loop):
-            J_effective = np.mean(self.effective_heat_flux_profile_y[1:, timeframe_number])
-            J_material = np.mean(self.material_heat_flux_profile_y[1:, timeframe_number])
+            # Average heat flux over the same range (always skip first pixel — it has a spurious
+            # spike due to rethermalization being applied before map recording in the time-step loop):
+            flux_start = max(fit_start, 1)
+            J_effective = np.mean(self.effective_heat_flux_profile_y[flux_start:fit_end, timeframe_number])
+            J_material = np.mean(self.material_heat_flux_profile_y[flux_start:fit_end, timeframe_number])
 
             # By definition, J = -K * grad(T), so:
             if grad_T != 0:
