@@ -135,14 +135,31 @@ class Phonon(Particle):
         # Group velocity of exactly the drawn dispersion bin:
         self.speed = material.group_velocity_table[self.branch_number][index]
 
+    def internal_event_is_inelastic(self, material):
+        """
+        Attribute the current internal scattering event to one of the two channels.
+        The internal event time is drawn from the total rate (a sum of independent
+        Poisson processes), so the event belongs to the inelastic (anharmonic)
+        channel with probability rate_inelastic/rate_total, and to the elastic
+        (impurity) channel otherwise. Only inelastic events rethermalize the mode;
+        elastic events conserve frequency and branch and merely redirect the phonon
+        (which internal_scattering has already done).
+        """
+        inelastic_rate, elastic_rate = material.phonon_scattering_rates(2 * pi * self.f)
+        if elastic_rate == 0.0:
+            return True
+        return random() < inelastic_rate / (inelastic_rate + elastic_rate)
+
     def rethermalize(self, material):
         """
-        Re-draw branch and frequency at an internal scattering event from the
-        collision-rate-weighted distribution C(f)/tau(f) (see Material.assign_phonon_sampling_tables), following
-        Peraud & Hadjiconstantinou, PRB 84, 205331 (2011). The 1/tau weight is
-        essential: phonons drawn from this distribution spend a time tau(f) at
-        each frequency, so the steady-state population spectrum remains equal
-        to the emitted spectrum and does not drift.
+        Re-draw branch and frequency at an inelastic internal scattering event from
+        the collision-rate-weighted distribution C(f)/tau_inelastic(f) (see
+        Material.assign_phonon_sampling_tables), following Peraud &
+        Hadjiconstantinou, PRB 84, 205331 (2011). The 1/tau_inelastic weight is
+        essential: with events fired at the total rate but redrawn only when the
+        channel draw lands on the inelastic one, a phonon waits on average exactly
+        tau_inelastic(f) at each drawn frequency, so the steady-state population
+        spectrum remains equal to the emitted spectrum and does not drift.
         """
         # Draw the new branch and frequency from the scattering tables;
         # the group velocity of the drawn bin is set by draw_from_table

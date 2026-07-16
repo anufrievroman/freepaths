@@ -64,14 +64,17 @@ GRAY_APPROXIMATION_MFP           = None
 # constant weight per phonon instead of h*w:
 SAMPLE_FROM_DISPERSION           = True
 
-# Re-draw phonon branch and frequency at internal scattering events from the
-# collision-rate-weighted distribution (Peraud & Hadjiconstantinou,
-# PRB 84, 205331 (2011)). This restores local thermal equilibrium of the phonon
-# population, which is required for correct Fourier-law thermal conductivity
-# when internal scattering dominates (e.g. bulk-like structures at room
-# temperature). Applies only to the phonon tracing mode; MFP sampling and
-# electron modes keep the particle identity by construction.
-RETHERMALIZE_INTERNAL_SCATTERING = True
+# Re-draw phonon branch and frequency at inelastic (anharmonic) internal
+# scattering events from the collision-rate-weighted distribution (Peraud &
+# Hadjiconstantinou, PRB 84, 205331 (2011)). This restores local thermal
+# equilibrium of the phonon population, which is required for correct
+# Fourier-law thermal conductivity when internal scattering dominates (e.g.
+# bulk-like structures at room temperature). Elastic internal events
+# (impurity/alloy scattering) never rethermalize: they conserve the mode and
+# only randomize the direction (see Material.phonon_scattering_rates).
+# Applies only to the phonon tracing mode; MFP sampling and electron modes
+# keep the particle identity by construction.
+RETHERMALIZE_INELASTIC_SCATTERING = True
 
 # Convert deposited particle energy into the temperature profile using the
 # dispersion-only heat capacity (Material.dispersion_heat_capacity, summed only

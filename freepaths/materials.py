@@ -20,6 +20,18 @@ class Material(ABC):
         """Calculate relaxation time at a given frequency and temperature"""
         pass
 
+    def phonon_scattering_rates(self, omega):
+        """
+        Return (inelastic_rate, elastic_rate) [1/s] at angular frequency omega.
+        Inelastic processes (anharmonic: Umklapp, 4-phonon) exchange energy with
+        the phonon bath, so they rethermalize the mode; elastic processes
+        (point-defect/alloy mass-disorder, Rayleigh ~ omega^4) only redirect the
+        phonon and conserve its frequency and branch. By default all scattering
+        is treated as inelastic; materials with a known elastic component
+        override this and derive phonon_relaxation_time from the sum of rates.
+        """
+        return 1 / self.phonon_relaxation_time(omega), 0.0
+
     @abstractmethod
     def assign_heat_capacity(self):
         """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
@@ -70,9 +82,14 @@ class Material(ABC):
         - emission (weight D(w)*C(w)*v(w)): a hot wall emits into mode w at a rate
           proportional to how fast that mode carries energy away, hence the extra
           group-velocity factor (phonon analog of blackbody effusion);
-        - scattering (weight D(w)*C(w)/tau(w)): the collision bath re-emits into
-          mode w at its collision rate 1/tau, which ensures that phonons, spending
-          tau(w) at each drawn frequency, maintain the C(w)-shaped steady population.
+        - scattering (weight D(w)*C(w)/tau_inelastic(w)): only the inelastic
+          (anharmonic) channel exchanges energy with the bath, so detailed balance
+          is set by its rate alone — modes are absorbed into the bath at rate
+          1/tau_inelastic and must be re-emitted at the same rate. Elastic
+          (impurity) events conserve the mode and drop out of the balance; a
+          phonon redrawn from this table therefore waits, on average, exactly
+          tau_inelastic at the drawn frequency before the next redraw (elastic
+          events in between don't redraw), keeping the C(w)-shaped population.
         Note that the tables use the actual dispersion, and NOT the Debye
         approximation: the Debye density of states strongly underweights the slow
         zone-edge phonons and overestimates the thermal conductivity.
@@ -117,7 +134,7 @@ class Material(ABC):
             x = hbar * omegas / (k_B * self.temp)
             # Mode heat capacity C(w)
             heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
-            taus = np.array([self.phonon_relaxation_time(omega) for omega in omegas])
+            inelastic_rates = np.array([self.phonon_scattering_rates(omega)[0] for omega in omegas])
             # Density of states weight k^2 dk
             dos = k_mid[valid]**2 * d_k[valid]
 
@@ -127,7 +144,7 @@ class Material(ABC):
             # Cumulative bin weights; the last element is the total weight of
             # the branch, used for the branch probabilities below:
             emission_cumulative = np.cumsum(dos * heat_capacity * group_velocity[valid])
-            scattering_cumulative = np.cumsum(dos * heat_capacity / taus)
+            scattering_cumulative = np.cumsum(dos * heat_capacity * inelastic_rates)
             self.emission_frequency_probabilities.append(emission_cumulative / emission_cumulative[-1])
             self.scattering_frequency_probabilities.append(scattering_cumulative / scattering_cumulative[-1])
             emission_branch_weights.append(emission_cumulative[-1])
@@ -194,12 +211,17 @@ class Si(Material):
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
+    def phonon_scattering_rates(self, omega):
+        """Umklapp (inelastic) and impurity (elastic) scattering rates [1/s]"""
+        deb_temp = 152.0  # Debye temperature normal constant calculated for Si
+        rate_impurity = 1.8516e-45 * (omega ** 4)
+        rate_umklapp = 1.1026e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp)
+        return rate_umklapp, rate_impurity
+
     def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature"""
-        deb_temp = 152.0  # Debye temperature normal constant calculated for Si
-        tau_impurity = 1 / (1.8516e-45 * (omega ** 4))
-        tau_umklapp = 1 / (1.1026e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
-        return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
+        inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
+        return 1 / (inelastic_rate + elastic_rate)
 
     def assign_heat_capacity(self):
         """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
@@ -304,13 +326,18 @@ class SiC(Material):
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
+    def phonon_scattering_rates(self, omega):
+        """Umklapp + 4-phonon (inelastic) and impurity (elastic) scattering rates [1/s]"""
+        deb_temp = 1200
+        rate_impurity = 8.46e-45 * (omega ** 4)
+        rate_umklapp = 6.16e-20 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp)
+        rate_4p = 6.9e-23 * (self.temp ** 2) * (omega ** 2)
+        return rate_umklapp + rate_4p, rate_impurity
+
     def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature including 4 phonon scattering"""
-        deb_temp = 1200
-        tau_impurity = 1 / (8.46e-45 * (omega ** 4))
-        tau_umklapp = 1 / (6.16e-20 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
-        tau_4p = 1 / (6.9e-23 * (self.temp ** 2) * (omega ** 2))
-        return 1 / ((1 / tau_impurity) + (1 / tau_umklapp) + (1 / tau_4p))
+        inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
+        return 1 / (inelastic_rate + elastic_rate)
 
 
     def assign_heat_capacity(self):
@@ -382,7 +409,10 @@ class SiGe(Material):
     """
     Physical properties of Si0.8Ge0.2 alloy.
     Dispersion - Adapted from Muta et al, J. Alloys Compd. 392, 306 (2005) and Li, J. Phys. Chem. Ref. Data 9, 561 (1980)
-    Relaxation time - Adapted from Maire et al, Scientific Reports 7, 41794 (2017)
+    Relaxation time - Umklapp coefficient carried over from the pre-refit Si values
+      (Maire et al., Sci. Rep. 7, 41794 (2017) era), impurity/alloy coefficient an
+      ad-hoc adaptation of the same; NOT refit against bulk SiGe kappa data, unlike
+      Si (see Data/Fitting_BulkSi/). Treat absolute SiGe kappa values with caution.
     Heat capacity - Fit based on Desai P.D., J. Phys. Chem. Ref. Data 13, 1069 (1984) and Wunderlich, Thermophysical Properties of Materials, Springer (2005)
     Effective masses - linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
@@ -415,14 +445,19 @@ class SiGe(Material):
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA
         self.dispersion[:, 3] = self.dispersion[:, 2]  # TA2 = TA1 (approx)
 
-    def phonon_relaxation_time(self, omega):
-        """Relaxation time model (impurities + Umklapp scattering)"""
-
+    def phonon_scattering_rates(self, omega):
+        """Umklapp (inelastic) and impurity/alloy mass-disorder (elastic) scattering rates [1/s].
+        The elastic channel dominates in the alloy, so the split matters most here."""
         # Debye Température approx from Ge : ~230 K
         deb_temp = 586.8 #(640 - 266x) K	300 K	Schaffler F. et al.(2001) 4/07
-        tau_impurity = 1 / (3.5e-45 * (omega ** 4))  # Maire et al.
-        tau_umklapp = 1 / (1.1e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp))
-        return 1 / ((1 / tau_impurity) + (1 / tau_umklapp))
+        rate_impurity = 3.5e-45 * (omega ** 4)  # includes alloy mass-disorder; adapted from pre-refit Si values, not fit to SiGe data
+        rate_umklapp = 1.1e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp)
+        return rate_umklapp, rate_impurity
+
+    def phonon_relaxation_time(self, omega):
+        """Relaxation time model (impurities + Umklapp scattering)"""
+        inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
+        return 1 / (inelastic_rate + elastic_rate)
 
     def assign_heat_capacity(self):
         """Empirical polynomial fits for Cp vs T"""

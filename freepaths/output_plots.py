@@ -404,9 +404,9 @@ def plot_heat_flux_profile():
     # Material heat flux:
     fig, ax = plt.subplots()
     for timeframe_num in range(n_timeframes):
-        ax.plot(data[0][1:], data[2*timeframe_num + 1][1:], linewidth=1,
+        ax.plot(data[0][1:], data[n_timeframes + timeframe_num + 1][1:], linewidth=1,
                 color=colors[timeframe_num], label=f'Time frame {timeframe_num+1}')
-    mean_flux_mat = np.mean(data[2*n_timeframes - 1][1:])
+    mean_flux_mat = np.mean(data[2*n_timeframes][1:])
     ax.axhline(mean_flux_mat, color='gray', linestyle='--', linewidth=1, label='Mean (last frame)')
     ax.set_xlabel('Y (μm)')
     ax.set_ylabel('Heat flux (W/m²)')
