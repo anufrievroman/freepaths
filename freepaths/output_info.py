@@ -28,10 +28,12 @@ def output_general_information(start_time):
             f'\nWidth = {cf.width * 1e9:.1f} nm',
             f'\nThickness = {cf.thickness * 1e9:.1f} nm\n',
             f'\nSide wall roughness = {cf.side_wall_roughness * 1e9:.1f} nm',
-            f'\nHole roughness = {cf.hole_roughness * 1e9:.1f} nm',
             f'\nTop roughness = {cf.top_roughness * 1e9:.1f} nm',
             f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm',
-            f'\nInterface roughness = {cf.interface_roughness * 1e9:.1f} nm\n',
+            *([ f'\nHole roughness = {cf.hole_roughness * 1e9:.1f} nm'] if cf.holes else []),
+            *([ f'\nInterface roughness = {cf.interface_roughness * 1e9:.1f} nm'] if cf.interfaces else []),
+            *([ f'\nGrain size = {cf.grain_size * 1e9:.1f} nm, std = {cf.grain_size_std * 1e9:.1f} nm, roughness = {cf.grain_roughness * 1e9:.1f} nm'] if cf.grain_size else []),
+            '\n',
             f'\n{percentage:.0f}% of particles reached the cold side\n'
             ]
     with open("Information.txt", "w+", encoding="utf-8") as file:

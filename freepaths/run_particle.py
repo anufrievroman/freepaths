@@ -82,7 +82,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             # Tracing mode must keep going regardless, to build the flux/temperature map:
             if (mode is SimulationMode.PHONON_MFP_SAMPLING
                     and cf.max_number_of_scattering_events is not None
-                    and len(flight.free_paths) >= cf.max_number_of_scattering_events):
+                    and flight._mfp_count >= cf.max_number_of_scattering_events):
                 flight.finish(step_number, cf.timestep)
                 break
 
