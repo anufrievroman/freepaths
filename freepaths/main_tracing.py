@@ -279,11 +279,14 @@ def main(input_file, mode: SimulationMode):
         kappa_ph = None
         if os.path.isfile("Data/Thermal conductivity from MFP.csv"):
             try:
-                # Last column is the effective (porosity-corrected) conductivity,
-                # consistent with the effective electrical conductivity of the MC;
-                # in older single-value files it is the only value:
-                data = np.atleast_1d(np.genfromtxt("Data/Thermal conductivity from MFP.csv", delimiter=',', skip_header=1))
-                kappa_ph = float(data.flatten()[-1])
+                # The MC electrical conductivity is a solid-convention quantity: the TDF
+                # uses the bulk DOS, so holes enter only via the time-of-flight slowdown,
+                # which includes both hole-boundary scattering and tortuosity (detours),
+                # but not the (1 - porosity) carrier removal. The consistent phonon
+                # counterpart is kappa_solid = K_material / (1 + porosity/2), i.e.
+                # K_material with the tortuosity part of the Eucken factor applied:
+                data = np.atleast_1d(np.genfromtxt("Data/Thermal conductivity from MFP.csv", delimiter=',', skip_header=1)).flatten()
+                kappa_ph = float(data[0]) / (1 + float(data[1]) / 2)
             except Exception:
                 pass
         elif os.path.isfile("Data/Average thermal conductivity.csv"):
