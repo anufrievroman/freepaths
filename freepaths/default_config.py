@@ -98,6 +98,18 @@ USE_DISPERSION_HEAT_CAPACITY     = True
 # (run to the timestep budget or a boundary, as before):
 MAX_NUMBER_OF_SCATTERING_EVENTS  = 1000
 
+# Grain boundary scattering (polycrystalline materials):
+# GRAIN_SIZE sets the mean grain diameter [m]. None disables grain boundary scattering entirely.
+# GRAIN_SIZE_STD sets the standard deviation [m]; the grain size is drawn per phonon from a
+# lognormal distribution with this mean and std. Set to 0 for monodisperse (single grain size).
+# GRAIN_ROUGHNESS is the RMS disorder width of the grain boundary [m], used in a Soffer-type
+# specularity factor: at low frequencies (long wavelengths) the boundary appears smooth and
+# phonons pass through; at high frequencies it acts as a classical diffuse scatterer.
+# Typical values: GRAIN_SIZE 100 nm – 10 µm, GRAIN_ROUGHNESS 0.5–2 nm.
+GRAIN_SIZE                       = None
+GRAIN_SIZE_STD                   = 0.0
+GRAIN_ROUGHNESS                  = 1e-9
+
 # System dimensions [m]:
 THICKNESS                        = 150e-9
 WIDTH                            = 200e-9

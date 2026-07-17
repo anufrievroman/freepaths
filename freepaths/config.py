@@ -99,6 +99,9 @@ class Config:
         self.rethermalize_inelastic_scattering = RETHERMALIZE_INELASTIC_SCATTERING
         self.use_dispersion_heat_capacity = USE_DISPERSION_HEAT_CAPACITY
         self.max_number_of_scattering_events = MAX_NUMBER_OF_SCATTERING_EVENTS
+        self.grain_size = GRAIN_SIZE
+        self.grain_size_std = GRAIN_SIZE_STD
+        self.grain_roughness = GRAIN_ROUGHNESS
 
         # System dimensions:
         self.thickness = THICKNESS

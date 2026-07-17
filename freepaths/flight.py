@@ -3,21 +3,23 @@
 from math import cos
 import numpy as np
 
+from freepaths.config import cf
+
 
 class Path:
     """Particle path coordinates"""
 
     def __init__(self, x_init, y_init, z_init):
         """Initialize a path"""
-        self.x = np.array([x_init])
-        self.y = np.array([y_init])
-        self.z = np.array([z_init])
+        self.x = [x_init]
+        self.y = [y_init]
+        self.z = [z_init]
 
     def add_point(self, x_new, y_new, z_new):
         """Add a point to the particle path"""
-        self.x = np.append(self.x, x_new)
-        self.y = np.append(self.y, y_new)
-        self.z = np.append(self.z, z_new)
+        self.x.append(x_new)
+        self.y.append(y_new)
+        self.z.append(z_new)
 
     @property
     def number_of_path_points(self):
@@ -41,17 +43,15 @@ class Flight:
         self.travel_time = 0.0
         self.time_since_previous_scattering = 0.0
         self.free_paths = []
+        self._mfp_sum = 0.0
+        self._mfp_count = 0
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
         self.thermal_conductivity = 0.0
     @property
     def mean_free_path(self):
         """Mean value of all free flights"""
-        try:
-            mfp = sum(self.free_paths)/len(self.free_paths)
-        except ZeroDivisionError:
-            mfp = 0
-        return mfp
+        return self._mfp_sum / self._mfp_count if self._mfp_count else 0
 
     def add_point_to_path(self):
         """Add a scattering point to the path"""
@@ -59,7 +59,10 @@ class Flight:
 
     def save_free_paths(self):
         """Save current free path to the list of free paths"""
-        self.free_paths.append(self.free_path)
+        self._mfp_sum += self.free_path
+        self._mfp_count += 1
+        if not cf.low_memory_usage:
+            self.free_paths.append(self.free_path)
 
     def save_hole_diff_scattering_angle(self, angle):
         """Save angle of diffuse scattering from the hole"""

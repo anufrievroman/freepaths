@@ -50,6 +50,7 @@ class Phonon(Particle):
         # draw_from_table already sets the speed from the drawn dispersion bin:
         if self.speed is None:
             self.assign_speed(material)
+        self.grain_size = self._draw_grain_size()
         self.assign_internal_scattering_time(material)
 
     @property
@@ -135,6 +136,26 @@ class Phonon(Particle):
         # Group velocity of exactly the drawn dispersion bin:
         self.speed = material.group_velocity_table[self.branch_number][index]
 
+    def _draw_grain_size(self):
+        """Draw a grain diameter from lognormal(GRAIN_SIZE, GRAIN_SIZE_STD), or return None."""
+        if cf.grain_size is None:
+            return None
+        if cf.grain_size_std > 0:
+            s2 = np.log(1 + (cf.grain_size_std / cf.grain_size) ** 2)
+            mu = np.log(cf.grain_size) - s2 / 2
+            return np.random.lognormal(mu, np.sqrt(s2))
+        return cf.grain_size
+
+    def _grain_boundary_rate(self):
+        """Grain boundary scattering rate with Soffer-type low-frequency transparency.
+        Rate = (v_g / d) * (1 - exp(-4 sigma_GB^2 omega^2 / v_g^2)).
+        Vanishes at low omega (long wavelength passes through); approaches v_g/d at high omega."""
+        if self.grain_size is None:
+            return 0.0
+        omega = 2 * pi * self.f
+        soffer = exp(-4 * cf.grain_roughness ** 2 * omega ** 2 / self.speed ** 2)
+        return (self.speed / self.grain_size) * (1 - soffer)
+
     def internal_event_is_inelastic(self, material):
         """
         Attribute the current internal scattering event to one of the two channels.
@@ -146,6 +167,7 @@ class Phonon(Particle):
         (which internal_scattering has already done).
         """
         inelastic_rate, elastic_rate = material.phonon_scattering_rates(2 * pi * self.f)
+        elastic_rate += self._grain_boundary_rate()
         if elastic_rate == 0.0:
             return True
         return random() < inelastic_rate / (inelastic_rate + elastic_rate)
@@ -176,7 +198,8 @@ class Phonon(Particle):
         else:
             # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
             omega = 2 * pi * self.f
-            self.time_of_internal_scattering = -log(random()) * material.phonon_relaxation_time(omega)
+            total_rate = 1 / material.phonon_relaxation_time(omega) + self._grain_boundary_rate()
+            self.time_of_internal_scattering = -log(random()) / total_rate
 
     def move(self):
         """Move a phonon in one timestep and return new coordinates"""

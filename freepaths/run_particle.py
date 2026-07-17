@@ -19,14 +19,16 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
 
         # If the particle reached a cold side, record it and break the loop:
         if particle.has_crossed_cold_side:
-            flight.add_point_to_path()
+            if not cf.low_memory_usage:
+                flight.add_point_to_path()
             flight.save_free_paths()
             flight.finish(step_number, cf.timestep)
             break
 
         # If the particle reached a hot side, record it and break the loop:
         if particle.has_crossed_hot_side and not cf.rethermalization_on_hot_sides:
-            flight.add_point_to_path()
+            if not cf.low_memory_usage:
+                flight.add_point_to_path()
             flight.save_free_paths()
             break
 
@@ -41,7 +43,8 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
 
         # If any scattering has occurred, record it:
         if scattering_types.is_scattered:
-            flight.add_point_to_path()
+            if not cf.low_memory_usage:
+                flight.add_point_to_path()
             scatter_stats.save_scattering_events(particle.y, scattering_types)
             if cf.output_scattering_map:
                 scatter_maps.add_scattering_to_map(particle, scattering_types)
