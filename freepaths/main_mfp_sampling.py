@@ -257,12 +257,7 @@ def main(input_file, mode: SimulationMode):
                np.array([[total_thermal_conductivity, porosity, eucken_factor, effective_thermal_conductivity]]),
                fmt='%2.4e', delimiter=',', header=header, encoding='utf-8')
 
-    # Standard error from the spread of each mode's own free-path segments (see
-    # Flight.mean_free_path_sem) - a lower bound on the total uncertainty, since it
-    # only captures within-mode stochastic noise, not the separate discretization
-    # error from sweeping a finite number of k-points across the dispersion (that
-    # one is assessed by comparing NUMBER_OF_PARTICLES across separate runs).
-    # Kept in its own file rather than appended to "Thermal conductivity from MFP.csv"
+    # Kept in its own file rather than appended to "Thermal conductivity from MFP.csv",
     # since several plotting scripts index into that file positionally (incl. by
     # [-1] for the last column), which a trailing column would silently break:
     kappa_sem = total_kappa_variance ** 0.5
