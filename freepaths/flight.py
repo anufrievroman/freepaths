@@ -53,6 +53,28 @@ class Flight:
         """Mean value of all free flights"""
         return self._mfp_sum / self._mfp_count if self._mfp_count else 0
 
+    @property
+    def mean_free_path_sem(self):
+        """Standard error of the mean free path (MFP sampling mode only). Assumes
+        individual free-path segments are exponentially distributed (the natural
+        assumption for Poisson-process intrinsic scattering: coefficient of
+        variation = 1, i.e. std = mean), so SEM = mean_free_path / sqrt(n).
+
+        An earlier version instead measured the spread empirically from this one
+        phonon's own segments (a running sum of squares, no per-segment storage
+        needed) - but that returns exactly 0 for any mode with fewer than 2
+        segments, silently zeroing out the modes that reach the cold side in a
+        single, boundary-limited hop - precisely the near-ballistic population
+        with the *most* run-to-run variability. That version underestimated the
+        true spread by ~5x (rerunning one config - Nanowire_Si_MFP_L5.5um, N=200,
+        cap=1000 - 10 times gave empirical kappa std = 1.08 W/mK vs. its ~0.21
+        W/mK average prediction). This exponential-CV version was validated the
+        same way (9 reruns): empirical std 0.91 vs. 0.94 W/mK average prediction
+        (session notes, CLAUDE.md, 2026-07-20)."""
+        if self._mfp_count < 1:
+            return 0.0
+        return self.mean_free_path / (self._mfp_count ** 0.5)
+
     def add_point_to_path(self):
         """Add a scattering point to the path"""
         self.path.add_point(self.particle.x, self.particle.y, self.particle.z)

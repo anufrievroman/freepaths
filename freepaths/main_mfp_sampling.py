@@ -99,6 +99,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
     scatter_maps = ScatteringMap()
 
     total_thermal_conductivity = 0.0
+    total_kappa_variance = 0.0
     last_pct = -1
 
     for index in range(cf.number_of_particles):
@@ -126,6 +127,12 @@ def _run_branch(branch_number, shared_list, shared_progress):
         flight.thermal_conductivity = (1 / (6 * math.pi**2)) * c_p * phonon.speed**2 * mean_relax_time * k_vector**2 * d_k_vector
         total_thermal_conductivity += flight.thermal_conductivity
 
+        # This mode's kappa is linear in its mean free path, so its variance
+        # propagates directly through the same proportionality (kappa_i / mfp_i):
+        if flight.mean_free_path > 0:
+            kappa_relative_sem = flight.mean_free_path_sem / flight.mean_free_path
+            total_kappa_variance += (flight.thermal_conductivity * kappa_relative_sem) ** 2
+
         general_stats.save_particle_data(phonon, SimulationMode.PHONON_MFP_SAMPLING)
         general_stats.save_flight_data(flight, SimulationMode.PHONON_MFP_SAMPLING)
 
@@ -135,6 +142,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
     # Push this branch's results to the shared list for the main process to collect:
     shared_list.append({
         'total_thermal_conductivity': total_thermal_conductivity,
+        'total_kappa_variance': total_kappa_variance,
         'scatter_stats': scatter_stats.dump_data(),
         'general_stats': general_stats.dump_data(),
         'segment_stats': segment_stats.dump_data(),
@@ -204,9 +212,11 @@ def main(input_file, mode: SimulationMode):
     path_stats = PathData()
     scatter_maps = ScatteringMap()
     total_thermal_conductivity = 0.0
+    total_kappa_variance = 0.0
 
     for result in shared_list:
         total_thermal_conductivity += result['total_thermal_conductivity']
+        total_kappa_variance += result['total_kappa_variance']
         scatter_stats.read_data(result['scatter_stats'])
         general_stats.read_data(result['general_stats'])
         segment_stats.read_data(result['segment_stats'])
@@ -247,6 +257,21 @@ def main(input_file, mode: SimulationMode):
                np.array([[total_thermal_conductivity, porosity, eucken_factor, effective_thermal_conductivity]]),
                fmt='%2.4e', delimiter=',', header=header, encoding='utf-8')
 
+    # Standard error from the spread of each mode's own free-path segments (see
+    # Flight.mean_free_path_sem) - a lower bound on the total uncertainty, since it
+    # only captures within-mode stochastic noise, not the separate discretization
+    # error from sweeping a finite number of k-points across the dispersion (that
+    # one is assessed by comparing NUMBER_OF_PARTICLES across separate runs).
+    # Kept in its own file rather than appended to "Thermal conductivity from MFP.csv"
+    # since several plotting scripts index into that file positionally (incl. by
+    # [-1] for the last column), which a trailing column would silently break:
+    kappa_sem = total_kappa_variance ** 0.5
+    effective_kappa_sem = kappa_sem * eucken_factor
+    np.savetxt("Data/Thermal conductivity from MFP uncertainty.csv",
+               np.array([[kappa_sem, effective_kappa_sem]]),
+               fmt='%2.4e', delimiter=',',
+               header="K_material SEM [W/mK], K_effective SEM [W/mK]", encoding='utf-8')
+
     sys.stdout.write("\rAnalyzing the data...")
     plot_data(mode, cf)
 
@@ -254,8 +279,8 @@ def main(input_file, mode: SimulationMode):
     output_scattering_information(scatter_stats)
     output_parameter_warnings(mode, general_stats)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
-    sys.stdout.write(f"\rMaterial thermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
+    sys.stdout.write(f"\rMaterial thermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f} ± {kappa_sem:.5f}{Style.RESET_ALL} W/m·K\n")
     if cf.holes:
-        sys.stdout.write(f"\rEffective thermal conductivity = {Fore.GREEN}{effective_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K "
+        sys.stdout.write(f"\rEffective thermal conductivity = {Fore.GREEN}{effective_thermal_conductivity:.5f} ± {effective_kappa_sem:.5f}{Style.RESET_ALL} W/m·K "
                          f"(porosity {porosity:.1%}, Eucken factor {eucken_factor:.3f})\n")
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")
