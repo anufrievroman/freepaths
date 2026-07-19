@@ -9,17 +9,25 @@ from freepaths.config import cf
 from freepaths.materials import get_media_class
 
 
-def output_general_information(start_time):
+def output_general_information(start_time, general_stats, mode):
     """This function outputs the simulation information into the Information.txt file"""
+    from freepaths.options import SimulationMode
     print(f'\rThe simulation took about {int((time.time() - start_time)//60)} min. to run.')
-    travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-    n_total = len(travel_times)
-    percentage = int(100 * np.count_nonzero(travel_times) / n_total) if n_total > 0 else 0
+    n_total = len(general_stats.travel_times)
+    percentage = int(100 * np.count_nonzero(general_stats.travel_times) / n_total) if n_total > 0 else 0
+
+    # In MFP sampling mode, NUMBER_OF_PARTICLES is the count per polarization branch,
+    # not the true total (see materials.py/_run_branch: each branch is a separate
+    # worker looping range(cf.number_of_particles)), so state both explicitly:
+    if mode is SimulationMode.PHONON_MFP_SAMPLING:
+        particles_line = f'\nNumber of particles = {cf.number_of_particles} per branch ({n_total} total)'
+    else:
+        particles_line = f'\nNumber of particles = {cf.number_of_particles}'
 
     info = [
             f'The simulation finished on {time.strftime("%d %B %Y")}, at {time.strftime("%H:%M")}.',
             f'\nIt took about {int((time.time()-start_time)//60)} min to run.\n',
-            f'\nNumber of particles = {cf.number_of_particles}',
+            particles_line,
             f'\nNumber of timesteps = {cf.number_of_timesteps}',
             f'\nLength of a timestep = {cf.timestep} s',
             f'\nTemperature = {cf.temp} K\n',
@@ -136,7 +144,7 @@ def output_scattering_information(scatter_stats):
                             f"mechanism fired simultaneously. Consider reducing TIMESTEP.")
 
 
-def output_parameter_warnings(mode):
+def output_parameter_warnings(mode, general_stats):
     """Check if parameters used for this simulation made sense considering the simulation results"""
 
     from freepaths.options import SimulationMode
@@ -157,9 +165,8 @@ def output_parameter_warnings(mode):
     # Irrelevant in MFP sampling mode, where free paths are measured along the way
     # and reaching the cold side is not required:
     if mode is not SimulationMode.PHONON_MFP_SAMPLING:
-        travel_times = np.loadtxt("Data/All travel times.csv", encoding='utf-8')
-        n_total = len(travel_times)
-        percentage = int(100 * np.count_nonzero(travel_times) / n_total) if n_total > 0 else 0
+        n_total = len(general_stats.travel_times)
+        percentage = int(100 * np.count_nonzero(general_stats.travel_times) / n_total) if n_total > 0 else 0
         if percentage < 95:
             message = f"Only {percentage}% of particles reached the cold side. Increase NUMBER_OF_TIMESTEPS."
             # The timeframe bias only concerns thermal profiles, i.e. phonon tracing mode:

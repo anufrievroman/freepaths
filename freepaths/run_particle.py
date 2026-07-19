@@ -22,7 +22,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             if not cf.low_memory_usage:
                 flight.add_point_to_path()
             flight.save_free_paths()
-            flight.finish(step_number, cf.timestep)
+            flight.finish(step_number, cf.timestep, reached_cold_side=True)
             break
 
         # If the particle reached a hot side, record it and break the loop:

@@ -77,11 +77,15 @@ class Flight:
         self.time_since_previous_scattering = 0.0
         self.free_path = 0.0
 
-    def finish(self, step, timestep):
-        """Finish the flight and record final state"""
+    def finish(self, step, timestep, reached_cold_side=False):
+        """Finish the flight and record final state. travel_time is only set when
+        the particle genuinely reached the cold side - it means "time to cold side",
+        so leaving it at 0 for other exits (e.g. the MFP-sampling scattering-event
+        cap) keeps that meaning intact instead of recording a meaningless duration."""
         self.exit_theta = self.particle.theta
         self.exit_frequency = self.particle.f
-        self.travel_time = step * timestep
+        if reached_cold_side:
+            self.travel_time = step * timestep
 
     def add_step(self, timestep):
         """Increase parameters of the flight by length of one step"""

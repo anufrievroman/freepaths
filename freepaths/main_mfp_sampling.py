@@ -250,9 +250,9 @@ def main(input_file, mode: SimulationMode):
     sys.stdout.write("\rAnalyzing the data...")
     plot_data(mode, cf)
 
-    output_general_information(start_time)
+    output_general_information(start_time, general_stats, mode)
     output_scattering_information(scatter_stats)
-    output_parameter_warnings(mode)
+    output_parameter_warnings(mode, general_stats)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\rMaterial thermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f}{Style.RESET_ALL} W/m·K\n")
     if cf.holes:

@@ -322,11 +322,11 @@ def main(input_file, mode: SimulationMode):
     plot_data(mode, cf)
 
     # Output general information:
-    output_general_information(start_time)
+    output_general_information(start_time, general_stats, mode)
     output_scattering_information(scatter_stats)
     if mode is SimulationMode.ELECTRON:
         output_electron_information(electron_computations)
-    output_parameter_warnings(mode)
+    output_parameter_warnings(mode, general_stats)
 
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     sys.stdout.write(f"\r{Fore.BLUE}Thank you for using FreePATHS{Style.RESET_ALL}\n\n")
