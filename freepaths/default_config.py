@@ -29,7 +29,22 @@ ENERGY_UPPER_BOUND               = 350e-3
 ENERGY_LOWER_BOUND               = 0
 ENERGY_STEP                      = 5e-3
 
-ELECTRON_MFP                     = 10e-9 # [m]
+ELECTRON_MFP                     = 10e-9 # [m] crystal (acoustic-phonon-limited) MFP, energy-independent
+# Ionized-impurity scattering: if DOPING_CONCENTRATION > 0, the MFP becomes energy-
+# and doping-dependent via Matthiessen's rule, 1/Lambda_tot(E) = 1/ELECTRON_MFP +
+# 1/Lambda_ii(E), where Lambda_ii is the Brooks-Herring contribution from N_I ionized
+# dopants (screened Coulomb scattering). This shortens the MFP with doping and raises
+# the Seebeck coefficient. 0 -> pure crystal MFP.
+DOPING_CONCENTRATION             = 0.0   # [m^-3] ionized-impurity (dopant) concentration N_I
+# Surface depletion of carriers: with SURFACE_POTENTIAL > 0, a dead layer of width
+# W = sqrt(2*eps_s*phi_s/(e*N_D)) (abrupt-junction depletion) is excluded around every
+# free surface (walls, top/bottom, hole edges) for CARRIERS ONLY. phi_s is the surface
+# band bending set by Fermi-level pinning at the native oxide / surface states. Needs
+# DOPING_CONCENTRATION and the material dielectric constant. 0 -> no depletion.
+SURFACE_POTENTIAL                = 0.0   # [eV] surface band bending phi_s (0 = off)
+# Legacy phenomenological energy dependence (only used when DOPING_CONCENTRATION = 0):
+# Lambda(E) = ELECTRON_MFP * (E/kT)^p.  p=0 -> constant; p=2 -> ionized-impurity-like.
+ELECTRON_MFP_ENERGY_EXPONENT     = 0.0
 MEAN_MAPPING_CONSTANT            = 5e-6 # [m²]
 
 FERMI_LEVEL_LOWER_BOUND          = -0.2  # [eV] lower end of post-processing Fermi level sweep

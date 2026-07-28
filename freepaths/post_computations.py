@@ -5,6 +5,7 @@ from scipy.integrate import simpson
 from freepaths.data import GeneralData
 from freepaths.materials import get_media_class
 from freepaths.config import cf
+from freepaths.electron import electron_mfp
 
 class ElectronPostComputation:
     """Handle computations for electrons"""
@@ -89,8 +90,8 @@ class ElectronPostComputation:
         self.mean_travel_times = np.column_stack((self.energies_unique, means))
 
     def compute_bte_tdf(self):
-        """Compute analytical BTE TDF for pristine material with constant MFP"""
-        mfp = cf.electron_mfp
+        """Compute analytical BTE TDF (constant or energy-dependent MFP)"""
+        mfp = electron_mfp(self.energies_unique, self.material)   # constant, or energy/doping-dependent
         # From BTE: Ξ_BTE = (1/3)τv²g; the 1/3 is the 3D angular average ⟨v_x²/v²⟩; with τ = mfp/v: Ξ_BTE = (mfp/3)·v(E)·g(E)
         self.bte_tdf = np.column_stack((self.energies_unique, (mfp/3) * (2*self.energies_unique/(self.effective_conduction_mass))**0.5 * self.density_of_states))
 
@@ -167,9 +168,9 @@ class ElectronPostComputation:
         self.mc_zt = np.column_stack((self.fermi_levels, zt))
 
     def compute_relaxation_time(self):
-        # τ(E) = mfp / v(E): relaxation time from constant MFP and parabolic-band group velocity
+        # τ(E) = mfp(E) / v(E): relaxation time from the (possibly energy-dependent) MFP and parabolic-band group velocity
         self.speeds = ((2 * self.energies_unique) / (self.effective_conduction_mass)) ** 0.5
-        self.relaxation_times = cf.electron_mfp / self.speeds
+        self.relaxation_times = electron_mfp(self.energies_unique, self.material) / self.speeds
         self.relaxation_times = np.column_stack((self.energies_unique, self.relaxation_times))
 
     def write_into_file(self):

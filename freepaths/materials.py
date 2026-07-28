@@ -243,6 +243,7 @@ class Si(Material):
         self.effective_hole_dos_mass = 0.81 * electron_mass
         self.effective_electron_mass = 0.26 * electron_mass
         self.effective_hole_mass = 0.23 * electron_mass # light hole
+        self.dielectric_constant = 11.7  # static relative permittivity of Si (for Brooks-Herring ionized-impurity scattering)
 
         if fermi_level:
             self.fermi_level = fermi_level

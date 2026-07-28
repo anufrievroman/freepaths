@@ -14,7 +14,7 @@ from colorama import Fore, Style
 # Modules:
 from freepaths.config import cf
 from freepaths.run_particle import run_particle
-from freepaths.electron import Electron
+from freepaths.electron import Electron, depletion_width
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.options import SimulationMode
@@ -49,6 +49,9 @@ class ParticleSimulator:
         else:
             logging.error(f"Material {cf.media} is not supported")
             sys.exit()
+
+        # Carrier surface-depletion dead-layer width (0 unless SURFACE_POTENTIAL and doping are set):
+        cf.depletion_width = depletion_width(self.material)
 
         # Save some general information about the process:
         self.worker_id = worker_id

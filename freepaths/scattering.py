@@ -10,6 +10,7 @@ from math import sqrt
 from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_primitives import *
+from freepaths.options import ParticleType
 
 
 def internal_scattering(pt, flight, scattering_types):
@@ -42,15 +43,15 @@ def reinitialization(pt, scattering_types):
     return False
 
 
-def scattering_on_right_sidewall(pt, scattering_types, x, y, z):
-    """Scatter particle if it reached right side wall"""
-    if x > cf.width / 2:
+def scattering_on_right_sidewall(pt, scattering_types, x, y, z, depletion=0.0):
+    """Scatter particle if it reached right side wall (inset by the carrier dead layer)"""
+    if x > cf.width / 2 - depletion:
         scattering_types.walls = vertical_surface_left_scattering(pt, cf.side_wall_roughness, cf)
 
 
-def scattering_on_left_sidewall(pt, scattering_types, x, y, z):
-    """Scatter particle if it reached left side wall"""
-    if x < -cf.width / 2:
+def scattering_on_left_sidewall(pt, scattering_types, x, y, z, depletion=0.0):
+    """Scatter particle if it reached left side wall (inset by the carrier dead layer)"""
+    if x < -cf.width / 2 + depletion:
         scattering_types.walls = vertical_surface_right_scattering(pt, cf.side_wall_roughness, cf)
 
 
@@ -66,15 +67,15 @@ def scattering_on_bottom_sidewall(pt, scattering_types, x, y, z):
         scattering_types.walls = horizontal_surface_up_scattering(pt, cf.side_wall_roughness)
 
 
-def floor_scattering(pt, scattering_types, x, y, z):
-    """Check if the particle hits the floor surface and calculate new angles"""
-    if z < -cf.thickness / 2:
+def floor_scattering(pt, scattering_types, x, y, z, depletion=0.0):
+    """Check if the particle hits the floor surface (inset by the carrier dead layer)"""
+    if z < -cf.thickness / 2 + depletion:
         scattering_types.top_bottom = in_plane_surface_scattering(pt, cf.top_roughness)
 
 
-def ceiling_scattering(pt, scattering_types, x, y, z):
-    """Check if the particle hits the ceiling surface and if this place has a pillar and output new vector"""
-    if z <= cf.thickness / 2:
+def ceiling_scattering(pt, scattering_types, x, y, z, depletion=0.0):
+    """Check if the particle hits the ceiling surface (inset by the carrier dead layer) and if this place has a pillar and output new vector"""
+    if z <= cf.thickness / 2 - depletion:
         return
     if cf.pillars:
         for pillar in cf.pillars:
@@ -100,25 +101,29 @@ def surface_scattering(pt, scattering_types, triangle_scattering_places):
     # Preliminary move to see if particle would cross something:
     x, y, z = move(pt, cf.timestep)
 
-    # Scattering on top and bottom surfaces:
-    ceiling_scattering(pt, scattering_types, x, y, z)
-    floor_scattering(pt, scattering_types, x, y, z)
+    # Carrier surface-depletion dead layer: carriers (electrons/holes) are excluded within
+    # `depletion` of every free surface. Phonons are unaffected (gated on particle type).
+    depletion = cf.depletion_width if pt.type is ParticleType.ELECTRON else 0.0
 
-    # Scattering on sidewalls:
+    # Scattering on top and bottom surfaces:
+    ceiling_scattering(pt, scattering_types, x, y, z, depletion)
+    floor_scattering(pt, scattering_types, x, y, z, depletion)
+
+    # Scattering on sidewalls (the y-ends are hot/cold contacts, so they are not depleted):
     if cf.include_right_sidewall:
-        scattering_on_right_sidewall(pt, scattering_types, x, y, z)
+        scattering_on_right_sidewall(pt, scattering_types, x, y, z, depletion)
     if cf.include_left_sidewall:
-        scattering_on_left_sidewall(pt, scattering_types, x, y, z)
+        scattering_on_left_sidewall(pt, scattering_types, x, y, z, depletion)
     if cf.include_top_sidewall:
         scattering_on_top_sidewall(pt, scattering_types, x, y, z)
     if cf.include_bottom_sidewall:
         scattering_on_bottom_sidewall(pt, scattering_types, x, y, z)
 
-    # Scattering on holes:
+    # Scattering on holes (hole boundary inflated by the dead layer for carriers):
     if cf.holes:
         # Check for each hole and each hole type:
         for hole in cf.holes:
-            if hole.is_inside(x, y, z, cf):
+            if hole.is_inside_depleted(x, y, z, cf, depletion):
                 hole.scatter(pt, scattering_types, x, y, z, cf)
 
             # If there was any scattering, then no need to check rest of the holes:

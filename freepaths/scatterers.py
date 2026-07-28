@@ -29,6 +29,12 @@ class Hole:
         """
         pass
 
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Whether (x, y, z) is inside the hole or within `depletion` of its boundary,
+        i.e. inside the carrier dead layer (surface-depletion model). Default: no dead
+        layer (ignores depletion). Shapes that support it (e.g. CircularHole) override."""
+        return self.is_inside(x, y, z, cf)
+
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """
         Calculate the new direction after scattering on the hole.
@@ -55,6 +61,11 @@ class CircularHole(Hole):
     def is_inside(self, x, y, z, cf):
         """Check if particle with given coordinates traverses the boundary"""
         radius = self.diameter / 2
+        return (x - self.x0) ** 2 + (y - self.y0) ** 2 <= radius**2
+
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Circular hole boundary inflated outward by the carrier depletion width."""
+        radius = self.diameter / 2 + depletion
         return (x - self.x0) ** 2 + (y - self.y0) ** 2 <= radius**2
 
     def scatter(self, pt, scattering_types, x, y, z, cf):
