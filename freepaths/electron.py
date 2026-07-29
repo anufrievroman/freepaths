@@ -17,12 +17,17 @@ def _carrier_dos_mass(material):
 def depletion_width(material):
     """Surface-depletion (dead-layer) width for carriers, from the abrupt-junction
     depletion approximation W = sqrt(2*eps_s*phi_s/(e*N_D)), with phi_s = SURFACE_POTENTIAL
-    the surface band bending (eV, used as volts), N_D = DOPING_CONCENTRATION the doping,
-    and eps_s the static permittivity of the material. Carriers are excluded within W of
-    every free surface (Fermi-level pinning by surface states / native oxide). Returns 0
-    if there is no doping or no surface potential. Reference: any semiconductor-device text
-    (e.g. Sze), surface-depletion / dead-layer model for nanostructure conductivity."""
-    N_I = cf.doping_concentration
+    the surface band bending (eV, used as volts), N_D the doping, and eps_s the static
+    permittivity of the material. Carriers are excluded within W of every free surface
+    (Fermi-level pinning by surface states / native oxide). Returns 0 if there is no
+    doping or no surface potential. Reference: any semiconductor-device text (e.g. Sze),
+    surface-depletion / dead-layer model for nanostructure conductivity.
+
+    N_D is DEPLETION_DOPING if set, otherwise DOPING_CONCENTRATION. The separate
+    DEPLETION_DOPING lets the dead layer be driven by the real doping WITHOUT also
+    engaging the Brooks-Herring ionized-impurity MFP (which keys off DOPING_CONCENTRATION),
+    i.e. to isolate the depletion effect on top of a constant-MFP transport calibration."""
+    N_I = cf.depletion_doping if cf.depletion_doping else cf.doping_concentration
     phi = cf.surface_potential
     eps_r = getattr(material, 'dielectric_constant', None)
     if not N_I or phi <= 0 or not eps_r:

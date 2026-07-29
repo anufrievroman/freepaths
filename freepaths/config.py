@@ -73,6 +73,7 @@ class Config:
         self.electron_mfp = ELECTRON_MFP
         self.doping_concentration = DOPING_CONCENTRATION
         self.surface_potential = SURFACE_POTENTIAL
+        self.depletion_doping = DEPLETION_DOPING   # doping for the dead-layer width only (falls back to DOPING_CONCENTRATION)
         self.depletion_width = 0.0   # [m] carrier dead-layer width; set from the material at simulation start
         self.electron_mfp_energy_exponent = ELECTRON_MFP_ENERGY_EXPONENT
         self.mean_mapping_constant = MEAN_MAPPING_CONSTANT

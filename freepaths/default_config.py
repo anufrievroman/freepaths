@@ -40,8 +40,14 @@ DOPING_CONCENTRATION             = 0.0   # [m^-3] ionized-impurity (dopant) conc
 # W = sqrt(2*eps_s*phi_s/(e*N_D)) (abrupt-junction depletion) is excluded around every
 # free surface (walls, top/bottom, hole edges) for CARRIERS ONLY. phi_s is the surface
 # band bending set by Fermi-level pinning at the native oxide / surface states. Needs
-# DOPING_CONCENTRATION and the material dielectric constant. 0 -> no depletion.
+# a doping (DEPLETION_DOPING or DOPING_CONCENTRATION) and the material dielectric
+# constant. 0 -> no depletion.
 SURFACE_POTENTIAL                = 0.0   # [eV] surface band bending phi_s (0 = off)
+# Doping used ONLY for the depletion-width formula. If 0/None it falls back to
+# DOPING_CONCENTRATION. Set this (and leave DOPING_CONCENTRATION = 0) to add a surface
+# dead layer from the real doping WITHOUT engaging Brooks-Herring, i.e. to isolate the
+# depletion effect on top of a constant-MFP transport calibration.
+DEPLETION_DOPING                 = 0.0   # [m^-3] dopant concentration for the dead-layer width only
 # Legacy phenomenological energy dependence (only used when DOPING_CONCENTRATION = 0):
 # Lambda(E) = ELECTRON_MFP * (E/kT)^p.  p=0 -> constant; p=2 -> ionized-impurity-like.
 ELECTRON_MFP_ENERGY_EXPONENT     = 0.0
