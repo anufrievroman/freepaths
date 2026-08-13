@@ -108,6 +108,13 @@ class RectangularHole(Hole):
         else:
             return (abs(x - self.x0) <= self.size_x / 2) and (abs(y - self.y0) <= self.size_y / 2)
 
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Rectangle boundary inflated outward by the carrier depletion width."""
+        hx = self.size_x / 2 + depletion
+        hy = self.size_y / 2 + depletion
+        if self.depth and z:
+            return (abs(x - self.x0) <= hx) and (abs(y - self.y0) <= hy) and (z > cf.thickness / 2 - self.depth - depletion)
+        return (abs(x - self.x0) <= hx) and (abs(y - self.y0) <= hy)
 
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
@@ -161,6 +168,13 @@ class TriangularUpHole(Hole):
         return ((self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
                 and (abs(y - self.y0) < self.size_y / 2))
 
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Up-triangle boundary offset outward by the carrier depletion width: the two
+        slanted edges are offset by depletion/sin(beta) and the base by depletion."""
+        beta = atan(0.5 * self.size_x / self.size_y)
+        return ((self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta) + depletion / math.sin(beta))
+                and (abs(y - self.y0) < self.size_y / 2 + depletion))
+
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
 
@@ -205,6 +219,13 @@ class TriangularDownHole(Hole):
         beta = atan(0.5 * self.size_x / self.size_y)
         return ((self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
                 and (abs(y - self.y0) < self.size_y / 2))
+
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Down-triangle boundary offset outward by the carrier depletion width: the two
+        slanted edges are offset by depletion/sin(beta) and the top base by depletion."""
+        beta = atan(0.5 * self.size_x / self.size_y)
+        return ((self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta) + depletion / math.sin(beta))
+                and (abs(y - self.y0) < self.size_y / 2 + depletion))
 
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
@@ -252,6 +273,17 @@ class TriangularDownHalfHole(Hole):
         else:
            return ((self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
             and (abs(y - self.y0) < self.size_y / 2) and (x < self.x0))
+
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Down half-triangle boundary offset outward by the carrier depletion width.
+        The slant is offset by depletion/sin(beta), the top base by depletion, and the
+        flat vertical cut at x0 (also a hole surface) by depletion."""
+        beta = atan(0.5 * self.size_x / self.size_y)
+        slant = (self.size_y / 2 - (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta) + depletion / math.sin(beta))
+        band = abs(y - self.y0) < self.size_y / 2 + depletion
+        if self.is_right_half:
+            return slant and band and (x > self.x0 - depletion)
+        return slant and band and (x < self.x0 + depletion)
 
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
@@ -343,6 +375,17 @@ class TriangularUpHalfHole(Hole):
             return ((self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta))
                     and (abs(y - self.y0) < self.size_y / 2) and (x < self.x0))
 
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Up half-triangle boundary offset outward by the carrier depletion width.
+        The slant is offset by depletion/sin(beta), the base by depletion, and the
+        flat vertical cut at x0 (also a hole surface) by depletion."""
+        beta = atan(0.5 * self.size_x / self.size_y)
+        slant = (self.size_y / 2 + (y - self.y0) <= (self.size_x / 2 - abs(x - self.x0)) / tan(beta) + depletion / math.sin(beta))
+        band = abs(y - self.y0) < self.size_y / 2 + depletion
+        if self.is_right_half:
+            return slant and band and (x > self.x0 - depletion)
+        return slant and band and (x < self.x0 + depletion)
+
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
 
@@ -432,6 +475,12 @@ class PointLineHole(Hole):
         """Check if particle with given coordinates traverses the boundary"""
         distance, _ = self.tree.query((x, y))
         return distance < self.thickness / 2
+
+    def is_inside_depleted(self, x, y, z, cf, depletion):
+        """Curve half-width inflated outward by the carrier depletion width.
+        Inherited by FunctionLineHole."""
+        distance, _ = self.tree.query((x, y))
+        return distance < self.thickness / 2 + depletion
 
     def scatter(self, pt, scattering_types, x, y, z, cf):
         """Calculate the new direction after scattering on the hole"""
@@ -775,12 +824,6 @@ class RectangularBulk(Bulk):
             mat_in,  mat_out = self.material,   cf.materials[0]   # inside: Ge -> outside: Si
         else:
             mat_in,  mat_out = cf.materials[0], self.material     # inside: Si -> outside: Ge
-
-        # *** DEBUG PRINT  ***
-        z_str = f"{pt.z:.3e}" if getattr(pt, "z", None) is not None else "None"
-        print(f"[BULK] inside={inside0}  mat_in={getattr(mat_in,'name','?')}  "
-            f"mat_out={getattr(mat_out,'name','?')}  x={pt.x:.3e} y={pt.y:.3e} z={z_str}",
-            flush=True)
 
         # --- left side ---
         if abs(y1) <= self.size_y/2 + eps and x < self.x0:
