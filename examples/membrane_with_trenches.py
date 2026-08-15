@@ -25,8 +25,6 @@ MEDIA                          = 'Si'
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
-USE_GRAY_APPROXIMATION_MFP     = False
-GRAY_APPROXIMATION_MFP         = None
 
 # System dimensions [m]:
 THICKNESS                      = 300e-9

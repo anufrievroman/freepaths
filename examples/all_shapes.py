@@ -32,8 +32,6 @@ MEDIA                          = 'Si'
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
-USE_GRAY_APPROXIMATION_MFP     = False
-GRAY_APPROXIMATION_MFP         = None
 
 # Particle source:
 PARTICLE_SOURCES               = [Source(x=-WIDTH/2, y=LENGTH/2, z=0, size_x=0,  size_y=500e-9, size_z=THICKNESS, angle_distribution="random", angle=np.pi/2)]

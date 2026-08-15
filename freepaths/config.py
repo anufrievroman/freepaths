@@ -98,10 +98,6 @@ class Config:
 
         # Internal scattering:
         self.include_internal_scattering = INCLUDE_INTERNAL_SCATTERING
-        self.use_gray_approximation_mfp = USE_GRAY_APPROXIMATION_MFP
-        self.gray_approximation_mfp = GRAY_APPROXIMATION_MFP
-        self.sample_from_dispersion = SAMPLE_FROM_DISPERSION
-        self.rethermalize_inelastic_scattering = RETHERMALIZE_INELASTIC_SCATTERING
         self.use_dispersion_heat_capacity = USE_DISPERSION_HEAT_CAPACITY
         self.max_number_of_scattering_events = MAX_NUMBER_OF_SCATTERING_EVENTS
         self.grain_size = GRAIN_SIZE

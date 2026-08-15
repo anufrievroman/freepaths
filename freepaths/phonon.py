@@ -3,7 +3,7 @@
 from math import pi, exp, log
 from random import random, choice
 from numpy import sign
-from scipy.constants import k, hbar, h
+from scipy.constants import h
 import numpy as np
 
 from freepaths.config import cf
@@ -71,54 +71,13 @@ class Phonon(Particle):
 
     def assign_frequency(self, material):
         """
-        Assign branch and frequency for phonon tracing mode. Uses the pre-tabulated,
-        dispersion-weighted cumulative probabilities by default (see Material.assign_phonon_sampling_tables); falls back to a
-        branch-blind Debye-Planck rejection sampling under the gray approximation or
-        when SAMPLE_FROM_DISPERSION is off, both of which treat the 3 branches as
-        identical.
+        Assign branch and frequency for phonon tracing mode by inverse sampling of the
+        pre-tabulated, dispersion-weighted cumulative probabilities
+        (see Material.assign_phonon_sampling_tables). Particles are equal-energy bundles
+        of deviational energy, so the source emits with the heat-capacity weight C(w),
+        consistent with rethermalize().
         """
-        if cf.sample_from_dispersion and not cf.use_gray_approximation_mfp:
-            # Particles are equal-energy bundles of deviational energy, so the source
-            # emits with the heat-capacity weight C(w), consistent with rethermalize():
-            self.draw_from_table(material, material.emission_branch_probabilities, material.emission_frequency_probabilities)
-        else:
-            self.assign_debye_frequency(material)
-
-    def assign_debye_frequency(self, material):
-        """
-        Legacy/gray path: pick a branch uniformly at random (the lumped Debye model
-        below treats all 3 branches as identical) and draw a frequency via rejection
-        sampling from the Planck distribution, weighted by the Debye density of states.
-        """
-        # Branch is not weighted here since the Debye model below is branch-blind
-        self.branch_number = choice(range(3))
-        self.f_max = max(material.dispersion[:, self.branch_number + 1])
-
-        # Frequency of the peak of the Plank distribution:
-        f_peak = material.default_speed/(2*pi*hbar*material.default_speed/(2.82*k*cf.temp))
-
-        # Density of states for f_max in Debye approximation:
-        dos_max = 3*((2*pi*f_peak)**2)/(2*(pi**2)*(material.default_speed**3))
-
-        # Bose-Einstein distribution for f_max:
-        bose_einstein_max = 1/(exp((hbar*2*pi*f_peak)/(k*cf.temp)) - 1)
-
-        # Peak of the distribution (needed for normalization)
-        plank_distribution_max = dos_max*hbar*2*pi*f_peak*bose_einstein_max
-
-        while True:
-            # Draw a candidate frequency in the 0 - 5*f_peak range
-            self.f = f_peak*5*random()
-            # Density of states in Debye approximation
-            dos = 3*((2*pi*self.f)**2)/(2*(pi**2)*(material.default_speed**3))
-            # Bose-Einstein distribution at this frequency
-            bose_einstein = 1/(exp((hbar*2*pi*self.f)/(k*cf.temp))-1)
-            # Planck distribution at this frequency
-            plank_distribution = dos*hbar*2*pi*self.f*bose_einstein
-
-            # Accept the candidate with probability proportional to the normalized distribution
-            if random() < plank_distribution/plank_distribution_max and self.f < self.f_max:
-                break
+        self.draw_from_table(material, material.emission_branch_probabilities, material.emission_frequency_probabilities)
 
     def draw_from_table(self, material, branch_probabilities, frequency_probabilities):
         """
@@ -193,13 +152,10 @@ class Phonon(Particle):
 
     def assign_internal_scattering_time(self, material):
         """Determine relaxation time after which this phonon will undergo internal scattering"""
-        if cf.use_gray_approximation_mfp:
-            self.time_of_internal_scattering = cf.gray_approximation_mfp / self.speed
-        else:
-            # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
-            omega = 2 * pi * self.f
-            total_rate = 1 / material.phonon_relaxation_time(omega) + self._grain_boundary_rate()
-            self.time_of_internal_scattering = -log(random()) / total_rate
+        # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
+        omega = 2 * pi * self.f
+        total_rate = 1 / material.phonon_relaxation_time(omega) + self._grain_boundary_rate()
+        self.time_of_internal_scattering = -log(random()) / total_rate
 
     def move(self):
         """Move a phonon in one timestep and return new coordinates"""

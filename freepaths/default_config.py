@@ -75,27 +75,17 @@ MEDIA_FERMI_LEVEL                = None
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING      = True
-USE_GRAY_APPROXIMATION_MFP       = False
-GRAY_APPROXIMATION_MFP           = None
 
-# Sample phonon frequencies and branches from the tabulated dispersion
-# (weight k^2 dk per bin, heat capacity weighting, group velocity weighting at
-# the source) instead of the legacy Debye-approximation rejection sampling.
-# The particles are then equal-energy bundles and the thermal maps record a
-# constant weight per phonon instead of h*w:
-SAMPLE_FROM_DISPERSION           = True
-
-# Re-draw phonon branch and frequency at inelastic (anharmonic) internal
-# scattering events from the collision-rate-weighted distribution (Peraud &
-# Hadjiconstantinou, PRB 84, 205331 (2011)). This restores local thermal
-# equilibrium of the phonon population, which is required for correct
-# Fourier-law thermal conductivity when internal scattering dominates (e.g.
-# bulk-like structures at room temperature). Elastic internal events
-# (impurity/alloy scattering) never rethermalize: they conserve the mode and
-# only randomize the direction (see Material.phonon_scattering_rates).
-# Applies only to the phonon tracing mode; MFP sampling and electron modes
-# keep the particle identity by construction.
-RETHERMALIZE_INELASTIC_SCATTERING = True
+# Phonon frequencies and branches are always sampled from the tabulated dispersion
+# (weight k^2 dk per bin, heat-capacity weighting, group-velocity weighting at the
+# source), so particles are equal-energy deviational bundles and the thermal maps
+# record a constant weight per phonon. At inelastic (anharmonic) internal scattering
+# events the branch and frequency are re-drawn from the collision-rate-weighted
+# distribution (Peraud & Hadjiconstantinou, PRB 84, 205331 (2011)), restoring local
+# thermal equilibrium of the phonon population. Elastic internal events (impurity/alloy
+# scattering) conserve the mode and only randomize the direction. This applies to the
+# phonon tracing mode; MFP sampling and electron modes keep the particle identity by
+# construction.
 
 # Convert deposited particle energy into the temperature profile using the
 # dispersion-only heat capacity (Material.dispersion_heat_capacity, summed only

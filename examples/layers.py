@@ -29,8 +29,6 @@ MEAN_MAPPING_CONSTANT          = 1e-6  # [m²] calibration constant; tune agains
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
-USE_GRAY_APPROXIMATION_MFP     = False
-GRAY_APPROXIMATION_MFP         = None
 
 RETHERMALIZATION_ON_HOT_SIDES = True
 

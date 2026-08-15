@@ -63,12 +63,10 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             # distribution. An elastic (impurity) internal event conserves the mode —
             # the direction randomization already applied above is all it does.
             # Applied only in the phonon tracing mode: in the MFP sampling mode each
-            # phonon must keep its mode identity. Not applied in the gray approximation:
+            # phonon must keep its mode identity.
             if (scattering_types.is_internal
-                    and cf.rethermalize_inelastic_scattering
                     and particle.type is ParticleType.PHONON
                     and mode is SimulationMode.PHONON_TRACING
-                    and not cf.use_gray_approximation_mfp
                     and particle.internal_event_is_inelastic(material)):
                 particle.rethermalize(material)
             particle.assign_internal_scattering_time(material)

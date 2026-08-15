@@ -29,8 +29,6 @@ MEDIA                          = "Si"
 
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING    = True
-USE_GRAY_APPROXIMATION_MFP     = False
-GRAY_APPROXIMATION_MFP         = 200e-9
 
 
 # Particle source:

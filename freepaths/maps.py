@@ -1,7 +1,7 @@
 """Module that controls recording, calculation, and saving thermal and scattering maps"""
 
 from math import cos, sin
-from scipy.constants import hbar, pi, k as k_B
+from scipy.constants import k as k_B
 import numpy as np
 from freepaths.config import cf
 from freepaths.options import SimulationMode
@@ -153,14 +153,11 @@ class ThermalMaps(Maps):
                 return
 
             # Record energy [J] and heat flux [W/s/m^2] of this phonon into the pixel of thermal map.
-            # With rethermalization, particles are equal-energy bundles (Peraud & Hadjiconstantinou,
+            # Particles are equal-energy deviational bundles (Peraud & Hadjiconstantinou,
             # PRB 84, 205331 (2011)): the deposited weight must not depend on the current frequency,
             # so that the ensemble energy is conserved when frequencies are re-drawn. The absolute
             # value cancels in the thermal conductivity; k_B*T is used as a natural scale.
-            if cf.sample_from_dispersion:
-                energy = k_B * cf.temp
-            else:
-                energy = hbar * 2 * pi * pt.f
+            energy = k_B * cf.temp
             self.thermal_map[index_y, index_x] += energy
             self.heat_flux_map_x[index_y, index_x] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
