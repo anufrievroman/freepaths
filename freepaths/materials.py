@@ -236,6 +236,35 @@ class Material(ABC):
             total += np.sum(dos * mode_heat_capacity)
         self.dispersion_heat_capacity = total
 
+    def ballistic_conductance(self):
+        """
+        Landauer ballistic thermal conductance per unit cross-sectional area [W/m^2/K]:
+            G = (1/4) sum_branches int (d^3k / (2 pi)^3) v(w) C(w),
+        where C(w) = hbar*w * df_eq/dT is the mode heat capacity and the 1/4 is the
+        isotropic forward-flux projection <v_x * Theta(v_x)> = v/4. This is Huang et al.,
+        Nat. Commun. 14, 2044 (2023), Eq. 1 (their v * hbar*w * df/dT integrand). It
+        depends only on the dispersion (no scattering), so it is the conductance the
+        structure would have if transport were purely ballistic. The ratio
+        kappa / G_ballistic has units of length (an effective mean free path); its RISE
+        with temperature is the phonon-Poiseuille (hydrodynamic) criterion, because the
+        graphite ballistic conductance grows more slowly with T than kappa does when
+        momentum-conserving Normal scattering dominates.
+        """
+        k_vec = self.dispersion[:, 0]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        total = 0.0
+        for branch in range(1, self.dispersion.shape[1]):
+            freqs = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            group_velocity = 2 * pi * np.abs(np.diff(self.dispersion[:, branch])) / d_k
+            valid = freqs > 0
+            omegas = 2 * pi * freqs[valid]
+            x = hbar * omegas / (k_B * self.temp)
+            mode_heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
+            dos = k_mid[valid]**2 * d_k[valid] / (2 * pi**2)
+            total += np.sum(dos * mode_heat_capacity * group_velocity[valid]) / 4.0
+        return total
+
 
 class Si(Material):
     """
