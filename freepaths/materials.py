@@ -32,6 +32,22 @@ class Material(ABC):
         """
         return 1 / self.phonon_relaxation_time(omega), 0.0
 
+    def phonon_normal_rate(self, omega):
+        """
+        Normal (momentum-conserving) three-phonon scattering rate [1/s] at angular
+        frequency omega. N-processes keep all three phonons inside the first Brillouin
+        zone and conserve total crystal momentum hbar*q, so they are NON-resistive:
+        they redistribute momentum among modes rather than destroying it. They are
+        therefore deliberately EXCLUDED from phonon_relaxation_time and the kappa_RTA
+        integral. Adding 1/tau_N to the Matthiessen sum and randomizing direction at
+        the event would make N a second Umklapp, add fake resistance, and underestimate
+        kappa at low T. This rate is consumed only by the hydrodynamic tracing path
+        (cf.phonon_hydrodynamic), which at an N-event resamples the outgoing mode from
+        the drifting Bose-Einstein distribution (conserving the local crystal momentum)
+        instead of rethermalizing isotropically. Default: 0 (no N model, pure RTA).
+        """
+        return 0.0
+
     @abstractmethod
     def assign_heat_capacity(self):
         """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
@@ -66,6 +82,51 @@ class Material(ABC):
         d_omega = 2 * pi * abs(f_branch[point_num + 1] - f_branch[point_num])
         d_k = abs(self.dispersion[point_num + 1, 0] - self.dispersion[point_num, 0])
         return d_omega / d_k
+
+    def wavevector(self, branch_number, f):
+        """
+        Wavevector magnitude k [1/m] at ordinary frequency f [Hz] on the given branch,
+        read from the tabulated point closest to f (nearest-point search, like
+        group_velocity, since some branches are non-monotonic in f). Used to reconstruct
+        the per-bundle crystal momentum hbar*k for the hydrodynamic drift map.
+        """
+        f_branch = self.dispersion[:, branch_number + 1]
+        nearest = np.abs(f_branch - f).argmin()
+        return self.dispersion[nearest, 0]
+
+    def mean_inverse_phase_velocity_sq(self):
+        """
+        Heat-capacity-weighted average of (k/omega)^2 = 1/v_phase^2 over all tabulated
+        dispersion modes [s^2/m^2], = sum(DOS*C*(k/omega)^2) / sum(DOS*C). This is the
+        material constant that converts the recorded crystal-momentum density into a
+        drift velocity in the linearized (small-drift) displaced-Bose-Einstein picture:
+        the crystal momentum density is P = chi*u with chi = (T/3) sum(DOS*C*(k/omega)^2),
+        and the deviational energy density is e = C_v*T with C_v = sum(DOS*C)
+        (dispersion_heat_capacity), so
+            u = 3 * (P / e) / <(k/omega)^2>_C ,
+        with T, volume and sample count cancelling. Dominated by the slow, large-k/omega
+        modes (the quadratic ZA branch), consistent with the flexural branch carrying the
+        phonon hydrodynamics. Cached after the first call.
+        """
+        if getattr(self, "_mean_inv_vp2", None) is not None:
+            return self._mean_inv_vp2
+        k_vec = self.dispersion[:, 0]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        numerator = 0.0
+        denominator = 0.0
+        for branch in range(1, self.dispersion.shape[1]):
+            freqs = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            valid = freqs > 0
+            omegas = 2 * pi * freqs[valid]
+            x = hbar * omegas / (k_B * self.temp)
+            mode_heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
+            dos = k_mid[valid]**2 * d_k[valid]
+            inv_vp2 = (k_mid[valid] / omegas)**2
+            numerator += np.sum(dos * mode_heat_capacity * inv_vp2)
+            denominator += np.sum(dos * mode_heat_capacity)
+        self._mean_inv_vp2 = numerator / denominator
+        return self._mean_inv_vp2
 
     def assign_phonon_sampling_tables(self):
         """
@@ -380,22 +441,54 @@ class Graphite(Material):
 
         coefficients_LA = [-1.24989e-18, -4.11304e-08, 3640.918, 0]
         coefficients_TA = [-1.52298e-18, -4.72535e-08, 2304.367, 0]
-        coefficients_ZA = [-3.50255e-18, 1.114371e-07, 106.8250, 0]
 
         self.dispersion = np.zeros((num_points, 4))
         self.dispersion[:, 0] = np.linspace(0, 14500000000, num_points)  # Wavevectors
         self.dispersion[:, 1] = np.abs(np.polyval(coefficients_LA, self.dispersion[:, 0]))  # LA branch
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
-        self.dispersion[:, 3] = np.abs(np.polyval(coefficients_ZA, self.dispersion[:, 0]))  # ZA branch
+
+        # ZA (flexural) branch: quadratic near Gamma, omega = b_ZA * k^2 (Nihira & Iwata
+        # semicontinuum model via Alofi & Srivastava, PRB 87, 115421 (2013), Eqs. 5/13;
+        # bending parameter b = 3.13e-3 cm^2/s = 3.13e-7 m^2/s). Stored as ordinary
+        # frequency f = omega / 2pi. The group velocity v_g = dw/dk = 2*b_ZA*k then rises
+        # linearly from zero, matching the reference (their Fig. 3). The previous
+        # polynomial fit was LINEAR in k as k->0 (v_g -> const, finite), which misses the
+        # quadratic flexural dispersion whose vanishing velocity and large low-omega
+        # density of states carry the phonon hydrodynamics; see CLAUDE.md.
+        b_ZA = 3.13e-7  # [m^2/s]
+        self.dispersion[:, 3] = b_ZA * self.dispersion[:, 0] ** 2 / (2 * pi)  # ZA branch [Hz]
+
+    # Three-phonon anharmonic rate parameters, Alofi & Srivastava, PRB 87, 115421
+    # (2013), Eq. 22: 1/tau_anh = [B_N + B_U*exp(-deb_temp/(alpha*T))] * omega^2 * T^3.
+    # Values are their graphene / graphite-basal-plane fit (B in s*K^-3).
+    _B_N = 2.12e-25      # Normal-process prefactor (momentum-conserving)
+    _B_U = 3.18e-25      # Umklapp prefactor (resistive)
+    _deb_temp = 1000.0   # average acoustic Debye temperature [K]
+    _alpha = 3.0         # Umklapp freeze-out constant
 
     def phonon_relaxation_time(self, omega):
         """
-        Calculate relaxation time at a given frequency and temperature.
-        In graphite, we assume that material is perfect, i.e. without impurity scattering.
+        Resistive relaxation time at a given frequency and temperature (RTA / kappa_RTA).
+        Graphite is treated as a perfect crystal (no point-defect/isotope scattering),
+        so the only resistive channel is Umklapp, Alofi & Srivastava Eq. 22 U-term.
+        The momentum-conserving Normal term is NON-resistive and is deliberately left
+        out here (see phonon_normal_rate); it only enters the hydrodynamic tracing path.
         """
-        deb_temp = 1000.0
-        tau_umklapp = 1 / (3.18e-25 * (omega ** 2) * (self.temp ** 3) * np.exp(-deb_temp / (3*self.temp)))
-        return 1 / ( 1 / tau_umklapp)
+        rate_umklapp = self._B_U * (omega ** 2) * (self.temp ** 3) * np.exp(-self._deb_temp / (self._alpha * self.temp))
+        return 1 / rate_umklapp
+
+    def phonon_normal_rate(self, omega):
+        """
+        Normal (momentum-conserving) three-phonon rate [1/s], Alofi & Srivastava Eq. 22
+        N-term: 1/tau_N = B_N * omega^2 * T^3. Same omega^2 T^3 dependence as the Umklapp
+        term above (the two share a frequency/temperature law and differ only by the
+        prefactor and the absence of the Umklapp freeze-out exponential, since N does not
+        freeze out at low T). The ZA (flexural) branch dominates the hydrodynamics not
+        through a branch-dependent tau but through its dispersion (quadratic near Gamma:
+        large density of states at low omega, low group velocity), consistent with the
+        branch-independent B_N of the reference.
+        """
+        return self._B_N * (omega ** 2) * (self.temp ** 3)
 
 
     def assign_heat_capacity(self):
