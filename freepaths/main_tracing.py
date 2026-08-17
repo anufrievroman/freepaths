@@ -22,7 +22,7 @@ from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, T
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
 from freepaths.materials import Si, SiC, Graphite, SiGe
-from freepaths.maps import ScatteringMap, ThermalMaps
+from freepaths.maps import ScatteringMap, ThermalMaps, DriftField
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings, output_electron_information
 from freepaths.animation import create_animation
 from freepaths.output_plots import plot_data
@@ -35,7 +35,7 @@ class ParticleSimulator:
     It is meant to be used as a worker for multiprocessing
     """
 
-    def __init__(self, worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of):
+    def __init__(self, worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of, drift_field=None):
 
         # Initialize the material:
         if cf.media == "Si":
@@ -49,6 +49,10 @@ class ParticleSimulator:
         else:
             logging.error(f"Material {cf.media} is not supported")
             sys.exit()
+
+        # Frozen hydrodynamic drift field for this pass (None in the bootstrap pass and
+        # in non-hydrodynamic runs); read by momentum-conserving Normal scattering events:
+        self.material.drift_field = drift_field
 
         # Carrier surface-depletion dead-layer width (0 unless SURFACE_POTENTIAL and doping are set):
         cf.depletion_width = depletion_width(self.material)
@@ -130,11 +134,11 @@ class ParticleSimulator:
         self.result_queue.append(collected_data)
 
 
-def worker_process(worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of, finished_workers):
+def worker_process(worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of, finished_workers, drift_field=None):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
         # Create a particle simulator and run the simulation:
-        simulator = ParticleSimulator(worker_id, mode, total_particles, shared_list, output_trajectories_of)
+        simulator = ParticleSimulator(worker_id, mode, total_particles, shared_list, output_trajectories_of, drift_field)
         simulator.simulate_particles(render_progress=1 if worker_id == 0 else 0)
 
         # Declare that the calculation is finished:
@@ -165,19 +169,15 @@ def display_workers_finished(finished_workers):
         pass
 
 
-def main(input_file, mode: SimulationMode):
+def run_pass(mode: SimulationMode, drift_field=None):
     """
-    This is the main function.
-    It should be used to simulate electron paths or phonon paths at low temperatures.
+    Launch all worker processes for one full sweep of the ensemble (one "pass"), with
+    the given frozen drift field, and return the collected result_list. In a
+    non-hydrodynamic run this is called exactly once; in hydrodynamic mode it is called
+    once per self-consistency pass, each time with the drift field frozen at the value
+    converged from the previous pass.
     """
-
-    sys.stdout.write(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}\n')
-    start_time = time.time()
-
-    # Create manager for managing variable acces for multiple workers:
     manager = multiprocessing.Manager()
-
-    # These variables created with the manager can safely be accessed by multiple workers:
     shared_list = manager.list()
     finished_workers = manager.Value('i', 0)
 
@@ -196,7 +196,7 @@ def main(input_file, mode: SimulationMode):
     for i in range(cf.num_workers):
         worker_particles = workload_per_worker + (1 if i < remaining_particles else 0)
         output_trajectory_of = output_trajectories_per_worker + (1 if i < remaining_output_trajectories else 0)
-        process = multiprocessing.Process(target=worker_process, args=(i, mode, worker_particles, shared_list, output_trajectory_of, finished_workers))
+        process = multiprocessing.Process(target=worker_process, args=(i, mode, worker_particles, shared_list, output_trajectory_of, finished_workers, drift_field))
         processes.append(process)
         process.start()
 
@@ -217,9 +217,11 @@ def main(input_file, mode: SimulationMode):
     # Wait for the worker count to finish but continue after 3 seconds:
     worker_count_process.join(timeout=3)
     worker_count_process.terminate() # should not be necessary but sometimes process does not terminate
+    return list(shared_list)
 
-    # Initiate data structures to collect the data from the workers:
-    # material = Material(cf.media, num_points=cf.number_of_phonons+1)
+
+def merge_results(result_list, mode: SimulationMode):
+    """Merge the per-worker data dictionaries from one pass into unified data structures."""
     scatter_stats = ScatteringData()
     places_stats = TriangleScatteringData()
     general_stats = GeneralData()
@@ -228,17 +230,9 @@ def main(input_file, mode: SimulationMode):
     scatter_maps = ScatteringMap()
     thermal_maps = ThermalMaps() if mode is SimulationMode.PHONON_TRACING else None
 
-    # Collect the results:
-    sys.stdout.write('\nCollecting data from workers...\r')
-
-    # Convert the shared list to a normal list so it's easier to use
-    result_list = list(shared_list)
-
-    # Check that all workers actually returned some data
     if len(result_list) != cf.num_workers:
         sys.stdout.write(f'WARNING: of {cf.num_workers} workers only the results of {len(result_list)} were collected\n')
 
-    # Put the data from every worker into it's respective place:
     execution_time_list = []
     for collected_data in result_list:
         scatter_stats.read_data(collected_data['scatter_stats'])
@@ -251,12 +245,60 @@ def main(input_file, mode: SimulationMode):
             thermal_maps.read_data(collected_data['thermal_maps'])
         execution_time_list.append(collected_data['execution_time'])
 
+    return scatter_stats, places_stats, general_stats, segment_stats, path_stats, scatter_maps, thermal_maps, execution_time_list
+
+
+def main(input_file, mode: SimulationMode):
+    """
+    This is the main function.
+    It should be used to simulate electron paths or phonon paths at low temperatures.
+    """
+
+    sys.stdout.write(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}\n')
+    start_time = time.time()
+
+    # Hydrodynamic mode traces the ensemble in several self-consistency passes, updating
+    # the drift field between them (frozen within each pass). Everything else runs a
+    # single pass. Only the final pass supplies the reported statistics and maps:
+    hydrodynamic = cf.phonon_hydrodynamic and mode is SimulationMode.PHONON_TRACING
+    number_of_passes = cf.number_of_hydrodynamic_passes if hydrodynamic else 1
+
+    # Material instance for the momentum-susceptibility constant (drift-field derivation):
+    hydro_material = {"Si": Si, "SiGe": SiGe, "SiC": SiC, "Graphite": Graphite}[cf.media](cf.temp) if hydrodynamic else None
+
+    drift_field = None
+    for pass_index in range(number_of_passes):
+        if hydrodynamic:
+            sys.stdout.write(f'\nHydrodynamic self-consistency pass {pass_index + 1}/{number_of_passes}\n')
+
+        result_list = run_pass(mode, drift_field)
+
+        # Collect the results of this pass:
+        sys.stdout.write('\nCollecting data from workers...\r')
+        (scatter_stats, places_stats, general_stats, segment_stats, path_stats,
+         scatter_maps, thermal_maps, execution_time_list) = merge_results(result_list, mode)
+
+        # Update the self-consistent drift field for the next pass. The freshly measured
+        # field is under-relaxed against the previous one (Robbins-Monro) for stability:
+        if hydrodynamic and thermal_maps is not None:
+            thermal_maps.calculate_drift_velocity(hydro_material)
+            fresh = DriftField(thermal_maps.drift_velocity_x, thermal_maps.drift_velocity_y, thermal_maps.drift_velocity_z)
+            if drift_field is None:
+                drift_field = fresh
+            else:
+                g = cf.hydrodynamic_relaxation
+                drift_field = DriftField(
+                    (1 - g) * drift_field.u_x + g * fresh.u_x,
+                    (1 - g) * drift_field.u_y + g * fresh.u_y,
+                    (1 - g) * drift_field.u_z + g * fresh.u_z,
+                )
+
     # Give some info about the variability in the worker calculation time:
     if cf.num_workers > 1:
         sys.stdout.write(f'Shortest process execution time: {round(min(execution_time_list))}s\n')
         sys.stdout.write(f'Longest process execution time: {round(max(execution_time_list))}s\n')
 
-    # Run thermal calculations:
+    # Run thermal calculations on the final pass:
     if thermal_maps is not None:
         thermal_maps.calculate_thermal_conductivity()
         thermal_maps.calculate_heat_flux_modulus()

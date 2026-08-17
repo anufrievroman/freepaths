@@ -14,6 +14,35 @@ class Maps:
             setattr(self, key, getattr(self, key) + value)
 
 
+class DriftField:
+    """
+    Frozen phonon drift-velocity field u(r) [m/s] that momentum-conserving Normal
+    events read during flight (hydrodynamic mode). Wraps the three pixel-grid components
+    produced by ThermalMaps.calculate_drift_velocity and provides a fast pixel lookup.
+    Pickled and passed to each worker process at the start of a pass, so the field is
+    identical (frozen) for every phonon in that pass.
+    """
+
+    def __init__(self, u_x, u_y, u_z):
+        self.u_x = u_x
+        self.u_y = u_y
+        self.u_z = u_z
+        self.n_x = u_x.shape[1]
+        self.n_y = u_x.shape[0]
+
+    def velocity_at(self, x, y):
+        """Local drift velocity vector (u_x, u_y, u_z) [m/s] at position (x, y); (0,0,0) outside the grid."""
+        index_x = int(((x + cf.width / 2) * self.n_x) // cf.width)
+        index_y = int(y // (cf.length / self.n_y))
+        if 0 <= index_x < self.n_x and 0 <= index_y < self.n_y:
+            return self.u_x[index_y, index_x], self.u_y[index_y, index_x], self.u_z[index_y, index_x]
+        return 0.0, 0.0, 0.0
+
+    def as_arrays(self):
+        """Return the raw (u_x, u_y, u_z) component arrays."""
+        return self.u_x, self.u_y, self.u_z
+
+
 class ScatteringMap(Maps):
     """Map of scattering in the structure"""
 
@@ -112,6 +141,17 @@ class ThermalMaps(Maps):
         self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
         self.vol_pixel_correction_per_row = np.mean(self.vol_pixel_ratio, axis=1)
 
+        # Crystal-momentum density maps for the hydrodynamic (Poiseuille) drift field.
+        # Accumulated per timestep-visit exactly like the thermal energy, but weighted by
+        # the per-bundle crystal momentum hbar*k reconstructed from the mode: the drift
+        # velocity u(r) is later derived from these (see calculate_drift_velocity). Only
+        # allocated when phonon hydrodynamics is requested, so RTA runs are unaffected.
+        self.record_momentum = cf.phonon_hydrodynamic
+        if self.record_momentum:
+            self.crystal_momentum_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+            self.crystal_momentum_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+            self.crystal_momentum_map_z = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
+
     def calculate_pixel_volumes(self, number_of_pixels_x, number_of_pixels_y):
         """Calculate a map showing if the pixel contains material (1) or a hole (0)"""
         if not cf.holes:
@@ -162,6 +202,19 @@ class ThermalMaps(Maps):
             self.heat_flux_map_x[index_y, index_x] += energy * sin(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
             self.heat_flux_map_y[index_y, index_x] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_pixel
 
+            # Crystal-momentum density: a deviational bundle of energy dE in mode (branch, omega)
+            # represents dE/(hbar*omega) phonons, each carrying crystal momentum hbar*k along the
+            # propagation direction, so it deposits p = dE*(k/omega)*d_hat (Peraud-bundle weighting).
+            # The energy factor is the same constant as above, so it cancels when the drift velocity
+            # is formed as the ratio to the thermal map (calculate_drift_velocity).
+            if self.record_momentum:
+                cos_phi = abs(cos(pt.phi))
+                k_over_omega = material.wavevector(pt.branch_number, pt.f) / (2 * np.pi * pt.f)
+                p = energy * k_over_omega
+                self.crystal_momentum_map_x[index_y, index_x] += p * sin(pt.theta) * cos_phi
+                self.crystal_momentum_map_y[index_y, index_x] += p * cos(pt.theta) * cos_phi
+                self.crystal_momentum_map_z[index_y, index_x] += p * sin(pt.phi)
+
             # Calculate to which timeframe this timestep belongs:
             timeframe_number = (pt.first_timestep + timestep_number) // self.timesteps_per_timeframe
 
@@ -180,6 +233,28 @@ class ThermalMaps(Maps):
     def calculate_heat_flux_modulus(self):
         """Calculate heat flux modulus as sqrt(q_x^2 + q_y^2)"""
         self.heat_flux_map_xy += np.sqrt(self.heat_flux_map_x**2 + self.heat_flux_map_y**2)
+
+    def calculate_drift_velocity(self, material):
+        """
+        Derive the phonon drift-velocity field u(r) [m/s] from the accumulated
+        crystal-momentum maps, in the linearized displaced-Bose-Einstein picture:
+            u_alpha = 3 * (P_alpha / e) / <(k/omega)^2>_C ,
+        where P_alpha / e = crystal_momentum_map_alpha / thermal_map is the crystal-
+        momentum density per unit deposited energy (temperature, volume and sample count
+        cancel), and <(k/omega)^2>_C is the material's heat-capacity-weighted mean inverse
+        squared phase velocity (Material.mean_inverse_phase_velocity_sq). Empty pixels
+        (no deposited energy) get u = 0.
+        """
+        if not self.record_momentum:
+            return
+        inv_vp2 = material.mean_inverse_phase_velocity_sq()
+        with np.errstate(divide='ignore', invalid='ignore'):
+            norm = np.where(self.thermal_map > 0, self.thermal_map, np.nan)
+            self.drift_velocity_x = 3 * self.crystal_momentum_map_x / norm / inv_vp2
+            self.drift_velocity_y = 3 * self.crystal_momentum_map_y / norm / inv_vp2
+            self.drift_velocity_z = 3 * self.crystal_momentum_map_z / norm / inv_vp2
+        for arr in (self.drift_velocity_x, self.drift_velocity_y, self.drift_velocity_z):
+            np.nan_to_num(arr, copy=False)
 
 
     def calculate_thermal_conductivity(self):
@@ -256,9 +331,24 @@ class ThermalMaps(Maps):
         np.savetxt("Data/Heat flux map x.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
         np.savetxt("Data/Heat flux map y.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
 
+        # Hydrodynamic drift-velocity field u(r) [m/s] and its cross-width profile. The
+        # transport-direction drift u_y averaged over the middle of the length, plotted
+        # vs the width coordinate x, is the phonon-Poiseuille signature (parabolic across
+        # the channel in the hydrodynamic regime, flat/plug-like in the diffusive one).
+        if self.record_momentum and hasattr(self, "drift_velocity_y"):
+            np.savetxt("Data/Drift velocity map x.csv", self.drift_velocity_x, fmt='%1.3e', delimiter=",", encoding='utf-8')
+            np.savetxt("Data/Drift velocity map y.csv", self.drift_velocity_y, fmt='%1.3e', delimiter=",", encoding='utf-8')
+            y_lo = int(0.25 * cf.number_of_pixels_y)
+            y_hi = max(int(0.75 * cf.number_of_pixels_y), y_lo + 1)
+            uy_profile = np.mean(self.drift_velocity_y[y_lo:y_hi, :], axis=0)
+            coordinates_x = (np.arange(cf.number_of_pixels_x) + 0.5) * 1e9 * cf.width / cf.number_of_pixels_x - 1e9 * cf.width / 2
+            data_drift_x = np.vstack((coordinates_x, uy_profile)).T
+            np.savetxt("Data/Drift velocity profile x.csv", data_drift_x, fmt='%1.3e', delimiter=",",
+                       header="X (nm), u_y (m/s)", encoding='utf-8')
+
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
-        return {
+        data = {
             'thermal_map': self.thermal_map,
             'heat_flux_map_x': self.heat_flux_map_x,
             'heat_flux_map_y': self.heat_flux_map_y,
@@ -267,3 +357,10 @@ class ThermalMaps(Maps):
             'material_heat_flux_profile_y': self.material_heat_flux_profile_y,
             'temperature_profile_y': self.temperature_profile_y,
         }
+        # Crystal-momentum maps are summed across workers by the parent read_data (both
+        # sides allocate them, since record_momentum comes from the same config flag):
+        if self.record_momentum:
+            data['crystal_momentum_map_x'] = self.crystal_momentum_map_x
+            data['crystal_momentum_map_y'] = self.crystal_momentum_map_y
+            data['crystal_momentum_map_z'] = self.crystal_momentum_map_z
+        return data

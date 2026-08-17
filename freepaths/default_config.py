@@ -76,6 +76,40 @@ MEDIA_FERMI_LEVEL                = None
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING      = True
 
+# Phonon hydrodynamic (Poiseuille) transport. When True, momentum-conserving Normal
+# three-phonon processes are simulated explicitly: N-events scatter the phonon at rate
+# material.phonon_normal_rate(omega) but, instead of rethermalizing isotropically, the
+# outgoing mode is resampled from the local drifting (displaced Bose-Einstein)
+# distribution so the local crystal momentum is conserved. Only Umklapp, boundary and
+# defect scattering then act as momentum sinks, letting the phonon gas develop a viscous
+# (parabolic) drift profile across a channel. Requires a material with a Normal-process
+# model (currently Graphite). Off by default: the standard RTA treats N as resistive
+# (lumped into the tabulated tau), which is correct at 300 K but cannot show Poiseuille
+# flow. See CLAUDE.md "phonon Poiseuille (hydrodynamic) flow".
+PHONON_HYDRODYNAMIC              = False
+
+# Self-consistent drift field for hydrodynamic mode. The drift velocity u(r) that
+# N-events read is built by outer iteration: the whole ensemble is traced in
+# NUMBER_OF_HYDRODYNAMIC_PASSES passes, and between passes u(r) is updated from the
+# accumulated crystal-momentum map, under-relaxed against the previous pass by
+# HYDRODYNAMIC_RELAXATION (Robbins-Monro-style, keeps the fixed-point iteration
+# stable). Within a pass u(r) is frozen, so every phonon reads the same field. The
+# first pass bootstraps from u = 0 (N acts transiently as isotropic scattering), and
+# the drift grows smoothly over the passes. Only the final (converged) pass supplies
+# the reported maps and statistics. No effect when PHONON_HYDRODYNAMIC is False (a
+# single pass is run, exactly as before).
+NUMBER_OF_HYDRODYNAMIC_PASSES    = 5
+HYDRODYNAMIC_RELAXATION          = 0.5
+
+# Diagnostic control: when True, Normal events still fire (tau_N in the clock, momentum
+# map recorded, mode redrawn) but redraw the direction ISOTROPICALLY instead of biased
+# toward the local drift, i.e. Normal is made momentum-DESTROYING (a second Umklapp).
+# This isolates the effect of momentum conservation: comparing a run with this True
+# vs False, at identical geometry, separates the genuine hydrodynamic (Poiseuille)
+# response from the wall-induced drift dip that boundary scattering produces anyway.
+# Not physical - for validation only. No effect unless PHONON_HYDRODYNAMIC is True.
+HYDRODYNAMIC_NORMAL_RESISTIVE    = False
+
 # Phonon frequencies and branches are always sampled from the tabulated dispersion
 # (weight k^2 dk per bin, heat-capacity weighting, group-velocity weighting at the
 # source), so particles are equal-energy deviational bundles and the thermal maps

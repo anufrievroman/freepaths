@@ -58,17 +58,23 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if scattering_types.is_diffuse or scattering_types.is_internal:
             flight.save_free_paths()
             flight.restart()
-            # An inelastic (anharmonic) internal event rethermalizes the phonon: new
-            # branch and frequency are drawn from the collision-rate-weighted
-            # distribution. An elastic (impurity) internal event conserves the mode —
-            # the direction randomization already applied above is all it does.
-            # Applied only in the phonon tracing mode: in the MFP sampling mode each
-            # phonon must keep its mode identity.
+            # Attribute the internal event to a channel and act accordingly. Inelastic
+            # (Umklapp / 4-phonon) rethermalizes the phonon (isotropic mode redraw);
+            # elastic (impurity/grain) conserves the mode, so the direction randomization
+            # already applied above is all it does; normal (momentum-conserving, only in
+            # hydrodynamic mode) redraws the mode and a drift-biased direction from the
+            # local drift field. Applied only in the phonon tracing mode: in the MFP
+            # sampling mode each phonon must keep its mode identity.
             if (scattering_types.is_internal
                     and particle.type is ParticleType.PHONON
-                    and mode is SimulationMode.PHONON_TRACING
-                    and particle.internal_event_is_inelastic(material)):
-                particle.rethermalize(material)
+                    and mode is SimulationMode.PHONON_TRACING):
+                event = particle.classify_internal_event(material)
+                if event == "normal":
+                    drift_field = getattr(material, "drift_field", None)
+                    drift = drift_field.velocity_at(particle.x, particle.y) if drift_field else (0.0, 0.0, 0.0)
+                    particle.drift_scatter(material, drift)
+                elif event == "inelastic":
+                    particle.rethermalize(material)
             particle.assign_internal_scattering_time(material)
             if cf.is_two_dimensional_material:
                 particle.phi = 0.0

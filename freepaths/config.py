@@ -98,6 +98,10 @@ class Config:
 
         # Internal scattering:
         self.include_internal_scattering = INCLUDE_INTERNAL_SCATTERING
+        self.phonon_hydrodynamic = PHONON_HYDRODYNAMIC
+        self.number_of_hydrodynamic_passes = NUMBER_OF_HYDRODYNAMIC_PASSES
+        self.hydrodynamic_relaxation = HYDRODYNAMIC_RELAXATION
+        self.hydrodynamic_normal_resistive = HYDRODYNAMIC_NORMAL_RESISTIVE
         self.use_dispersion_heat_capacity = USE_DISPERSION_HEAT_CAPACITY
         self.max_number_of_scattering_events = MAX_NUMBER_OF_SCATTERING_EVENTS
         self.grain_size = GRAIN_SIZE
