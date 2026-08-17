@@ -89,17 +89,20 @@ INCLUDE_INTERNAL_SCATTERING      = True
 PHONON_HYDRODYNAMIC              = False
 
 # Self-consistent drift field for hydrodynamic mode. The drift velocity u(r) that
-# N-events read is built by outer iteration: the whole ensemble is traced in
-# NUMBER_OF_HYDRODYNAMIC_PASSES passes, and between passes u(r) is updated from the
-# accumulated crystal-momentum map, under-relaxed against the previous pass by
-# HYDRODYNAMIC_RELAXATION (Robbins-Monro-style, keeps the fixed-point iteration
-# stable). Within a pass u(r) is frozen, so every phonon reads the same field. The
-# first pass bootstraps from u = 0 (N acts transiently as isotropic scattering), and
-# the drift grows smoothly over the passes. Only the final (converged) pass supplies
-# the reported maps and statistics. No effect when PHONON_HYDRODYNAMIC is False (a
+# N-events read is built by outer iteration: the ensemble is first traced in
+# NUMBER_OF_HYDRODYNAMIC_PRERUNS "prerun" passes whose only purpose is to build u(r),
+# followed by one final reported run that reads the converged field and supplies the
+# reported maps and statistics. Between preruns u(r) is updated from the accumulated
+# crystal-momentum map, under-relaxed against the previous prerun by
+# HYDRODYNAMIC_PRERUNS_WEIGHT (Robbins-Monro-style, keeps the fixed-point iteration
+# stable; 0 = ignore new preruns, 1 = no damping). Within a pass u(r) is frozen, so
+# every phonon reads the same field. The first prerun bootstraps from u = 0 (N acts as
+# isotropic scattering) and the drift grows smoothly over the preruns. The reported run
+# does not update the field, so it reads the fully converged u(r). Total passes =
+# NUMBER_OF_HYDRODYNAMIC_PRERUNS + 1. No effect when PHONON_HYDRODYNAMIC is False (a
 # single pass is run, exactly as before).
-NUMBER_OF_HYDRODYNAMIC_PASSES    = 5
-HYDRODYNAMIC_RELAXATION          = 0.5
+NUMBER_OF_HYDRODYNAMIC_PRERUNS   = 4
+HYDRODYNAMIC_PRERUNS_WEIGHT      = 0.5
 
 # Diagnostic control: when True, Normal events still fire (tau_N in the clock, momentum
 # map recorded, mode redrawn) but redraw the direction ISOTROPICALLY instead of biased

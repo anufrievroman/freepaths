@@ -257,19 +257,26 @@ def main(input_file, mode: SimulationMode):
     sys.stdout.write(f'Simulation of {Fore.GREEN}{cf.output_folder_name}{Style.RESET_ALL}\n')
     start_time = time.time()
 
-    # Hydrodynamic mode traces the ensemble in several self-consistency passes, updating
-    # the drift field between them (frozen within each pass). Everything else runs a
-    # single pass. Only the final pass supplies the reported statistics and maps:
+    # Hydrodynamic mode first traces the ensemble in NUMBER_OF_HYDRODYNAMIC_PRERUNS
+    # preruns that only build the self-consistent drift field (frozen within each prerun,
+    # under-relaxed between them), then a final reported run that reads the converged field
+    # and supplies the reported statistics and maps. The reported run does NOT update the
+    # field (there is no pass after it), so unlike a plain "report the last of N passes"
+    # scheme the reported run reads the fully converged field. Everything non-hydrodynamic
+    # runs a single pass.
     hydrodynamic = cf.phonon_hydrodynamic and mode is SimulationMode.PHONON_TRACING
-    number_of_passes = cf.number_of_hydrodynamic_passes if hydrodynamic else 1
+    number_of_preruns = cf.number_of_hydrodynamic_preruns if hydrodynamic else 0
+    number_of_passes = number_of_preruns + 1
 
     # Material instance for the momentum-susceptibility constant (drift-field derivation):
     hydro_material = {"Si": Si, "SiGe": SiGe, "SiC": SiC, "Graphite": Graphite}[cf.media](cf.temp) if hydrodynamic else None
 
     drift_field = None
     for pass_index in range(number_of_passes):
+        is_reported_run = (pass_index == number_of_passes - 1)
         if hydrodynamic:
-            sys.stdout.write(f'\nHydrodynamic self-consistency pass {pass_index + 1}/{number_of_passes}\n')
+            label = "reported run" if is_reported_run else f"prerun {pass_index + 1}/{number_of_preruns}"
+            sys.stdout.write(f'\nHydrodynamic {label}\n')
 
         result_list = run_pass(mode, drift_field)
 
@@ -278,20 +285,23 @@ def main(input_file, mode: SimulationMode):
         (scatter_stats, places_stats, general_stats, segment_stats, path_stats,
          scatter_maps, thermal_maps, execution_time_list) = merge_results(result_list, mode)
 
-        # Update the self-consistent drift field for the next pass. The freshly measured
-        # field is under-relaxed against the previous one (Robbins-Monro) for stability:
+        # During preruns, update the self-consistent drift field for the next pass. The
+        # freshly measured field is under-relaxed against the previous one (Robbins-Monro)
+        # for stability. The reported run still measures its drift (for the saved profile)
+        # but does not feed it back:
         if hydrodynamic and thermal_maps is not None:
             thermal_maps.calculate_drift_velocity(hydro_material)
-            fresh = DriftField(thermal_maps.drift_velocity_x, thermal_maps.drift_velocity_y, thermal_maps.drift_velocity_z)
-            if drift_field is None:
-                drift_field = fresh
-            else:
-                g = cf.hydrodynamic_relaxation
-                drift_field = DriftField(
-                    (1 - g) * drift_field.u_x + g * fresh.u_x,
-                    (1 - g) * drift_field.u_y + g * fresh.u_y,
-                    (1 - g) * drift_field.u_z + g * fresh.u_z,
-                )
+            if not is_reported_run:
+                fresh = DriftField(thermal_maps.drift_velocity_x, thermal_maps.drift_velocity_y, thermal_maps.drift_velocity_z)
+                if drift_field is None:
+                    drift_field = fresh
+                else:
+                    g = cf.hydrodynamic_preruns_weight
+                    drift_field = DriftField(
+                        (1 - g) * drift_field.u_x + g * fresh.u_x,
+                        (1 - g) * drift_field.u_y + g * fresh.u_y,
+                        (1 - g) * drift_field.u_z + g * fresh.u_z,
+                    )
 
     # Give some info about the variability in the worker calculation time:
     if cf.num_workers > 1:
