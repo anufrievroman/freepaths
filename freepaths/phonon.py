@@ -162,12 +162,17 @@ class Phonon(Particle):
 
     def _draw_drift_direction(self, material, drift_velocity):
         """
-        Draw a new propagation direction from the linearized displaced-Bose-Einstein
-        angular distribution P(d_hat) ~ 1 + a * (d_hat . u_hat), where the bias
-        a = (1 + n0) * hbar * k * |u| / (k_B T) aligns the outgoing momentum with the
-        local drift u (clamped to [0, 1] to keep P >= 0 in the small-drift regime). With
-        |u| = 0 (bootstrap pass) this reduces to an isotropic redraw, i.e. momentum-
-        neutral. Sampled by rejection; the polar angle is measured from u_hat.
+        Draw a new propagation direction from the displaced-Bose-Einstein angular
+        distribution P(d_hat) ~ exp(a * (d_hat . u_hat)), a von Mises (2D) / von
+        Mises-Fisher (3D) distribution with concentration
+        a = (1 + n0) * hbar * k * |u| / (k_B T) aligning the outgoing momentum with the
+        local drift u. This is the full displaced form: it reduces to the linear-response
+        1 + a cos(psi) for small a, but unlike the clamped linear form it keeps conserving
+        momentum at large drift (<cos psi> -> 1 as a -> infinity), which is required in the
+        deep hydrodynamic regime where the flexural (ZA) modes reach a > 1 (a clamp there
+        would cap the forward bias and leak momentum, flattening the Poiseuille parabola
+        into plug flow). With |u| = 0 (bootstrap pass) it reduces to an isotropic redraw
+        (momentum-neutral). The polar angle psi is measured from u_hat.
         """
         u_x, u_y, u_z = drift_velocity
         u_mag = sqrt(u_x**2 + u_y**2 + u_z**2)
@@ -182,25 +187,39 @@ class Phonon(Particle):
         k = material.wavevector(self.branch_number, self.f)
         n0 = 1.0 / expm1(hbar * omega / (k_B * material.temp))
         a = (1.0 + n0) * hbar * k * u_mag / (k_B * material.temp)
-        a = min(a, 1.0)
 
         if cf.is_two_dimensional_material:
-            # In-plane: sample the angle delta from u_hat with P(delta) ~ 1 + a cos(delta).
+            # In-plane: draw the angle delta from u_hat, von Mises P(delta) ~ exp(a cos delta),
+            # by rejection against the exp(a) envelope (accept w.p. exp(a(cos delta - 1))):
             theta_u = atan2(u_x, u_y)
             while True:
                 delta = -pi + random() * 2 * pi
-                if random() * (1.0 + a) <= 1.0 + a * cos(delta):
+                if random() <= exp(a * (cos(delta) - 1.0)):
                     break
+            # Previous linearized form P(delta) ~ 1 + a cos(delta), a clamped to <=1 so P >= 0
+            # (kept for reference; gives essentially the same profile - the clamp was not the
+            # cause of the flat cross-width profile):
+            #     a_lin = min(a, 1.0)
+            #     while True:
+            #         delta = -pi + random() * 2 * pi
+            #         if random() * (1.0 + a_lin) <= 1.0 + a_lin * cos(delta):
+            #             break
             self.theta = theta_u + delta
             self.phi = 0.0
             self.correct_angle()
             return
 
-        # 3D: sample cos(psi) from P ~ 1 + a cos(psi), azimuth uniform about u_hat.
-        while True:
-            cos_psi = 2 * random() - 1
-            if random() * (1.0 + a) <= 1.0 + a * cos_psi:
-                break
+        # 3D: von Mises-Fisher polar angle cos(psi) ~ exp(a cos psi), sampled by direct
+        # inversion (Ulrich 1984); azimuth uniform about u_hat:
+        r = random()
+        cos_psi = 1.0 + log(r + (1.0 - r) * exp(-2.0 * a)) / a
+        cos_psi = max(-1.0, min(1.0, cos_psi))
+        # Previous linearized form P(cos psi) ~ 1 + a cos psi, a clamped to <=1 (kept for reference):
+        #     a_lin = min(a, 1.0)
+        #     while True:
+        #         cos_psi = 2 * random() - 1
+        #         if random() * (1.0 + a_lin) <= 1.0 + a_lin * cos_psi:
+        #             break
         sin_psi = sqrt(max(0.0, 1.0 - cos_psi**2))
         azimuth = 2 * pi * random()
 
