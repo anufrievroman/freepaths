@@ -490,10 +490,15 @@ class Graphite(Material):
     # Three-phonon anharmonic rate parameters, Alofi & Srivastava, PRB 87, 115421
     # (2013), Eq. 22: 1/tau_anh = [B_N + B_U*exp(-deb_temp/(alpha*T))] * omega^2 * T^3.
     # Values are their graphene / graphite-basal-plane fit (B in s*K^-3).
-    _B_N = 2.12e-25      # Normal-process prefactor (momentum-conserving)
+    _B_N = 2.12e-25      # Normal-process prefactor (momentum-conserving) [Alofi, unused; see phonon_normal_rate]
     _B_U = 3.18e-25      # Umklapp prefactor (resistive)
     _deb_temp = 1000.0   # average acoustic Debye temperature [K]
     _alpha = 3.0         # Umklapp freeze-out constant
+
+    # Frequency/wavevector-independent Normal-process prefactor [Hz/K^3], calibrated to the
+    # first-principles graphite N-rate ~1e10 Hz at 100 K (Guo et al., PRB 104, 075450 (2021),
+    # Fig. 1). See phonon_normal_rate for the rationale and cross-check.
+    _C_N = 1.0e4
 
     def phonon_relaxation_time(self, omega):
         """
@@ -508,16 +513,24 @@ class Graphite(Material):
 
     def phonon_normal_rate(self, omega):
         """
-        Normal (momentum-conserving) three-phonon rate [1/s], Alofi & Srivastava Eq. 22
-        N-term: 1/tau_N = B_N * omega^2 * T^3. Same omega^2 T^3 dependence as the Umklapp
-        term above (the two share a frequency/temperature law and differ only by the
-        prefactor and the absence of the Umklapp freeze-out exponential, since N does not
-        freeze out at low T). The ZA (flexural) branch dominates the hydrodynamics not
-        through a branch-dependent tau but through its dispersion (quadratic near Gamma:
-        large density of states at low omega, low group velocity), consistent with the
-        branch-independent B_N of the reference.
+        Normal (momentum-conserving) three-phonon rate [1/s].
+
+        Frequency- and wavevector-INDEPENDENT model with the standard Klemens/Callaway
+        three-phonon T^3 temperature scaling: 1/tau_N = C_N * T^3. First-principles graphite
+        scattering rates (Guo et al., PRB 104, 075450 (2021), Fig. 1; Huang et al., Nat.
+        Commun. 14, 2044 (2023), SI Fig. 6) show the bending-acoustic Normal rate is roughly
+        flat in both frequency and wavevector (~1e9-1e10 Hz), NOT the Klemens omega^2 form.
+        The prefactor C_N = 1e4 Hz/K^3 is calibrated to rate_N(100 K) ~ 1e10 Hz (Guo Fig. 1)
+        and then independently reproduces the ~2-6 um Normal mean free path at 60 K
+        (Huang SI Fig. 6) - a cross-check, not a fit - which also selects the T^3 power
+        (T^2 -> ~1.9 um, T^4 -> ~5.2 um, T^3 -> ~3 um).
+
+        The Alofi & Srivastava Eq. 22 N-term (1/tau_N = B_N * omega^2 * T^3) is kept below,
+        commented out: it is ~5-250x too weak across the acoustic band and has the wrong
+        (omega^2) frequency dependence for the flexural phonons that carry the hydrodynamics.
         """
-        return self._B_N * (omega ** 2) * (self.temp ** 3)
+        return self._C_N * (self.temp ** 3)
+        # return self._B_N * (omega ** 2) * (self.temp ** 3)  # Alofi & Srivastava Eq. 22 (too weak; see above)
 
 
     def assign_heat_capacity(self):
