@@ -104,6 +104,12 @@ PHONON_HYDRODYNAMIC              = False
 NUMBER_OF_HYDRODYNAMIC_PRERUNS   = 5
 HYDRODYNAMIC_PRERUNS_WEIGHT      = 0.8
 
+# Preruns only build the drift field, so they can use fewer particles than the reported
+# run. NUMBER_OF_HYDRODYNAMIC_PRERUN_PARTICLES sets that count (None = same as
+# NUMBER_OF_PARTICLES). Cheap preruns + a high-statistics reported run make a clean
+# emergent-heat-flux (Poiseuille) profile affordable.
+NUMBER_OF_HYDRODYNAMIC_PRERUN_PARTICLES = None
+
 # Diagnostic control: when True, Normal events still fire (tau_N in the clock, momentum
 # map recorded, mode redrawn) but redraw the direction ISOTROPICALLY instead of biased
 # toward the local drift, i.e. Normal is made momentum-DESTROYING (a second Umklapp).

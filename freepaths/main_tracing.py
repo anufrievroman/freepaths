@@ -169,21 +169,24 @@ def display_workers_finished(finished_workers):
         pass
 
 
-def run_pass(mode: SimulationMode, drift_field=None):
+def run_pass(mode: SimulationMode, drift_field=None, total_particles=None):
     """
     Launch all worker processes for one full sweep of the ensemble (one "pass"), with
     the given frozen drift field, and return the collected result_list. In a
     non-hydrodynamic run this is called exactly once; in hydrodynamic mode it is called
     once per self-consistency pass, each time with the drift field frozen at the value
-    converged from the previous pass.
+    converged from the previous pass. total_particles overrides cf.number_of_particles
+    for this pass (used to run cheaper preruns than the reported run).
     """
+    if total_particles is None:
+        total_particles = cf.number_of_particles
     manager = multiprocessing.Manager()
     shared_list = manager.list()
     finished_workers = manager.Value('i', 0)
 
     # Divide all the particles among the workers:
-    workload_per_worker = cf.number_of_particles // cf.num_workers
-    remaining_particles = cf.number_of_particles % cf.num_workers
+    workload_per_worker = total_particles // cf.num_workers
+    remaining_particles = total_particles % cf.num_workers
 
     # Divide number of output trajectories to save among workers:
     output_trajectories_per_worker = cf.output_trajectories_of_first // cf.num_workers
@@ -274,13 +277,20 @@ def main(input_file, mode: SimulationMode):
     drift_field = None
     drift_convergence = []   # per-prerun (n, mean|u_fresh|, mean|u_field|, rel_change) for the convergence test
     flux_profiles = []       # per-pass mid-length cross-width |J_y|(x), to watch it become parabolic
+    # Preruns only need to converge the field, so they can use fewer particles than the
+    # reported run (NUMBER_OF_HYDRODYNAMIC_PRERUN_PARTICLES; None = same as the reported run):
+    prerun_particles = cf.number_of_hydrodynamic_prerun_particles
     for pass_index in range(number_of_passes):
         is_reported_run = (pass_index == number_of_passes - 1)
+        pass_particles = None
+        if hydrodynamic and not is_reported_run and prerun_particles:
+            pass_particles = prerun_particles
         if hydrodynamic:
+            n = pass_particles if pass_particles else cf.number_of_particles
             label = "reported run" if is_reported_run else f"prerun {pass_index + 1}/{number_of_preruns}"
-            sys.stdout.write(f'\nHydrodynamic {label}\n')
+            sys.stdout.write(f'\nHydrodynamic {label} ({n} particles)\n')
 
-        result_list = run_pass(mode, drift_field)
+        result_list = run_pass(mode, drift_field, pass_particles)
 
         # Collect the results of this pass:
         sys.stdout.write('\nCollecting data from workers...\r')
