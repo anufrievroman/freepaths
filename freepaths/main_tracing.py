@@ -272,6 +272,8 @@ def main(input_file, mode: SimulationMode):
     hydro_material = {"Si": Si, "SiGe": SiGe, "SiC": SiC, "Graphite": Graphite}[cf.media](cf.temp) if hydrodynamic else None
 
     drift_field = None
+    drift_convergence = []   # per-prerun (n, mean|u_fresh|, mean|u_field|, rel_change) for the convergence test
+    flux_profiles = []       # per-pass mid-length cross-width |J_y|(x), to watch it become parabolic
     for pass_index in range(number_of_passes):
         is_reported_run = (pass_index == number_of_passes - 1)
         if hydrodynamic:
@@ -291,8 +293,16 @@ def main(input_file, mode: SimulationMode):
         # but does not feed it back:
         if hydrodynamic and thermal_maps is not None:
             thermal_maps.calculate_drift_velocity(hydro_material)
+
+            # Cross-width heat-flux profile at mid-length, one per pass, so the profile can
+            # be watched evolving from blunt (bootstrap, no drift) toward parabolic (Poiseuille):
+            ny = thermal_maps.heat_flux_map_y.shape[0]
+            band = thermal_maps.heat_flux_map_y[int(0.35 * ny):int(0.65 * ny), :]
+            flux_profiles.append(np.abs(band).mean(axis=0))
+
             if not is_reported_run:
                 fresh = DriftField(thermal_maps.drift_velocity_x, thermal_maps.drift_velocity_y, thermal_maps.drift_velocity_z)
+                previous = drift_field
                 if drift_field is None:
                     drift_field = fresh
                 else:
@@ -302,6 +312,21 @@ def main(input_file, mode: SimulationMode):
                         (1 - g) * drift_field.u_y + g * fresh.u_y,
                         (1 - g) * drift_field.u_z + g * fresh.u_z,
                     )
+
+                # Convergence diagnostics: mean drift magnitude of the freshly measured
+                # field and of the (under-relaxed) field carried to the next prerun, plus
+                # the relative L1 change of that field vs the previous prerun. When the
+                # relative change flattens toward its noise floor, the preruns are adequate.
+                def _mean_mag(f):
+                    mag = np.hypot(f.u_x, f.u_y)
+                    return float(mag[mag > 0].mean()) if np.any(mag > 0) else 0.0
+                if previous is None:
+                    rel_change = np.nan
+                else:
+                    delta = np.abs(drift_field.u_x - previous.u_x) + np.abs(drift_field.u_y - previous.u_y)
+                    scale = np.abs(drift_field.u_x) + np.abs(drift_field.u_y)
+                    rel_change = float(delta.sum() / (scale.sum() + 1e-30))
+                drift_convergence.append((pass_index + 1, _mean_mag(fresh), _mean_mag(drift_field), rel_change))
 
     # Give some info about the variability in the worker calculation time:
     if cf.num_workers > 1:
@@ -328,6 +353,18 @@ def main(input_file, mode: SimulationMode):
     if input_file:
         shutil.copy(input_file, "Results/" + cf.output_folder_name)
     os.chdir("Results/" + cf.output_folder_name)
+
+    # Save the hydrodynamic-drift-field convergence trace (one row per prerun):
+    if drift_convergence:
+        np.savetxt("Data/Drift convergence.csv", np.array(drift_convergence), fmt="%1.4e", delimiter=",",
+                   header="prerun, mean|u_fresh| (m/s), mean|u_field| (m/s), rel_change_of_field", encoding="utf-8")
+    if flux_profiles:
+        prof = np.array(flux_profiles).T                       # rows = x pixels, cols = passes
+        nx = prof.shape[0]
+        x = (np.arange(nx) + 0.5) * cf.width / nx - cf.width / 2
+        header = "x (m), " + ", ".join([f"pass{i + 1}" for i in range(prof.shape[1])])
+        np.savetxt("Data/Drift convergence profiles.csv", np.column_stack([x, prof]), fmt="%1.4e",
+                   delimiter=",", header=header, encoding="utf-8")
 
     # Try to load pre-computed phonon thermal conductivity to enable ZT calculation:
     if mode is SimulationMode.ELECTRON:
