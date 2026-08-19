@@ -291,11 +291,33 @@ class ThermalMaps(Maps):
                 self.effective_thermal_conductivity[timeframe_number, 1] = J_effective / grad_T
                 self.material_thermal_conductivity[timeframe_number, 1] = J_material / grad_T
 
-            # Calculate single averaged value in the steady state range:
-            self.av_effective_thermal_conductivity = np.mean(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
-            self.av_material_thermal_conductivity = np.mean(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
-            self.std_effective_thermal_conductivity = np.std(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
-            self.std_material_thermal_conductivity = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+        # Calculate single averaged value in the steady state range:
+        self.av_effective_thermal_conductivity = np.mean(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+        self.av_material_thermal_conductivity = np.mean(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+
+        # Reported uncertainty combines TWO independent sources:
+        #   (1) measurement scatter: std of kappa across the steady-state timeframes;
+        #   (2) fit uncertainty: how poorly a straight line describes T(y). kappa comes
+        #       from a LINEAR fit of the temperature profile, so when that profile is
+        #       strongly non-linear (e.g. a step across a slit/obstacle) the slope -- and
+        #       thus kappa -- is ill-defined. We take the standard error of the fitted
+        #       slope on the steady-state-averaged profile (usually small for a clean
+        #       linear profile, large for a step) and combine it in quadrature with (1).
+        std_eff = np.std(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+        std_mat = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
+
+        coordinates_y = np.arange(cf.number_of_pixels_y) * cf.length / cf.number_of_pixels_y
+        y_fit = coordinates_y[fit_start:fit_end]
+        T_avg = np.mean(self.temperature_profile_y[fit_start:fit_end, cf.number_of_stabilization_timeframes:], axis=1)
+        fit_relative_error = 0.0
+        if len(y_fit) >= 3 and np.ptp(T_avg) > 0:
+            (slope_avg, _), cov = np.polyfit(y_fit, T_avg, 1, cov=True)
+            if slope_avg != 0:
+                fit_relative_error = np.sqrt(cov[0, 0]) / abs(slope_avg)
+        self.fit_relative_error = fit_relative_error
+
+        self.std_effective_thermal_conductivity = np.hypot(std_eff, abs(self.av_effective_thermal_conductivity) * fit_relative_error)
+        self.std_material_thermal_conductivity = np.hypot(std_mat, abs(self.av_material_thermal_conductivity) * fit_relative_error)
 
 
     def write_into_files(self, mode=None):
