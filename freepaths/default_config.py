@@ -101,8 +101,8 @@ PHONON_HYDRODYNAMIC              = False
 # does not update the field, so it reads the fully converged u(r). Total passes =
 # NUMBER_OF_HYDRODYNAMIC_PRERUNS + 1. No effect when PHONON_HYDRODYNAMIC is False (a
 # single pass is run, exactly as before).
-NUMBER_OF_HYDRODYNAMIC_PRERUNS   = 4
-HYDRODYNAMIC_PRERUNS_WEIGHT      = 0.5
+NUMBER_OF_HYDRODYNAMIC_PRERUNS   = 5
+HYDRODYNAMIC_PRERUNS_WEIGHT      = 0.8
 
 # Diagnostic control: when True, Normal events still fire (tau_N in the clock, momentum
 # map recorded, mode redrawn) but redraw the direction ISOTROPICALLY instead of biased
