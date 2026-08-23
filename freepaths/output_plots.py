@@ -633,18 +633,11 @@ def plot_material_properties():
     ax.set_ylim(bottom=0)
     ax.set_xlim(left=0)
 
-    # Add material properties. Show whichever heat capacity is actually used for the
-    # temperature-profile conversion in maps.py (cf.use_dispersion_heat_capacity),
-    # not always the real experimental one, since the two differ substantially
-    # (dispersion-only excludes optical branches) and showing the unused one here
-    # would misrepresent what the simulation is doing:
-    if cf.use_dispersion_heat_capacity:
-        heat_capacity = material.dispersion_heat_capacity / material.density
-        heat_capacity_label = "C$_v$ (dispersion-only)"
-    else:
-        heat_capacity = material.heat_capacity
-        heat_capacity_label = "C$_p$ (experimental)"
-    ax.set_title(f'{material.name},  T = {cf.temp} K,  {heat_capacity_label} = {heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
+    # Add material properties. The heat capacity shown is the dispersion-only C_v used for the
+    # temperature-profile conversion in maps.py (it counts only the tabulated dispersion
+    # branches, self-consistent with the dispersion-based sampling):
+    heat_capacity = material.dispersion_heat_capacity / material.density
+    ax.set_title(f'{material.name},  T = {cf.temp} K,  C$_v$ (dispersion-only) = {heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
 
     fig.savefig("Material properties.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)

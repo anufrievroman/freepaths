@@ -45,7 +45,7 @@ class ParticleSimulator:
         elif cf.media == "SiC":
             self.material = SiC(cf.temp)
         elif cf.media == "Graphite":
-            self.material = Graphite(cf.temp)
+            self.material = Graphite(cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
         else:
             logging.error(f"Material {cf.media} is not supported")
             sys.exit()

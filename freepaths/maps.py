@@ -121,8 +121,7 @@ class ThermalMaps(Maps):
         self.heat_flux_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_xy = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
-        # Timeframes span the whole virtual time over which phonon emission is spread,
-        # so that every phonon contributes to the profiles regardless of its start time:
+
         self.timesteps_per_timeframe = cf.number_of_virtual_timesteps // cf.number_of_timeframes
         self.effective_thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
         self.material_thermal_conductivity = np.zeros((cf.number_of_timeframes, 2))
@@ -142,10 +141,6 @@ class ThermalMaps(Maps):
         self.vol_pixel_correction_per_row = np.mean(self.vol_pixel_ratio, axis=1)
 
         # Crystal-momentum density maps for the hydrodynamic (Poiseuille) drift field.
-        # Accumulated per timestep-visit exactly like the thermal energy, but weighted by
-        # the per-bundle crystal momentum hbar*k reconstructed from the mode: the drift
-        # velocity u(r) is later derived from these (see calculate_drift_velocity). Only
-        # allocated when phonon hydrodynamics is requested, so RTA runs are unaffected.
         self.record_momentum = cf.phonon_hydrodynamic
         if self.record_momentum:
             self.crystal_momentum_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
@@ -219,11 +214,10 @@ class ThermalMaps(Maps):
             timeframe_number = (pt.first_timestep + timestep_number) // self.timesteps_per_timeframe
 
             # Record temperature and heat flux into the corresponding time segment.
-            # By default, use the dispersion-only heat capacity, self-consistent with the
-            # dispersion-based phonon sampling; the real (experimental) heat capacity,
-            # which also counts branches absent from the dispersion, is optional:
-            volumetric_heat_capacity = (material.dispersion_heat_capacity if cf.use_dispersion_heat_capacity
-                                        else material.heat_capacity * material.density)
+            # Temperature uses the dispersion-only volumetric heat capacity, self-consistent
+            # with the dispersion-based phonon sampling (it counts only the branches present in
+            # the tabulated dispersion, matching how energy is deposited and sampled):
+            volumetric_heat_capacity = material.dispersion_heat_capacity
             if timeframe_number < cf.number_of_timeframes and vol_pixel_correction_y != 0:
                 self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y
                 self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y / vol_pixel_correction_y
@@ -261,16 +255,14 @@ class ThermalMaps(Maps):
         """Calculate the thermal conductivity for each time interval from heat flux
         and temperature profiles accumulated in that interval"""
 
-        # Restrict the fit to a fraction of the length (GRADIENT_FIT_RANGE) to exclude
-        # the quasi-ballistic contact regions near the hot and cold sides, where the
-        # temperature profile deviates from linear (temperature jumps at the contacts):
+        # Restrict the fit to a fraction of the length (GRADIENT_FIT_RANGE) to exclude artifacts:
         fit_start = int(cf.gradient_fit_range[0] * cf.number_of_pixels_y)
         fit_end = max(int(cf.gradient_fit_range[1] * cf.number_of_pixels_y), fit_start + 2)
 
         # For each time interval calculate the thermal conductivity:
         for timeframe_number in range(cf.number_of_timeframes):
 
-            # ATTENTION: This only works when the hot side is at the bottom!
+            # ATTENTION: This only works when the hot side is at the bottom or top.
             # We need to improve the d_T calculation so that the gradient is calculated
             # from hot to cold in any direction.
 
@@ -295,14 +287,8 @@ class ThermalMaps(Maps):
         self.av_effective_thermal_conductivity = np.mean(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
         self.av_material_thermal_conductivity = np.mean(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
 
-        # Reported uncertainty combines TWO independent sources:
-        #   (1) measurement scatter: std of kappa across the steady-state timeframes;
-        #   (2) fit uncertainty: how poorly a straight line describes T(y). kappa comes
-        #       from a LINEAR fit of the temperature profile, so when that profile is
-        #       strongly non-linear (e.g. a step across a slit/obstacle) the slope -- and
-        #       thus kappa -- is ill-defined. We take the standard error of the fitted
-        #       slope on the steady-state-averaged profile (usually small for a clean
-        #       linear profile, large for a step) and combine it in quadrature with (1).
+        # Reported uncertainty combines std of kappa across the steady-state timeframes and
+        # the fit uncertainty, i.e. how poorly a straight line describes T(y).
         std_eff = np.std(self.effective_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
         std_mat = np.std(self.material_thermal_conductivity[cf.number_of_stabilization_timeframes:, 1])
 
@@ -353,8 +339,8 @@ class ThermalMaps(Maps):
         np.savetxt("Data/Heat flux map x.csv", self.heat_flux_map_x, fmt='%1.2e', delimiter=",", encoding='utf-8')
         np.savetxt("Data/Heat flux map y.csv", self.heat_flux_map_y, fmt='%1.2e', delimiter=",", encoding='utf-8')
 
-        # Hydrodynamic drift-velocity field u(r) [m/s] and its cross-width profile. The
-        # transport-direction drift u_y averaged over the middle of the length, plotted
+        # Hydrodynamic drift-velocity field u(r) [m/s] and its cross-width profile.
+        # The transport-direction drift u_y averaged over the middle of the length, plotted
         # vs the width coordinate x, is the phonon-Poiseuille signature (parabolic across
         # the channel in the hydrodynamic regime, flat/plug-like in the diffusive one).
         if self.record_momentum and hasattr(self, "drift_velocity_y"):

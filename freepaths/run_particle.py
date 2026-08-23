@@ -79,11 +79,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             if cf.is_two_dimensional_material:
                 particle.phi = 0.0
 
-            # MFP sampling only: a short-tau, low-velocity phonon takes tiny hops and
-            # essentially never reaches a boundary, but its mean free path already
-            # converges after a modest number of scattering events, so stop early
-            # rather than burning the full timestep budget on diminishing returns.
-            # Tracing mode must keep going regardless, to build the flux/temperature map:
+            # In MFP sampling mode, we finish the simulation when enough paths are sampled:
             if (mode is SimulationMode.PHONON_MFP_SAMPLING
                     and cf.max_number_of_scattering_events is not None
                     and flight._mfp_count >= cf.max_number_of_scattering_events):

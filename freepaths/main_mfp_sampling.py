@@ -85,7 +85,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
     elif cf.media == "SiC":
         material = SiC(cf.temp, num_points=cf.number_of_particles + 1)
     elif cf.media == "Graphite":
-        material = Graphite(cf.temp, num_points=cf.number_of_particles + 1)
+        material = Graphite(cf.temp, num_points=cf.number_of_particles + 1, isotope_c13_concentration=cf.isotope_c13_concentration)
     else:
         logging.error(f"Material {cf.media} is not supported")
         return
@@ -100,6 +100,9 @@ def _run_branch(branch_number, shared_list, shared_progress):
 
     total_thermal_conductivity = 0.0
     total_kappa_variance = 0.0
+    total_kappa1 = 0.0        # Callaway kappa1 accumulator (uses combined tau_C)
+    total_k2_num = 0.0        # Callaway kappa2 numerator sum:   w * tau_C / tau_N
+    total_k2_den = 0.0        # Callaway kappa2 denominator sum:  w * tau_C / (tau_N * tau_R)
     last_pct = -1
 
     for index in range(cf.number_of_particles):
@@ -122,10 +125,30 @@ def _run_branch(branch_number, shared_list, shared_progress):
         part = scipy.constants.hbar * omega / (scipy.constants.k * cf.temp)
         c_p = scipy.constants.k * part**2 * math.exp(part) / (math.exp(part) - 1)**2
 
-        # Thermal conductivity contribution from this k-point (Ref. Phys. Rev. 132 2461, 1963):
+        # Thermal conductivity contribution from this k-point (Ref. Phys. Rev. 132 2461, 1963).
+        # The measured mean free path is limited by resistive (Umklapp + isotope) and boundary
+        # scattering, so mean_relax_time is the Callaway resistive time tau_R (Normal scattering
+        # does not fire in the MFP-sampling mode). weight is the common per-mode integrand factor.
         mean_relax_time = flight.mean_free_path / phonon.speed
-        flight.thermal_conductivity = (1 / (6 * math.pi**2)) * c_p * phonon.speed**2 * mean_relax_time * k_vector**2 * d_k_vector
+        weight = (1 / (6 * math.pi**2)) * c_p * phonon.speed**2 * k_vector**2 * d_k_vector
+        flight.thermal_conductivity = weight * mean_relax_time          # single-mode RTA (SMRT)
         total_thermal_conductivity += flight.thermal_conductivity
+
+        # Callaway dual-relaxation correction (Callaway, Phys. Rev. 113, 1046 (1959)):
+        # kappa = kappa1 + kappa2, with 1/tau_C = 1/tau_R + 1/tau_N. kappa1 uses the combined
+        # tau_C (Normal provisionally counted as resistive); kappa2 is the momentum-recovery term
+        # kappa2 = (sum w*tau_C/tau_N)^2 / (sum w*tau_C/(tau_N*tau_R)), accumulated linearly here
+        # and combined in main(). tau_C/tau_N = tau_C*normal_rate. Only computed when
+        # PHONON_HYDRODYNAMIC is on (the Normal / momentum-recovery treatment); otherwise
+        # normal_rate = 0 and kappa1 collapses to the standard SMRT conductivity.
+        normal_rate = material.phonon_normal_rate(omega) if cf.phonon_hydrodynamic else 0.0
+        if normal_rate > 0 and mean_relax_time > 0:
+            tau_C = 1.0 / (1.0 / mean_relax_time + normal_rate)
+            total_kappa1 += weight * tau_C
+            total_k2_num += weight * tau_C * normal_rate
+            total_k2_den += weight * tau_C * normal_rate / mean_relax_time
+        else:
+            total_kappa1 += weight * mean_relax_time
 
         # This mode's kappa is linear in its mean free path, so its variance
         # propagates directly through the same proportionality (kappa_i / mfp_i):
@@ -143,6 +166,9 @@ def _run_branch(branch_number, shared_list, shared_progress):
     shared_list.append({
         'total_thermal_conductivity': total_thermal_conductivity,
         'total_kappa_variance': total_kappa_variance,
+        'total_kappa1': total_kappa1,
+        'total_k2_num': total_k2_num,
+        'total_k2_den': total_k2_den,
         'scatter_stats': scatter_stats.dump_data(),
         'general_stats': general_stats.dump_data(),
         'segment_stats': segment_stats.dump_data(),
@@ -213,10 +239,16 @@ def main(input_file, mode: SimulationMode):
     scatter_maps = ScatteringMap()
     total_thermal_conductivity = 0.0
     total_kappa_variance = 0.0
+    total_kappa1 = 0.0
+    total_k2_num = 0.0
+    total_k2_den = 0.0
 
     for result in shared_list:
         total_thermal_conductivity += result['total_thermal_conductivity']
         total_kappa_variance += result['total_kappa_variance']
+        total_kappa1 += result['total_kappa1']
+        total_k2_num += result['total_k2_num']
+        total_k2_den += result['total_k2_den']
         scatter_stats.read_data(result['scatter_stats'])
         general_stats.read_data(result['general_stats'])
         segment_stats.read_data(result['segment_stats'])
@@ -267,6 +299,19 @@ def main(input_file, mode: SimulationMode):
                fmt='%2.4e', delimiter=',',
                header="K_material SEM [W/mK], K_effective SEM [W/mK]", encoding='utf-8')
 
+    # Callaway dual-relaxation conductivity kappa = kappa1 + kappa2 (momentum-recovery term).
+    # Only written in hydrodynamic mode (the Normal-process treatment); in the standard RTA the
+    # -s output is unchanged. Kept in a separate file so the positional indexers of
+    # "Thermal conductivity from MFP.csv" are not disturbed. See main_mfp_sampling._run_branch.
+    kappa2 = kappa_callaway = None
+    if cf.phonon_hydrodynamic:
+        kappa2 = (total_k2_num ** 2 / total_k2_den) if total_k2_den > 0 else 0.0
+        kappa_callaway = total_kappa1 + kappa2
+        np.savetxt("Data/Thermal conductivity Callaway.csv",
+                   np.array([[total_kappa1, kappa2, kappa_callaway]]),
+                   fmt='%2.4e', delimiter=',',
+                   header="kappa1 [W/mK], kappa2 [W/mK], kappa_Callaway [W/mK]", encoding='utf-8')
+
     sys.stdout.write("\rAnalyzing the data...")
     plot_data(mode, cf)
 
@@ -274,7 +319,12 @@ def main(input_file, mode: SimulationMode):
     output_scattering_information(scatter_stats)
     output_parameter_warnings(mode, general_stats)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
-    sys.stdout.write(f"\rMaterial thermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f} ± {kappa_sem:.5f}{Style.RESET_ALL} W/m·K\n")
+    if cf.phonon_hydrodynamic:
+        sys.stdout.write(f"\rMaterial thermal conductivity (SMRT) = {Fore.GREEN}{total_thermal_conductivity:.5f} ± {kappa_sem:.5f}{Style.RESET_ALL} W/m·K\n")
+        sys.stdout.write(f"\rMaterial thermal conductivity (Callaway) = {Fore.GREEN}{kappa_callaway:.5f}{Style.RESET_ALL} W/m·K "
+                         f"(kappa1 {total_kappa1:.2f} + kappa2 {kappa2:.2f})\n")
+    else:
+        sys.stdout.write(f"\rMaterial thermal conductivity = {Fore.GREEN}{total_thermal_conductivity:.5f} ± {kappa_sem:.5f}{Style.RESET_ALL} W/m·K\n")
     if cf.holes:
         sys.stdout.write(f"\rEffective thermal conductivity = {Fore.GREEN}{effective_thermal_conductivity:.5f} ± {effective_kappa_sem:.5f}{Style.RESET_ALL} W/m·K "
                          f"(porosity {porosity:.1%}, Eucken factor {eucken_factor:.3f})\n")

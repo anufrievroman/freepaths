@@ -262,11 +262,15 @@ class Phonon(Particle):
         # Relaxation time is assigned with some randomization [PRB 94, 174303 (2016)]:
         omega = 2 * pi * self.f
         total_rate = 1 / material.phonon_relaxation_time(omega) + self._grain_boundary_rate()
-        # In hydrodynamic mode the momentum-conserving Normal events also scatter the
-        # phonon (they redirect it, conserving momentum), so they must fire as part of
-        # the Poisson clock. Excluded from phonon_relaxation_time (non-resistive), so
-        # they are added here explicitly:
-        if cf.phonon_hydrodynamic:
+        # In hydrodynamic TRACING mode the momentum-conserving Normal events also scatter
+        # the phonon (they redirect it, conserving momentum), so they must fire as part of
+        # the Poisson clock. Excluded from phonon_relaxation_time (non-resistive), so they
+        # are added here explicitly. NOT added in MFP-sampling mode: there Normal scattering
+        # is handled analytically via the Callaway kappa2 term (route a, see
+        # main_mfp_sampling), which needs the measured free path to be the RESISTIVE time
+        # tau_R (N excluded); letting N fire here would turn the measurement into tau_C and
+        # double-count N.
+        if cf.phonon_hydrodynamic and self.mode is SimulationMode.PHONON_TRACING:
             total_rate += material.phonon_normal_rate(omega)
         self.time_of_internal_scattering = -log(random()) / total_rate
 

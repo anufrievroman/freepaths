@@ -103,7 +103,7 @@ class Config:
         self.hydrodynamic_preruns_weight = HYDRODYNAMIC_PRERUNS_WEIGHT
         self.number_of_hydrodynamic_prerun_particles = NUMBER_OF_HYDRODYNAMIC_PRERUN_PARTICLES
         self.hydrodynamic_normal_resistive = HYDRODYNAMIC_NORMAL_RESISTIVE
-        self.use_dispersion_heat_capacity = USE_DISPERSION_HEAT_CAPACITY
+        self.isotope_c13_concentration = ISOTOPE_C13_CONCENTRATION
         self.max_number_of_scattering_events = MAX_NUMBER_OF_SCATTERING_EVENTS
         self.grain_size = GRAIN_SIZE
         self.grain_size_std = GRAIN_SIZE_STD
