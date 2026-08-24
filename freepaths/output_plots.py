@@ -293,6 +293,10 @@ def plot_scattering_rate_vs_frequency():
     fig.savefig('Distribution of phonon scattering rates.pdf', format='pdf', bbox_inches="tight")
     plt.close(fig)
 
+    mc_data = np.vstack((frequencies[mask] * 1e-12, scattering_rates * 1e-9)).T
+    np.savetxt('Data/Distribution of phonon scattering rates.csv', mc_data, fmt='%1.3e', delimiter=",",
+               header="Frequency (THz),MC total scattering rate (1/ns)")
+
 
 def plot_energy_distribution():
     """Plot distribution of energy"""
