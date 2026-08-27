@@ -266,12 +266,23 @@ def plot_velocity_distribution():
 
 
 def plot_scattering_rate_vs_frequency():
-    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency with theoretical internal rate"""
+    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency, resolved into the
+    internal (phonon-phonon + impurity) and boundary (diffuse surface) channels
+    measured in the simulation, with the theoretical internal rate overlaid."""
     mfps = np.loadtxt("Data/All mean free paths.csv")
     frequencies = np.loadtxt("Data/All final frequencies.csv")
     speeds = np.loadtxt("Data/All group velocities.csv")
     mask = mfps > 0
     scattering_rates = speeds[mask] / mfps[mask]
+
+    # Per-channel MC rates written by GeneralData in MFP-sampling mode (internal +
+    # boundary ≈ total). Optional so the plot still works on older result folders:
+    internal_rates = boundary_rates = None
+    try:
+        internal_rates = np.loadtxt("Data/All internal scattering rates.csv")
+        boundary_rates = np.loadtxt("Data/All boundary scattering rates.csv")
+    except OSError:
+        pass
 
     # Theoretical internal scattering rate from material model:
     material = get_media_class(cf.media)(cf.temp)
@@ -281,9 +292,23 @@ def plot_scattering_rate_vs_frequency():
 
     step_rate_ns = 1e-9 / cf.timestep  # 1/TIMESTEP in ns⁻¹
 
+    # Save the consolidated per-phonon spectra (frequency-sorted) to a single CSV so
+    # the Total/Internal/Boundary channels can be read without joining separate files:
+    if internal_rates is not None and boundary_rates is not None:
+        order = np.argsort(frequencies[mask])
+        spectra = np.column_stack((frequencies[mask], scattering_rates,
+                                   internal_rates[mask], boundary_rates[mask]))[order]
+        np.savetxt("Data/Distribution of scattering rates.csv", spectra,
+                   fmt='%2.4e', delimiter=',',
+                   header="f [Hz], Total (MC) [1/s], Internal (MC) [1/s], Boundary (MC) [1/s]",
+                   encoding='utf-8')
+
     fig, ax = plt.subplots()
-    ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='royalblue', label='MC total')
-    ax.plot(f_range * 1e-12, 1e-9 / tau_internal, '--', linewidth=0.8, c='deeppink', label='Internal (theory)')
+    ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='black', label='Total (MC)')
+    if internal_rates is not None and boundary_rates is not None:
+        ax.plot(frequencies[mask] * 1e-12, internal_rates[mask] * 1e-9, '.', markersize=2, c='#5ec962', label='Internal (MC)')
+        ax.plot(frequencies[mask] * 1e-12, boundary_rates[mask] * 1e-9, '.', markersize=2, c='royalblue', label='Boundary (MC)')
+    ax.plot(f_range * 1e-12, 1e-9 / tau_internal, '--', linewidth=0.8, c='gray', label='Internal (Theory)')
     ax.set_xlabel('Frequency (THz)')
     ax.set_ylabel(r'Scattering rate (ns$^{-1}$)')
     ax.legend()

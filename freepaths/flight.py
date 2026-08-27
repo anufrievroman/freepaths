@@ -45,6 +45,11 @@ class Flight:
         self.free_paths = []
         self._mfp_sum = 0.0
         self._mfp_count = 0
+        # Per-channel counts of the diffuse events that terminate a free-path segment,
+        # used to split the total scattering rate v/MFP into internal (phonon-phonon +
+        # impurity) and boundary (diffuse surface) spectra in the MFP-sampling mode:
+        self._internal_count = 0
+        self._boundary_count = 0
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
         self.thermal_conductivity = 0.0
@@ -52,6 +57,24 @@ class Flight:
     def mean_free_path(self):
         """Mean value of all free flights"""
         return self._mfp_sum / self._mfp_count if self._mfp_count else 0
+
+    @property
+    def internal_scattering_rate(self):
+        """Per-phonon internal (phonon-phonon + impurity) scattering rate [1/s]:
+        number of internal events divided by the total flight time (mfp_sum / speed).
+        Summed with boundary_scattering_rate this recovers the total rate v/MFP, so the
+        two split the total scattering-rate spectrum into physical channels."""
+        if self._mfp_sum <= 0:
+            return 0.0
+        return self.particle.speed * self._internal_count / self._mfp_sum
+
+    @property
+    def boundary_scattering_rate(self):
+        """Per-phonon boundary (diffuse surface) scattering rate [1/s]: number of
+        diffuse boundary events divided by the total flight time (mfp_sum / speed)."""
+        if self._mfp_sum <= 0:
+            return 0.0
+        return self.particle.speed * self._boundary_count / self._mfp_sum
 
     @property
     def mean_free_path_sem(self):
@@ -73,6 +96,14 @@ class Flight:
         self._mfp_count += 1
         if not cf.low_memory_usage:
             self.free_paths.append(self.free_path)
+
+    def record_scattering_channel(self, is_internal, is_boundary):
+        """Tally the channel of a diffuse event that ends a free-path segment, so the
+        total scattering rate can later be split into internal and boundary spectra."""
+        if is_internal:
+            self._internal_count += 1
+        if is_boundary:
+            self._boundary_count += 1
 
     def save_hole_diff_scattering_angle(self, angle):
         """Save angle of diffuse scattering from the hole"""

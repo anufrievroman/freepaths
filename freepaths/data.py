@@ -70,6 +70,10 @@ class GeneralData(Data):
         self.travel_times = []
         self.mean_free_paths = []
         self.thermal_conductivity = []
+        # Per-phonon internal and boundary scattering rates (MFP-sampling mode only),
+        # the two channels of the total rate v/MFP resolved as a function of frequency:
+        self.internal_scattering_rates = []
+        self.boundary_scattering_rates = []
     def save_particle_data(self, pt, mode=None):
         """Add information about the particle to the dataset"""
         from freepaths.options import SimulationMode
@@ -95,6 +99,8 @@ class GeneralData(Data):
         self.mean_free_paths.append(flight.mean_free_path)
         if mode is SimulationMode.PHONON_MFP_SAMPLING:
             self.thermal_conductivity.append(flight.thermal_conductivity)
+            self.internal_scattering_rates.append(flight.internal_scattering_rate)
+            self.boundary_scattering_rates.append(flight.boundary_scattering_rate)
 
     def write_into_files(self, mode=None):
         import os
@@ -121,6 +127,8 @@ class GeneralData(Data):
         np.savetxt("Data/All mean free paths.csv", self.mean_free_paths, fmt='%2.4e', header="MFPs [m]", encoding='utf-8')
         if mode is SimulationMode.PHONON_MFP_SAMPLING:
             np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
+            np.savetxt("Data/All internal scattering rates.csv", self.internal_scattering_rates, fmt='%2.4e', header="1/tau_internal [1/s]", encoding='utf-8')
+            np.savetxt("Data/All boundary scattering rates.csv", self.boundary_scattering_rates, fmt='%2.4e', header="1/tau_boundary [1/s]", encoding='utf-8')
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
@@ -136,6 +144,8 @@ class GeneralData(Data):
             'travel_times': self.travel_times,
             'mean_free_paths': self.mean_free_paths,
             'thermal_conductivity': self.thermal_conductivity,
+            'internal_scattering_rates': self.internal_scattering_rates,
+            'boundary_scattering_rates': self.boundary_scattering_rates,
             'initial_energies': self.initial_energies,
         }
 

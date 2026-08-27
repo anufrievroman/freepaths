@@ -56,6 +56,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
 
         # If diffuse scattering has occurred, reset particle free path:
         if scattering_types.is_diffuse or scattering_types.is_internal:
+            flight.record_scattering_channel(scattering_types.is_internal, scattering_types.is_diffuse)
             flight.save_free_paths()
             flight.restart()
             # An inelastic (anharmonic) internal event rethermalizes the phonon: new
