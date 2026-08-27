@@ -74,6 +74,10 @@ class GeneralData(Data):
         # the two channels of the total rate v/MFP resolved as a function of frequency:
         self.internal_scattering_rates = []
         self.boundary_scattering_rates = []
+        # Per-phonon dispersion branch index (0=LA, 1=TA1, 2=TA2, ...). In MFP-sampling
+        # mode each phonon keeps its launch branch (no rethermalization), so this lets the
+        # scattering-rate spectra be resolved per branch. Row-aligned with the arrays above.
+        self.branches = []
     def save_particle_data(self, pt, mode=None):
         """Add information about the particle to the dataset"""
         from freepaths.options import SimulationMode
@@ -82,6 +86,7 @@ class GeneralData(Data):
         else:
             self.final_frequencies.append(pt.f)
             self.group_velocities.append(pt.speed)
+            self.branches.append(pt.branch_number)
 
     def save_flight_data(self, flight, mode=None):
         """Add information about the particle flight to the dataset"""
@@ -129,6 +134,7 @@ class GeneralData(Data):
             np.savetxt("Data/All thermal conductivities.csv", self.thermal_conductivity, fmt='%2.4e', header="K [W/mK]", encoding='utf-8')
             np.savetxt("Data/All internal scattering rates.csv", self.internal_scattering_rates, fmt='%2.4e', header="1/tau_internal [1/s]", encoding='utf-8')
             np.savetxt("Data/All boundary scattering rates.csv", self.boundary_scattering_rates, fmt='%2.4e', header="1/tau_boundary [1/s]", encoding='utf-8')
+            np.savetxt("Data/All branches.csv", self.branches, fmt='%d', header="Branch index (0=LA, 1=TA1, 2=TA2)", encoding='utf-8')
     def dump_data(self):
         """Return data of a process in the form of a dictionary to be attached to the global data"""
         return {
@@ -146,6 +152,7 @@ class GeneralData(Data):
             'thermal_conductivity': self.thermal_conductivity,
             'internal_scattering_rates': self.internal_scattering_rates,
             'boundary_scattering_rates': self.boundary_scattering_rates,
+            'branches': self.branches,
             'initial_energies': self.initial_energies,
         }
 

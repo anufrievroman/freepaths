@@ -266,61 +266,98 @@ def plot_velocity_distribution():
 
 
 def plot_scattering_rate_vs_frequency():
-    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency, resolved into the
-    internal (phonon-phonon + impurity) and boundary (diffuse surface) channels
-    measured in the simulation, with the theoretical internal rate overlaid."""
+    """Plot phonon scattering rate (1/τ = v/MFP) vs frequency, resolved per dispersion
+    branch (color + marker shape: LA / TA1 / TA2) and per channel (marker fill:
+    filled = Total, open = Boundary, small dot = Internal), with the theoretical
+    internal rate overlaid. MFP-sampling mode."""
+    from matplotlib.lines import Line2D
+
     mfps = np.loadtxt("Data/All mean free paths.csv")
     frequencies = np.loadtxt("Data/All final frequencies.csv")
     speeds = np.loadtxt("Data/All group velocities.csv")
     mask = mfps > 0
     scattering_rates = speeds[mask] / mfps[mask]
+    f_masked = frequencies[mask]
 
-    # Per-channel MC rates written by GeneralData in MFP-sampling mode (internal +
-    # boundary ≈ total). Optional so the plot still works on older result folders:
-    internal_rates = boundary_rates = None
+    # Per-channel MC rates and per-phonon branch index written by GeneralData in
+    # MFP-sampling mode (internal + boundary ≈ total). Optional so the plot still
+    # works on older result folders:
+    internal_rates = boundary_rates = branches = None
     try:
         internal_rates = np.loadtxt("Data/All internal scattering rates.csv")
         boundary_rates = np.loadtxt("Data/All boundary scattering rates.csv")
     except OSError:
         pass
+    try:
+        branches = np.atleast_1d(np.loadtxt("Data/All branches.csv")).astype(int)
+    except OSError:
+        pass
 
     # Theoretical internal scattering rate from material model:
     material = get_media_class(cf.media)(cf.temp)
-    f_range = np.linspace(frequencies[mask].min(), frequencies[mask].max(), 500)
-    omega_range = 2 * np.pi * f_range
-    tau_internal = np.array([material.phonon_relaxation_time(w) for w in omega_range])
-
+    f_range = np.linspace(f_masked.min(), f_masked.max(), 500)
+    tau_internal = np.array([material.phonon_relaxation_time(w) for w in 2 * np.pi * f_range])
     step_rate_ns = 1e-9 / cf.timestep  # 1/TIMESTEP in ns⁻¹
 
-    # Save the consolidated per-phonon spectra (frequency-sorted) to a single CSV so
-    # the Total/Internal/Boundary channels can be read without joining separate files:
-    if internal_rates is not None and boundary_rates is not None:
-        order = np.argsort(frequencies[mask])
-        spectra = np.column_stack((frequencies[mask], scattering_rates,
-                                   internal_rates[mask], boundary_rates[mask]))[order]
-        np.savetxt("Data/Distribution of scattering rates.csv", spectra,
-                   fmt='%2.4e', delimiter=',',
-                   header="f [Hz], Total (MC) [1/s], Internal (MC) [1/s], Boundary (MC) [1/s]",
-                   encoding='utf-8')
+    branch_names = material.dispersion_branch_names
+    branch_colors = ['royalblue', '#5ec962', 'crimson', 'darkorange']  # one per branch
+    # Channel -> marker shape (+ a slightly different alpha to help separate overlaps):
+    channel_names = ['Total', 'Boundary', 'Internal']
+    channel_markers = ['o', 's', '^']
+    channel_alphas = [0.9, 0.6, 0.5]
 
     fig, ax = plt.subplots()
-    ax.plot(frequencies[mask] * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='black', label='Total (MC)')
-    if internal_rates is not None and boundary_rates is not None:
-        ax.plot(frequencies[mask] * 1e-12, internal_rates[mask] * 1e-9, '.', markersize=2, c='#5ec962', label='Internal (MC)')
-        ax.plot(frequencies[mask] * 1e-12, boundary_rates[mask] * 1e-9, '.', markersize=2, c='royalblue', label='Boundary (MC)')
-    ax.plot(f_range * 1e-12, 1e-9 / tau_internal, '--', linewidth=0.8, c='gray', label='Internal (Theory)')
+    have_channels = internal_rates is not None and boundary_rates is not None
+
+    if branches is not None and have_channels:
+        # Branch-resolved: branch -> color, channel -> marker shape + alpha.
+        br = branches[mask]
+        intr, bnd = internal_rates[mask], boundary_rates[mask]
+        present = [b for b in range(len(branch_names)) if np.any(br == b)]
+        for b in present:
+            sel = br == b
+            color = branch_colors[b % 4]
+            fx = f_masked[sel] * 1e-12
+            channel_data = [scattering_rates[sel], bnd[sel], intr[sel]]
+            for cdata, marker, alpha in zip(channel_data, channel_markers, channel_alphas):
+                ax.scatter(fx, cdata * 1e-9, s=8, marker=marker, color=color,
+                           alpha=alpha, linewidths=0)
+
+        # Two proxy legends: branch (color), channel (marker shape):
+        branch_handles = [Line2D([], [], linestyle='None', marker='o', markerfacecolor=branch_colors[b % 4],
+                                 markeredgecolor=branch_colors[b % 4], label=branch_names[b]) for b in present]
+        branch_handles.append(Line2D([], [], color='gray', linestyle='--', label='Internal (Theory)'))
+        channel_handles = [Line2D([], [], linestyle='None', marker=m, markerfacecolor='gray',
+                                  markeredgecolor='gray', label=n)
+                           for m, n in zip(channel_markers, channel_names)]
+        leg1 = ax.legend(handles=branch_handles, loc='upper left', fontsize=7, title='Branch')
+        ax.add_artist(leg1)
+        ax.legend(handles=channel_handles, loc='upper right', fontsize=7, title='Channel')
+
+        # Consolidated CSV in long format, sorted by (branch, frequency):
+        order = np.lexsort((f_masked, br))
+        legend = ", ".join(f"{i}={name}" for i, name in enumerate(branch_names))
+        spectra = np.column_stack((br, f_masked, scattering_rates, intr, bnd))[order]
+        np.savetxt("Data/Distribution of scattering rates.csv", spectra,
+                   fmt=['%d', '%2.4e', '%2.4e', '%2.4e', '%2.4e'], delimiter=',',
+                   header=f"branch ({legend}), f [Hz], Total (MC) [1/s], "
+                          "Internal (MC) [1/s], Boundary (MC) [1/s]", encoding='utf-8')
+    else:
+        # Fallback for older result folders without branch/channel data: total only.
+        ax.plot(f_masked * 1e-12, scattering_rates * 1e-9, '.', markersize=2, c='black', label='Total (MC)')
+        ax.legend(fontsize=7)
+        order = np.argsort(f_masked)
+        np.savetxt("Data/Distribution of scattering rates.csv",
+                   np.column_stack((f_masked, scattering_rates))[order],
+                   fmt='%2.4e', delimiter=',', header="f [Hz], Total (MC) [1/s]", encoding='utf-8')
+
+    ax.plot(f_range * 1e-12, 1e-9 / tau_internal, '--', linewidth=0.8, c='gray')
     ax.set_xlabel('Frequency (THz)')
     ax.set_ylabel(r'Scattering rate (ns$^{-1}$)')
-    ax.legend()
     ax.text(0.98, 0.04, f'Step rate = {step_rate_ns:.1f} ns$^{{-1}}$',
-            transform=ax.transAxes, ha='right', va='bottom',
-            fontsize=7, color='gray')
+            transform=ax.transAxes, ha='right', va='bottom', fontsize=7, color='gray')
     fig.savefig('Distribution of phonon scattering rates.pdf', format='pdf', bbox_inches="tight")
     plt.close(fig)
-
-    mc_data = np.vstack((frequencies[mask] * 1e-12, scattering_rates * 1e-9)).T
-    np.savetxt('Data/Distribution of phonon scattering rates.csv', mc_data, fmt='%1.3e', delimiter=",",
-               header="Frequency (THz),MC total scattering rate (1/ns)")
 
 
 def plot_energy_distribution():
