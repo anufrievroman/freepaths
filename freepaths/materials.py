@@ -48,6 +48,57 @@ class Material(ABC):
         """
         return 0.0
 
+    def assign_isotope_scattering(self, concentration):
+        """
+        Precompute the Tamura point-defect (isotope mass-disorder) scattering-rate table
+        1/tau_iso(w) = (pi/6) g^2 w^2 D(w) from the tabulated dispersion, where
+        g^2 = sum_i c_i (1 - m_i/<m>)^2 is the mass variance of the two isotopes
+        `_isotope_mass_light`/`_isotope_mass_heavy` (the heavy one at fractional abundance
+        `concentration`) and D(w) is the total phonon DOS per unit cell, built by
+        histogramming the k^2 dk mode weight over the three branches and normalized so each
+        branch integrates to one mode/cell (the Tamura final-state sum rule). That
+        normalization makes the rate independent of the fitted BZ k-extent and, in the Debye
+        limit D -> 3 V0 w^2 / (2 pi^2 v^3), recovers the Klemens form
+        1/tau = V0 g^2 w^4 / (4 pi v^3).
+        Tamura, PRB 27, 858 (1983); Klemens, Proc. Phys. Soc. A 68, 1113 (1955).
+        """
+        c_heavy = concentration
+        c_light = 1.0 - c_heavy
+        m_avg = c_light * self._isotope_mass_light + c_heavy * self._isotope_mass_heavy
+        self._isotope_g2 = (c_light * (1 - self._isotope_mass_light / m_avg) ** 2
+                            + c_heavy * (1 - self._isotope_mass_heavy / m_avg) ** 2)
+        if self._isotope_g2 == 0.0:
+            self._isotope_f_grid = None
+            self._isotope_rate_grid = None
+            return
+        # Total DOS per unit cell, summed over branches, on a uniform frequency histogram.
+        # Each k-bin holds 3 k^2 dk / k_max^3 modes/cell (so each branch integrates to 1);
+        # dividing the binned mode count by the bin's angular-frequency width gives D(w) [s].
+        k_vec = self.dispersion[:, 0]
+        k_max = k_vec[-1]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        mode_weight = 3.0 * k_mid ** 2 * d_k / k_max ** 3
+        f_max = self.dispersion[:, 1:4].max()
+        n_bins = 400
+        f_edges = np.linspace(0, f_max, n_bins + 1)
+        modes_per_cell = np.zeros(n_bins)
+        for branch in range(1, 4):
+            f_mid = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            modes_per_cell += np.histogram(f_mid, bins=f_edges, weights=mode_weight)[0]
+        d_omega = 2 * pi * (f_edges[1] - f_edges[0])
+        dos_per_cell = modes_per_cell / d_omega                       # D(w) [s], total integral = 3
+        omega_grid = 2 * pi * (f_edges[1:] + f_edges[:-1]) / 2
+        self._isotope_f_grid = omega_grid / (2 * pi)
+        self._isotope_rate_grid = (pi / 6) * self._isotope_g2 * omega_grid ** 2 * dos_per_cell
+
+    def phonon_isotope_rate(self, omega):
+        """Elastic isotope (mass-disorder) scattering rate [1/s] at angular frequency omega,
+        interpolated from the precomputed Tamura table; 0 for an isotopically pure crystal."""
+        if self._isotope_rate_grid is None:
+            return 0.0
+        return float(np.interp(omega / (2 * pi), self._isotope_f_grid, self._isotope_rate_grid))
+
     def group_velocity(self, branch_number, f):
         """
         Group velocity dw/dk [m/s] at ordinary frequency f [Hz] on the given branch,
@@ -443,58 +494,10 @@ class Graphite(Material):
     _N_shape_wc = 2 * pi * 2.93e12   # crossover angular frequency [rad/s]
     _N_shape_p = 1.38                # crossover sharpness
 
-    # 13-C isotope masses [amu] for the mass-variance parameter (12-C defines the amu):
-    _M_C12 = 12.0
-    _M_C13 = 13.003355
-
-    def assign_isotope_scattering(self, concentration):
-        """
-        Precompute the Tamura point-defect (isotope mass-disorder) scattering-rate table
-        1/tau_iso(w) = (pi/6) g^2 w^2 D(w) from the tabulated dispersion, where
-        g^2 = sum_i c_i (1 - m_i/<m>)^2 is the mass variance (13-C at fractional abundance
-        `concentration` in carbon; natural = 0.0107 -> g^2 ~ 7.4e-5) and D(w) is the total
-        phonon DOS per unit cell, built by histogramming the k^2 dk mode weight over the
-        three branches and normalized so each branch integrates to one mode/cell (the
-        Tamura final-state sum rule). That normalization makes the rate independent of the
-        fitted BZ k-extent and, in the Debye limit D -> 3 V0 w^2 / (2 pi^2 v^3), recovers
-        the Klemens form 1/tau = V0 g^2 w^4 / (4 pi v^3). 
-        Tamura, PRB 27, 858 (1983); Klemens, Proc. Phys. Soc. A 68, 1113 (1955).
-        """
-        c13 = concentration
-        c12 = 1.0 - c13
-        m_avg = c12 * self._M_C12 + c13 * self._M_C13
-        self._isotope_g2 = c12 * (1 - self._M_C12 / m_avg) ** 2 + c13 * (1 - self._M_C13 / m_avg) ** 2
-        if self._isotope_g2 == 0.0:
-            self._isotope_f_grid = None
-            self._isotope_rate_grid = None
-            return
-        # Total DOS per unit cell, summed over branches, on a uniform frequency histogram.
-        # Each k-bin holds 3 k^2 dk / k_max^3 modes/cell (so each branch integrates to 1);
-        # dividing the binned mode count by the bin's angular-frequency width gives D(w) [s].
-        k_vec = self.dispersion[:, 0]
-        k_max = k_vec[-1]
-        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
-        d_k = np.diff(k_vec)
-        mode_weight = 3.0 * k_mid ** 2 * d_k / k_max ** 3
-        f_max = self.dispersion[:, 1:4].max()
-        n_bins = 400
-        f_edges = np.linspace(0, f_max, n_bins + 1)
-        modes_per_cell = np.zeros(n_bins)
-        for branch in range(1, 4):
-            f_mid = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
-            modes_per_cell += np.histogram(f_mid, bins=f_edges, weights=mode_weight)[0]
-        d_omega = 2 * pi * (f_edges[1] - f_edges[0])
-        dos_per_cell = modes_per_cell / d_omega                       # D(w) [s], total integral = 3
-        omega_grid = 2 * pi * (f_edges[1:] + f_edges[:-1]) / 2
-        self._isotope_f_grid = omega_grid / (2 * pi)
-        self._isotope_rate_grid = (pi / 6) * self._isotope_g2 * omega_grid ** 2 * dos_per_cell
-
-    def phonon_isotope_rate(self, omega):
-        """Elastic isotope (mass-disorder) scattering rate [1/s] at angular frequency omega,
-        interpolated from the precomputed Tamura table; 0 for an isotopically pure crystal."""
-        if self._isotope_rate_grid is None:
-            return 0.0
-        return float(np.interp(omega / (2 * pi), self._isotope_f_grid, self._isotope_rate_grid))
+    # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines the amu;
+    # natural 13-C abundance 0.0107 -> g^2 ~ 7.4e-5). Consumed by Material.assign_isotope_scattering.
+    _isotope_mass_light = 12.0
+    _isotope_mass_heavy = 13.003355
 
     def phonon_scattering_rates(self, omega):
         """Return (inelastic, elastic) scattering rates [1/s] """
@@ -522,8 +525,6 @@ class Graphite(Material):
         return self._C_N * (self.temp ** 3) * shape / (1.0 + shape)
 
 
-
-# Materials below are not fully supported and don't have the relaxation times:
 
 class SiGe(Material):
     """
@@ -581,34 +582,88 @@ class SiGe(Material):
 
 class Diamond(Material):
     """
-    Physical properties of diamond
-    Dispersion - Ref. PRB 58 12899 (1998)
+    Physical properties of diamond.
+    Dispersion - Warren et al., Phys. Rev. 158, 805 (1967);
+    Relaxation times - Umklapp (Slack/Klemens high-T form, prefactor B_U fit to the bulk
+      natural-diamond kappa(300 K) ~ 2200 W/mK) + isotope (Tamura 13-C mass disorder,
+      shared with Graphite via Material.assign_isotope_scattering).
     """
 
-    def __init__(self, temp, num_points=1000):
+    # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines
+    # the amu; natural 13-C abundance 0.0107). Consumed by Material.assign_isotope_scattering.
+    _isotope_mass_light = 12.0
+    _isotope_mass_heavy = 13.003355
+
+    # Three-phonon Umklapp rate, Slack/Klemens high-T form:
+    #   1/tau_U = B_U * omega^2 * T * exp(-deb_temp / (alpha * T))
+    # B_U fit so the bulk natural-diamond (13-C = 0.0107) kappa reaches ~2200 W/mK at 300 K.
+    _B_U = 8.5e-20       # Umklapp prefactor [s/K]
+    _deb_temp = 2200.0   # Umklapp activation temperature (~diamond Debye temperature) [K]
+    _alpha = 3.0         # activation scaling (theta*/alpha)
+
+    def __init__(self, temp, num_points=1000, isotope_c13_concentration=0.0):
         self.name = "Diamond"
-        self.density = 3500         # [kg/m^3]
+        self.density = 3515         # [kg/m^3]
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
+        # Isotope table before the sampling tables, which query phonon_scattering_rates:
+        self.assign_isotope_scattering(isotope_c13_concentration)
+        self.assign_dispersion_heat_capacity()
+        self.assign_phonon_sampling_tables()
 
     def assign_phonon_dispersion(self, num_points):
-        """Assign phonon dispersion"""
+        """
+        Acoustic branches f(k) = A*k + B*k^2 + C*k^3 on the Gamma-X k-axis, with the three
+        coefficients fixed by: the long-wavelength sound velocity (f'(0) = v_sound / 2pi),
+        the measured zone-edge frequency (f(k_X) = f_X), and a vanishing group velocity at
+        the zone boundary (f'(k_X) = 0). TA2 is set equal to TA1.
+        """
+        a = 3.567e-10                 # lattice constant [m]
+        k_X = 2 * pi / a              # Gamma-X zone-boundary wavevector [1/m]
 
-        A1 = 4309.95222
-        B1 = -8.855338e-08
-        C1 = -1.347265e-18
-        A2 = 3185.66561
-        B2 = -4.104260e-08
-        C2 = -5.042335e-18
+        def branch_coeffs(v_sound, f_X):
+            A = v_sound / (2 * pi)
+            B = 3 * f_X / k_X ** 2 - 2 * A / k_X
+            C = A / k_X ** 2 - 2 * f_X / k_X ** 3
+            return [C, B, A, 0]
+
+        coeffs_LA = branch_coeffs(17520.0, 35.9e12)  # LA: v = 17520 m/s, LA(X) = 35.9 THz
+        coeffs_TA = branch_coeffs(12820.0, 24.2e12)  # TA: v = 12820 m/s, TA(X) = 24.2 THz
 
         self.dispersion = np.zeros((num_points, 4))
-        self.dispersion[:, 0] = [k * 11707071561.7 / (num_points - 1) for k in range(num_points)]     # Wavevectors
-        self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]  # LA branch
-        self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
+        self.dispersion[:, 0] = np.linspace(0, k_X, num_points)                       # Wavevectors
+        self.dispersion[:, 1] = np.abs(np.polyval(coeffs_LA, self.dispersion[:, 0]))  # LA branch
+        self.dispersion[:, 2] = np.abs(np.polyval(coeffs_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
+    def phonon_scattering_rates(self, omega):
+        """Umklapp (inelastic) and isotope mass-disorder (elastic) scattering rates [1/s]."""
+        rate_umklapp = self._B_U * (omega ** 2) * self.temp * np.exp(-self._deb_temp / (self._alpha * self.temp))
+        return rate_umklapp, self.phonon_isotope_rate(omega)
+
     def phonon_relaxation_time(self, omega):
-        pass
+        """Relaxation time from the sum of the Umklapp and isotope rates."""
+        inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
+        return 1 / (inelastic_rate + elastic_rate)
+
+    # Normal (momentum-conserving) three-phonon rate, Herring/Callaway form for a cubic
+    # crystal: 1/tau_N = B_N * omega^2 * T^3. NON-resistive (excluded from
+    # phonon_relaxation_time and kappa_RTA; see Material.phonon_normal_rate); consumed only
+    # by the Callaway-kappa2 / hydrodynamic path.
+    # CAVEAT: B_N is NOT pinned to a first-principles diamond reference. It is anchored so the
+    # kappa-weighted Normal rate equals the resistive (Umklapp + isotope) rate at ~100 K, the
+    # natural-diamond kappa peak (the peak IS the N<->U crossover). With this anchor the naive
+    # T^3 form (valid only near/below the peak) still yields <N>/<R> ~ 0.55 at 300 K, i.e. N is
+    # subdominant and the Callaway kappa2 correction is small (< ~20%): diamond is resistive-
+    # (Umklapp + isotope) dominated at 300 K. For quantitative LOW-T hydrodynamics a proper
+    # first-principles / saturating N model is needed (the T^3 form over-inflates N at high T,
+    # exactly as documented for graphite). Refs: Morelli, Heremans & Slack, PRB 66, 195304
+    # (2002); Ward, Broido, Stewart & Deinzer, PRB 80, 125203 (2009).
+    _B_N = 5.45e-26      # Normal-process prefactor [s * K^-3] (N=R crossover at 100 K)
+
+    def phonon_normal_rate(self, omega):
+        """Momentum-conserving Normal three-phonon rate [1/s], 1/tau_N = B_N * omega^2 * T^3."""
+        return self._B_N * (omega ** 2) * (self.temp ** 3)
 
 
 class AlN(Material):
@@ -649,5 +704,9 @@ def get_media_class(material_name: str) -> Material:
         return SiC
     elif material_name == "Graphite":
         return Graphite
+    elif material_name == "SiGe":
+        return SiGe
+    elif material_name == "Diamond":
+        return Diamond
     else:
         raise Exception(f"Material {material_name} is not supported")

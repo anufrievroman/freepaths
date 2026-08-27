@@ -13,7 +13,7 @@ from freepaths.config import cf
 from freepaths.options import SimulationMode
 from freepaths.materials import get_media_class
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
-from freepaths.materials import Si, SiC, Graphite, SiGe
+from freepaths.materials import Si, SiC, Graphite, SiGe, Diamond
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['pdf.compression'] = 9   # compresse PDF flux
@@ -614,6 +614,8 @@ def plot_material_properties():
         material = SiC(cf.temp)
     elif cf.media == "Graphite":
         material = Graphite(cf.temp)
+    elif cf.media == "Diamond":
+        material = Diamond(cf.temp)
     else:
         logging.error(f"Material {cf.media} is not supported")
         sys.exit()

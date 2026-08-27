@@ -21,7 +21,7 @@ from freepaths.options import SimulationMode
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite, SiGe
+from freepaths.materials import Si, SiC, Graphite, SiGe, Diamond
 from freepaths.maps import ScatteringMap, ThermalMaps, DriftField
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings, output_electron_information
 from freepaths.animation import create_animation
@@ -46,6 +46,8 @@ class ParticleSimulator:
             self.material = SiC(cf.temp)
         elif cf.media == "Graphite":
             self.material = Graphite(cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
+        elif cf.media == "Diamond":
+            self.material = Diamond(cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
         else:
             logging.error(f"Material {cf.media} is not supported")
             sys.exit()
@@ -272,7 +274,7 @@ def main(input_file, mode: SimulationMode):
     number_of_passes = number_of_preruns + 1
 
     # Material instance for the momentum-susceptibility constant (drift-field derivation):
-    hydro_material = {"Si": Si, "SiGe": SiGe, "SiC": SiC, "Graphite": Graphite}[cf.media](cf.temp) if hydrodynamic else None
+    hydro_material = {"Si": Si, "SiGe": SiGe, "SiC": SiC, "Graphite": Graphite, "Diamond": Diamond}[cf.media](cf.temp) if hydrodynamic else None
 
     drift_field = None
     drift_convergence = []   # per-prerun (n, mean|u_fresh|, mean|u_field|, rel_change) for the convergence test

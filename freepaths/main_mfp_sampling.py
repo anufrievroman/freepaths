@@ -21,7 +21,7 @@ from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.options import SimulationMode
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
-from freepaths.materials import Si, SiC, Graphite, SiGe
+from freepaths.materials import Si, SiC, Graphite, SiGe, Diamond
 from freepaths.maps import ScatteringMap
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
 from freepaths.materials import get_media_class
@@ -86,6 +86,8 @@ def _run_branch(branch_number, shared_list, shared_progress):
         material = SiC(cf.temp, num_points=cf.number_of_particles + 1)
     elif cf.media == "Graphite":
         material = Graphite(cf.temp, num_points=cf.number_of_particles + 1, isotope_c13_concentration=cf.isotope_c13_concentration)
+    elif cf.media == "Diamond":
+        material = Diamond(cf.temp, num_points=cf.number_of_particles + 1, isotope_c13_concentration=cf.isotope_c13_concentration)
     else:
         logging.error(f"Material {cf.media} is not supported")
         return
