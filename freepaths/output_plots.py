@@ -324,15 +324,22 @@ def plot_scattering_rate_vs_frequency():
                            alpha=alpha, linewidths=0)
 
         # Two proxy legends: branch (color), channel (marker shape):
-        branch_handles = [Line2D([], [], linestyle='None', marker='o', markerfacecolor=branch_colors[b % 4],
+        branch_handles = [Line2D([], [], linestyle='None', marker='o', markersize=4,
+                                 markerfacecolor=branch_colors[b % 4],
                                  markeredgecolor=branch_colors[b % 4], label=branch_names[b]) for b in present]
         branch_handles.append(Line2D([], [], color='gray', linestyle='--', label='Internal (Theory)'))
-        channel_handles = [Line2D([], [], linestyle='None', marker=m, markerfacecolor='gray',
-                                  markeredgecolor='gray', label=n)
+        channel_handles = [Line2D([], [], linestyle='None', marker=m, markersize=4,
+                                  markerfacecolor='gray', markeredgecolor='gray', label=n)
                            for m, n in zip(channel_markers, channel_names)]
-        leg1 = ax.legend(handles=branch_handles, loc='upper left', fontsize=7, title='Branch')
+        # Two horizontal legends side by side above the axes (branch on the left,
+        # channel on the right), clear of the data:
+        leg1 = ax.legend(handles=branch_handles, loc='lower left', bbox_to_anchor=(0, 1.02),
+                         ncol=len(branch_handles), fontsize=5.5, title='Branch', title_fontsize=6,
+                         columnspacing=0.8, handletextpad=0.3)
         ax.add_artist(leg1)
-        ax.legend(handles=channel_handles, loc='upper right', fontsize=7, title='Channel')
+        ax.legend(handles=channel_handles, loc='lower right', bbox_to_anchor=(1, 1.02),
+                  ncol=len(channel_handles), fontsize=5.5, title='Channel', title_fontsize=6,
+                  columnspacing=0.8, handletextpad=0.3)
 
         # Consolidated CSV in long format, sorted by (branch, frequency):
         order = np.lexsort((f_masked, br))
