@@ -3,9 +3,9 @@
 import sys
 import os
 import shutil
-import imageio
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 
 from freepaths.config import cf
 from freepaths.output_structure import draw_structure_top_view
@@ -77,25 +77,20 @@ def generate_frames_xy():
 def generate_animation_xy():
     """Generate animation of phonon path in XY plane"""
     sys.stdout.write(f"\rAnimation: creating animation file")
-    images = []
+
     # Sort the frames so the GIF plays in the order they were rendered.
     # os.listdir returns entries in arbitrary filesystem order (unsorted on
     # macOS/APFS), which produced out-of-order animations. Filtering to the
     # frame_*.png files also guards against stray files (e.g. .DS_Store).
     filenames = sorted(f for f in os.listdir("Frames/") if f.endswith(".png"))
-    for filename in filenames:
-        images.append(imageio.imread(f"Frames/{filename}"))
 
-    # Create a GIF file:
-    imageio.mimsave("Animated paths XY.gif", images,
-                    duration=1000 * 1/cf.output_animation_fps, subrectangles=True)
-
-    # Create an MP4 file:
-    # writer = imageio.get_writer('Animated paths XY.mp4', fps=cf.output_animation_fps)
-
-    # for im in images:
-        # writer.append_data(imageio.imread(im))
-    # writer.close()
+    # Assemble the GIF with Pillow (already a matplotlib dependency), so no
+    # extra imaging library is required. Frames are converted to a palette
+    # image for GIF; duration is milliseconds per frame, loop=0 loops forever.
+    frames = [Image.open(f"Frames/{name}").convert("RGB").convert("P", palette=Image.ADAPTIVE)
+              for name in filenames]
+    frames[0].save("Animated paths XY.gif", save_all=True, append_images=frames[1:],
+                   duration=1000 / cf.output_animation_fps, loop=0, optimize=True)
 
 
 def delete_frames():
