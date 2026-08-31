@@ -14,7 +14,7 @@ from freepaths.output_structure import draw_structure_top_view
 def generate_frames_xy():
     """Generate animation frames with phonon paths"""
 
-    data = np.genfromtxt("Data/Phonon paths.csv",
+    data = np.genfromtxt("Data/Particle paths.csv",
                          unpack=False,
                          delimiter=',',
                          skip_header=1,
@@ -78,7 +78,11 @@ def generate_animation_xy():
     """Generate animation of phonon path in XY plane"""
     sys.stdout.write(f"\rAnimation: creating animation file")
     images = []
-    filenames = os.listdir("Frames/")
+    # Sort the frames so the GIF plays in the order they were rendered.
+    # os.listdir returns entries in arbitrary filesystem order (unsorted on
+    # macOS/APFS), which produced out-of-order animations. Filtering to the
+    # frame_*.png files also guards against stray files (e.g. .DS_Store).
+    filenames = sorted(f for f in os.listdir("Frames/") if f.endswith(".png"))
     for filename in filenames:
         images.append(imageio.imread(f"Frames/{filename}"))
 

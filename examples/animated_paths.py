@@ -1,7 +1,5 @@
 """This example shows how FreePATHS can output animation of particle paths in the structure"""
 
-# !! Animations are currently broken !!
-
 # Basic parameters:
 OUTPUT_FOLDER_NAME             = "Animated Paths"
 NUMBER_OF_PARTICLES            = 50
