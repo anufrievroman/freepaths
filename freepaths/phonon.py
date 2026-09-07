@@ -189,13 +189,12 @@ class Phonon(Particle):
         a = (1.0 + n0) * hbar * k * u_mag / (k_B * material.temp)
 
         if cf.is_two_dimensional_material:
-            # In-plane: draw the angle delta from u_hat, von Mises P(delta) ~ exp(a cos delta),
-            # by rejection against the exp(a) envelope (accept w.p. exp(a(cos delta - 1))):
+            # In-plane: draw the angle delta from u_hat, von Mises P(delta) ~ exp(a cos delta).
+            # Sampled directly (Best-Fisher, via numpy) rather than by rejection against the
+            # exp(a) envelope, whose acceptance decays as ~1/sqrt(a) - and the flexural (ZA)
+            # modes that carry the hydrodynamics are exactly the large-a population:
             theta_u = atan2(u_x, u_y)
-            while True:
-                delta = -pi + random() * 2 * pi
-                if random() <= exp(a * (cos(delta) - 1.0)):
-                    break
+            delta = np.random.vonmises(0.0, a)
             # Previous linearized form P(delta) ~ 1 + a cos(delta), a clamped to <=1 so P >= 0
             # (kept for reference; gives essentially the same profile - the clamp was not the
             # cause of the flat cross-width profile):

@@ -1,6 +1,7 @@
 """Module that assigns physical properties according to chosen material"""
 
 from abc import ABC, abstractmethod
+from inspect import signature
 import numpy as np
 from scipy.constants import electron_volt, electron_mass, k as k_B, hbar, pi
 
@@ -696,6 +697,28 @@ class AlN(Material):
 
     def phonon_relaxation_time(self, omega):
         pass
+
+
+def create_material(material_name: str, temp, num_points=1000, fermi_level=None,
+                    isotope_c13_concentration=0.0) -> Material:
+    """
+    Build a material instance, passing only those keyword arguments that the chosen
+    material's constructor actually accepts (e.g. only Si/SiGe take a Fermi level,
+    only Graphite/Diamond take an isotope concentration). This is the single place
+    where materials are constructed from configuration, so a new material or a new
+    constructor argument does not have to be threaded through every call site.
+    """
+    material_class = get_media_class(material_name)
+    parameters = signature(material_class).parameters
+    kwargs = {}
+    if "num_points" in parameters:
+        kwargs["num_points"] = num_points
+    if "fermi_level" in parameters:
+        kwargs["fermi_level"] = fermi_level
+    if "isotope_c13_concentration" in parameters:
+        kwargs["isotope_c13_concentration"] = isotope_c13_concentration
+    return material_class(temp, **kwargs)
+
 
 def get_media_class(material_name: str) -> Material:
     if material_name == "Si":

@@ -21,7 +21,7 @@ from freepaths.options import SimulationMode
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
 from freepaths.post_computations import ElectronPostComputation
 from freepaths.progress import Progress
-from freepaths.materials import Si, SiC, Graphite, SiGe, Diamond
+from freepaths.materials import create_material
 from freepaths.maps import ScatteringMap, ThermalMaps, DriftField
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings, output_electron_information
 from freepaths.animation import create_animation
@@ -38,19 +38,8 @@ class ParticleSimulator:
     def __init__(self, worker_id, mode: SimulationMode, total_particles, shared_list, output_trajectories_of, drift_field=None):
 
         # Initialize the material:
-        if cf.media == "Si":
-            self.material = Si(cf.temp)
-        elif cf.media == "SiGe":
-            self.material = SiGe(cf.temp)
-        elif cf.media == "SiC":
-            self.material = SiC(cf.temp)
-        elif cf.media == "Graphite":
-            self.material = Graphite(cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
-        elif cf.media == "Diamond":
-            self.material = Diamond(cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
-        else:
-            logging.error(f"Material {cf.media} is not supported")
-            sys.exit()
+        self.material = create_material(cf.media, cf.temp,
+                                        isotope_c13_concentration=cf.isotope_c13_concentration)
 
         # Frozen hydrodynamic drift field for this pass (None in the bootstrap pass and
         # in non-hydrodynamic runs); read by momentum-conserving Normal scattering events:
@@ -274,7 +263,8 @@ def main(input_file, mode: SimulationMode):
     number_of_passes = number_of_preruns + 1
 
     # Material instance for the momentum-susceptibility constant (drift-field derivation):
-    hydro_material = {"Si": Si, "SiGe": SiGe, "SiC": SiC, "Graphite": Graphite, "Diamond": Diamond}[cf.media](cf.temp) if hydrodynamic else None
+    hydro_material = create_material(cf.media, cf.temp,
+                                    isotope_c13_concentration=cf.isotope_c13_concentration) if hydrodynamic else None
 
     drift_field = None
     drift_convergence = []   # per-prerun (n, mean|u_fresh|, mean|u_field|, rel_change) for the convergence test

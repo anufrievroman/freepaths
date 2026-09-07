@@ -1,7 +1,6 @@
 """Module that calculates and outputs vaious plots and distributions from the saved files"""
 
 import logging
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -11,9 +10,8 @@ from scipy.constants import electron_volt
 
 from freepaths.config import cf
 from freepaths.options import SimulationMode
-from freepaths.materials import get_media_class
+from freepaths.materials import create_material
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
-from freepaths.materials import Si, SiC, Graphite, SiGe, Diamond
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['pdf.compression'] = 9   # compresse PDF flux
@@ -274,7 +272,7 @@ def plot_scattering_rate_vs_frequency():
     scattering_rates = speeds[mask] / mfps[mask]
 
     # Theoretical internal scattering rate from material model:
-    material = get_media_class(cf.media)(cf.temp)
+    material = create_material(cf.media, cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
     f_range = np.linspace(frequencies[mask].min(), frequencies[mask].max(), 500)
     omega_range = 2 * np.pi * f_range
     tau_internal = np.array([material.phonon_relaxation_time(w) for w in omega_range])
@@ -606,19 +604,7 @@ def plot_material_properties():
     """Plot phonon dispersion and display some other material properties"""
 
     # Initialize the material:
-    if cf.media == "Si":
-        material = Si(cf.temp)
-    elif cf.media == "SiGe":
-        material = SiGe(cf.temp)
-    elif cf.media == "SiC":
-        material = SiC(cf.temp)
-    elif cf.media == "Graphite":
-        material = Graphite(cf.temp)
-    elif cf.media == "Diamond":
-        material = Diamond(cf.temp)
-    else:
-        logging.error(f"Material {cf.media} is not supported")
-        sys.exit()
+    material = create_material(cf.media, cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
 
     # Plot phonon dispersion:
     n_branches = material.dispersion.shape[1] - 1

@@ -21,10 +21,9 @@ from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.options import SimulationMode
 from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
-from freepaths.materials import Si, SiC, Graphite, SiGe, Diamond
+from freepaths.materials import create_material, get_media_class
 from freepaths.maps import ScatteringMap
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
-from freepaths.materials import get_media_class
 from freepaths.output_plots import plot_data
 
 
@@ -78,19 +77,8 @@ def _run_branch(branch_number, shared_list, shared_progress):
     # Each worker builds its own material instance so the dispersion is
     # sampled with the correct number of points (number_of_particles + 1
     # intervals → number_of_particles midpoints):
-    if cf.media == "Si":
-        material = Si(cf.temp, num_points=cf.number_of_particles + 1)
-    elif cf.media == "SiGe":
-        material = SiGe(cf.temp, num_points=cf.number_of_particles + 1)
-    elif cf.media == "SiC":
-        material = SiC(cf.temp, num_points=cf.number_of_particles + 1)
-    elif cf.media == "Graphite":
-        material = Graphite(cf.temp, num_points=cf.number_of_particles + 1, isotope_c13_concentration=cf.isotope_c13_concentration)
-    elif cf.media == "Diamond":
-        material = Diamond(cf.temp, num_points=cf.number_of_particles + 1, isotope_c13_concentration=cf.isotope_c13_concentration)
-    else:
-        logging.error(f"Material {cf.media} is not supported")
-        return
+    material = create_material(cf.media, cf.temp, num_points=cf.number_of_particles + 1,
+                               isotope_c13_concentration=cf.isotope_c13_concentration)
 
     # Local data structures — merged into the global ones after all workers finish:
     scatter_stats = ScatteringData()

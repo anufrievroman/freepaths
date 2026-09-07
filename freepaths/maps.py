@@ -38,10 +38,6 @@ class DriftField:
             return self.u_x[index_y, index_x], self.u_y[index_y, index_x], self.u_z[index_y, index_x]
         return 0.0, 0.0, 0.0
 
-    def as_arrays(self):
-        """Return the raw (u_x, u_y, u_z) component arrays."""
-        return self.u_x, self.u_y, self.u_z
-
 
 class ScatteringMap(Maps):
     """Map of scattering in the structure"""
