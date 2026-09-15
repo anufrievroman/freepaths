@@ -91,6 +91,7 @@ class Config:
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
         self.ignore_faulty_particles = IGNORE_FAULTY_PARTICLES
         self.gradient_fit_range = GRADIENT_FIT_RANGE
+        self.temperature_profile_x_range = TEMPERATURE_PROFILE_X_RANGE
 
         # Material parameters:
         self.media = MEDIA
@@ -173,6 +174,11 @@ class Config:
 
         if not (0.0 <= self.gradient_fit_range[0] < self.gradient_fit_range[1] <= 1.0):
             logging.error("Parameter GRADIENT_FIT_RANGE must be a pair (start, end) with 0 <= start < end <= 1.\n" +
+                          f"See the documentation at {WEBSITE}")
+            sys.exit()
+
+        if not (0.0 <= self.temperature_profile_x_range[0] < self.temperature_profile_x_range[1] <= 1.0):
+            logging.error("Parameter TEMPERATURE_PROFILE_X_RANGE must be a pair (start, end) with 0 <= start < end <= 1.\n" +
                           f"See the documentation at {WEBSITE}")
             sys.exit()
 

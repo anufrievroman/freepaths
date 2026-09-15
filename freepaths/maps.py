@@ -114,6 +114,7 @@ class ThermalMaps(Maps):
         self.effective_heat_flux_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
         self.material_heat_flux_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
         self.temperature_profile_y = np.zeros((cf.number_of_pixels_y, cf.number_of_timeframes))
+        self.temperature_profile_x = np.zeros((cf.number_of_pixels_x, cf.number_of_timeframes))
         self.heat_flux_map_x = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_y = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
         self.heat_flux_map_xy = np.zeros((cf.number_of_pixels_y, cf.number_of_pixels_x))
@@ -130,11 +131,24 @@ class ThermalMaps(Maps):
 
         # Calculate the volumes [m^3] and other parameters (need to be corrected with volume of the holes):
         self.vol_cell_y = cf.length * cf.thickness * cf.width / cf.number_of_pixels_y
+        self.vol_cell_x = cf.length * cf.thickness * cf.width / cf.number_of_pixels_x
         self.vol_pixel =  cf.length * cf.thickness * cf.width / (cf.number_of_pixels_x * cf.number_of_pixels_y)
 
         # Calculate the pixel volumes with respect to holes:
         self.vol_pixel_ratio = self.calculate_pixel_volumes(cf.number_of_pixels_x, cf.number_of_pixels_y)
         self.vol_pixel_correction_per_row = np.mean(self.vol_pixel_ratio, axis=1)
+        self.vol_pixel_correction_per_column = np.mean(self.vol_pixel_ratio, axis=0)
+
+        # Depth band (rows of the map) over which the lateral temperature profile is
+        # accumulated, from TEMPERATURE_PROFILE_X_RANGE as a fraction of the length. The
+        # default (0, 1) averages the whole sample; a narrow band near one face reproduces a
+        # measurement that only probes that depth, such as a buried sensor layer. The cell
+        # volume is reduced to match the band, so the profile stays a temperature.
+        self.profile_x_row_start = int(cf.temperature_profile_x_range[0] * cf.number_of_pixels_y)
+        self.profile_x_row_end = max(int(cf.temperature_profile_x_range[1] * cf.number_of_pixels_y),
+                                     self.profile_x_row_start + 1)
+        band_fraction = (self.profile_x_row_end - self.profile_x_row_start) / cf.number_of_pixels_y
+        self.vol_cell_x_band = self.vol_cell_x * band_fraction
 
         # Crystal-momentum density maps for the hydrodynamic (Poiseuille) drift field.
         self.record_momentum = cf.phonon_hydrodynamic
@@ -178,6 +192,7 @@ class ThermalMaps(Maps):
             # Calculate pixel volume correction factors:
             vol_pixel_correction = self.vol_pixel_ratio[index_y, index_x]
             vol_pixel_correction_y = self.vol_pixel_correction_per_row[index_y]
+            vol_pixel_correction_x = self.vol_pixel_correction_per_column[index_x]
 
             # Do not record data if the pixel is an empty one:
             if vol_pixel_correction == 0 and cf.ignore_faulty_particles:
@@ -218,6 +233,15 @@ class ThermalMaps(Maps):
                 self.effective_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y
                 self.material_heat_flux_profile_y[index_y, timeframe_number] += energy * cos(pt.theta) * abs(cos(pt.phi)) * pt.speed / self.vol_cell_y / vol_pixel_correction_y
                 self.temperature_profile_y[index_y, timeframe_number] += energy / volumetric_heat_capacity / self.vol_cell_y / vol_pixel_correction_y
+
+            # Lateral (x-resolved) temperature profile, the transpose of the y profile above.
+            # Needed whenever the gradient of interest runs across the sample rather than along
+            # it - e.g. heat spreading sideways from a line heater on one face, where the y
+            # profile (which averages over x) cannot resolve the quantity being measured.
+            # Kept as a separate guard because a column can be fully empty while its row is not.
+            if (timeframe_number < cf.number_of_timeframes and vol_pixel_correction_x != 0
+                    and self.profile_x_row_start <= index_y < self.profile_x_row_end):
+                self.temperature_profile_x[index_x, timeframe_number] += energy / volumetric_heat_capacity / self.vol_cell_x_band / vol_pixel_correction_x
 
 
     def calculate_heat_flux_modulus(self):
@@ -324,6 +348,10 @@ class ThermalMaps(Maps):
 
         t_headers = ', '.join([f'T (K) [step{i+1}]' for i in range(cf.number_of_timeframes)])
         np.savetxt("Data/Temperature profiles y.csv", data_temp_y, fmt='%1.3e', delimiter=",", header="Y (um), " + t_headers, encoding='utf-8')
+        num_of_points_x = self.temperature_profile_x.shape[0]
+        coordinates_x = ((np.arange(num_of_points_x) + 0.5) * cf.width / num_of_points_x - cf.width / 2) * 1e6
+        data_temp_x = np.vstack((coordinates_x, self.temperature_profile_x.T)).T
+        np.savetxt("Data/Temperature profiles x.csv", data_temp_x, fmt='%1.3e', delimiter=",", header="X (um, from centre), " + t_headers, encoding='utf-8')
         j_headers = ', '.join([f'J_eff (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)] + [f'J_mat (a.u.) [step{i+1}]' for i in range(cf.number_of_timeframes)])
         np.savetxt("Data/Heat flux profiles y.csv", data_flux_y, fmt='%1.3e', delimiter=",", header="Y (um), " + j_headers, encoding='utf-8')
         np.savetxt("Data/Thermal conductivity.csv", data_tc, fmt='%1.3e', delimiter=",", header="t(ns), K_eff (W/mK), K_mat (W/mK)", encoding='utf-8')
@@ -360,6 +388,7 @@ class ThermalMaps(Maps):
             'effective_heat_flux_profile_y': self.effective_heat_flux_profile_y,
             'material_heat_flux_profile_y': self.material_heat_flux_profile_y,
             'temperature_profile_y': self.temperature_profile_y,
+            'temperature_profile_x': self.temperature_profile_x,
         }
         # Crystal-momentum maps are summed across workers by the parent read_data (both
         # sides allocate them, since record_momentum comes from the same config flag):

@@ -65,6 +65,7 @@ NUMBER_OF_PIXELS_X               = 7
 NUMBER_OF_PIXELS_Y               = 67
 IGNORE_FAULTY_PARTICLES          = False
 GRADIENT_FIT_RANGE               = (0.1, 0.9)
+TEMPERATURE_PROFILE_X_RANGE      = (0.0, 1.0)
 
 # Material parameters:
 MEDIA                            = "Si"
