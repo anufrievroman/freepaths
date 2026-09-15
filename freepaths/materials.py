@@ -585,9 +585,12 @@ class Diamond(Material):
     """
     Physical properties of diamond.
     Dispersion - Warren et al., Phys. Rev. 158, 805 (1967);
-    Relaxation times - Umklapp (Slack/Klemens high-T form, prefactor B_U fit to the bulk
-      natural-diamond kappa(300 K) ~ 2200 W/mK) + isotope (Tamura 13-C mass disorder,
-      shared with Graphite via Material.assign_isotope_scattering).
+    Relaxation times - Umklapp (Slack/Klemens high-T form) + isotope (Tamura 13-C mass
+      disorder, shared with Graphite via Material.assign_isotope_scattering) + a
+      momentum-conserving Normal rate.  The Umklapp and Normal constants come from a joint
+      Callaway (kappa_1 + kappa_2) fit to the natural type-IIa kappa(T) curve of Onn et al.,
+      PRL 68, 2806 (1992) over 10-400 K plus three anchors from Wei et al., PRL 70, 3764
+      (1993); see Data/Fitting_BulkDiamond/fit_bulk_diamond_callaway.py.
     """
 
     # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines
@@ -597,10 +600,19 @@ class Diamond(Material):
 
     # Three-phonon Umklapp rate, Slack/Klemens high-T form:
     #   1/tau_U = B_U * omega^2 * T * exp(-deb_temp / (alpha * T))
-    # B_U fit so the bulk natural-diamond (13-C = 0.0107) kappa reaches ~2200 W/mK at 300 K.
-    _B_U = 8.5e-20       # Umklapp prefactor [s/K]
+    # B_U and the activation temperature theta/alpha = 683 K come from the joint Callaway
+    # fit described in the class docstring -- i.e. they are pinned by the SHAPE of kappa(T)
+    # from 10 to 400 K, not by a single 300 K value as before (that earlier single-point fit
+    # gave B_U = 8.5e-20 with theta/alpha = 733 K, which was 2.5x low at 1000 K and was also
+    # silently absorbing the vacancy / interstitial-nitrogen scattering of Berman's
+    # particular stones into the intrinsic Umklapp).  For cross-checking: Wei1993's
+    # independently fitted Umklapp is B/(4 pi^2 v) = 2.90e-20 s/K with C = 670 K, i.e. within
+    # 9% and 2% of these -- from a different dispersion model and a different data set.
+    # Sample-specific point defects (vacancies, nitrogen) are deliberately NOT included here;
+    # they belong in an input file. The fit's value for Onn's stones was D = 1.89e-47 s^3.
+    _B_U = 3.1655e-20    # Umklapp prefactor [s/K]
     _deb_temp = 2200.0   # Umklapp activation temperature (~diamond Debye temperature) [K]
-    _alpha = 3.0         # activation scaling (theta*/alpha)
+    _alpha = 3.220       # activation scaling (theta*/alpha = 683.3 K)
 
     def __init__(self, temp, num_points=1000, isotope_c13_concentration=0.0):
         self.name = "Diamond"
@@ -647,24 +659,35 @@ class Diamond(Material):
         inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
         return 1 / (inelastic_rate + elastic_rate)
 
-    # Normal (momentum-conserving) three-phonon rate, Herring/Callaway form for a cubic
-    # crystal: 1/tau_N = B_N * omega^2 * T^3. NON-resistive (excluded from
-    # phonon_relaxation_time and kappa_RTA; see Material.phonon_normal_rate); consumed only
-    # by the Callaway-kappa2 / hydrodynamic path.
-    # CAVEAT: B_N is NOT pinned to a first-principles diamond reference. It is anchored so the
-    # kappa-weighted Normal rate equals the resistive (Umklapp + isotope) rate at ~100 K, the
-    # natural-diamond kappa peak (the peak IS the N<->U crossover). With this anchor the naive
-    # T^3 form (valid only near/below the peak) still yields <N>/<R> ~ 0.55 at 300 K, i.e. N is
-    # subdominant and the Callaway kappa2 correction is small (< ~20%): diamond is resistive-
-    # (Umklapp + isotope) dominated at 300 K. For quantitative LOW-T hydrodynamics a proper
-    # first-principles / saturating N model is needed (the T^3 form over-inflates N at high T,
-    # exactly as documented for graphite). Refs: Morelli, Heremans & Slack, PRB 66, 195304
-    # (2002); Ward, Broido, Stewart & Deinzer, PRB 80, 125203 (2009).
-    _B_N = 5.45e-26      # Normal-process prefactor [s * K^-3] (N=R crossover at 100 K)
+    # Normal (momentum-conserving) three-phonon rate, Wei1993 Eq. (1):
+    #   1/tau_N = A * v * T^3 / lambda  ==  (A / 2 pi) * omega * T^3
+    # NON-resistive (excluded from phonon_relaxation_time and kappa_RTA; see
+    # Material.phonon_normal_rate); consumed only by the Callaway-kappa2 / hydrodynamic path.
+    #
+    # This replaces an earlier Herring omega^2 T^3 form whose prefactor was anchored to an
+    # N = resistive crossover at the ~100 K kappa peak. That form is the wrong SHAPE: against
+    # Wei's omega^1 rate it was 33x too weak at 1 THz, 6.7x at 5 THz and only 1.1x at 30 THz,
+    # i.e. it under-weighted N precisely on the low-frequency modes that carry the heat and
+    # generate kappa_2. The consequence was a badly under-predicted isotope effect (pure /
+    # natural kappa ratio 1.06 at 300 K against a measured ~1.45): with N too weak the model
+    # reproduces bulk kappa but cannot reproduce the ISOTOPE dependence, which is exactly the
+    # failure Wei1993 attribute to Onn1992's N-free analysis.
+    #
+    # The FORM is Wei's and transfers cleanly (it is velocity-independent). The VALUE is
+    # refitted on our real dispersion: at Wei's own A = 7.2e-11 this model over-predicts the
+    # isotope ratio (2.0 vs ~1.45), because our v_g -> 0 zone boundary concentrates the heat
+    # in low-omega modes where an omega^1 N-rate bites hardest, buying ~2x the kappa_2 of
+    # Wei's constant-velocity Debye model.
+    #
+    # CAVEAT: the T^3 factor is a low-temperature form, fitted over 10-400 K. It extrapolates
+    # catastrophically above that (at 1250 K it drives tau_N far below tau_R, sending
+    # kappa_2/kappa_1 to ~11 and the isotope ratio to ~29) -- the same pathology already
+    # documented for Graphite. Do not trust kappa_2 above ~400 K.
+    _A_N = 1.5537e-11    # Normal-process prefactor [K^-3]; 1/tau_N = (_A_N / 2 pi) omega T^3
 
     def phonon_normal_rate(self, omega):
-        """Momentum-conserving Normal three-phonon rate [1/s], 1/tau_N = B_N * omega^2 * T^3."""
-        return self._B_N * (omega ** 2) * (self.temp ** 3)
+        """Momentum-conserving Normal three-phonon rate [1/s], 1/tau_N = (A/2pi) omega T^3."""
+        return (self._A_N / (2 * pi)) * omega * (self.temp ** 3)
 
 
 class AlN(Material):
