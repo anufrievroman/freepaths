@@ -31,6 +31,19 @@ def alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j):
     """
     Specular transmission coefficient (AMM) between two materials.
 
+    Ran & Cao, PRB 110, 024302 (2024), Eq. (20):
+
+        alpha = 4*A*B / (A + B)**2,   A = Z_j/Z_i,  B = cos(theta_j)/cos(theta_i)
+
+    which is the standard oblique-incidence acoustic result 4*W_i*W_j/(W_i + W_j)**2
+    with the angle-corrected impedances W = Z/cos(theta), i.e. the COSINES IN THE
+    DENOMINATOR ARE CROSSED: (Z_i*cos(theta_j) + Z_j*cos(theta_i))**2. Writing them
+    uncrossed agrees at normal incidence but over-estimates transmission at oblique
+    incidence (Si/SiGe LA at 1 THz: 0.990 vs 0.928 at 60 deg).
+
+    Note this is Eq. (20), not Eq. (25): the MTM detailed-balance prefactor
+    min{1, P_j*C_j*vg_j**3 / (P_i*C_i*vg_i**3)} of Eq. (25) is deliberately not applied.
+
     Parameters:
     theta_i -- incidence angle
     vg_i, vg_j -- group velocities of media i and j
@@ -49,7 +62,7 @@ def alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j):
         Z_j = rho_j * vg_j
 
         num = 4 * Z_i * Z_j * abs(math.cos(theta_i)) * abs(math.cos(theta_j))
-        den = (Z_i * abs(math.cos(theta_i)) + Z_j * abs(math.cos(theta_j))) ** 2
+        den = (Z_i * abs(math.cos(theta_j)) + Z_j * abs(math.cos(theta_i))) ** 2
         return num / den
     except:
         return 0.0
