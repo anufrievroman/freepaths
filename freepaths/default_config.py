@@ -55,9 +55,6 @@ MEAN_MAPPING_CONSTANT            = 5e-6 # [m²]
 
 FERMI_LEVEL_LOWER_BOUND          = -0.2  # [eV] lower end of post-processing Fermi level sweep
 FERMI_LEVEL_UPPER_BOUND          =  0.1  # [eV] upper end of post-processing Fermi level sweep;
-# far above the band edge the Fermi window leaves the sampled energy range and
-# the MC results become noisy, so there is little point in sweeping further
-
 
 # Animation:
 OUTPUT_PATH_ANIMATION            = False
@@ -68,6 +65,7 @@ NUMBER_OF_PIXELS_X               = 7
 NUMBER_OF_PIXELS_Y               = 67
 IGNORE_FAULTY_PARTICLES          = False
 GRADIENT_FIT_RANGE               = (0.1, 0.9)
+TEMPERATURE_PROFILE_X_RANGE      = (0.0, 1.0)
 
 # Material parameters:
 MEDIA                            = "Si"
@@ -76,47 +74,20 @@ MEDIA_FERMI_LEVEL                = None
 # Internal scattering:
 INCLUDE_INTERNAL_SCATTERING      = True
 
-# Phonon frequencies and branches are always sampled from the tabulated dispersion
-# (weight k^2 dk per bin, heat-capacity weighting, group-velocity weighting at the
-# source), so particles are equal-energy deviational bundles and the thermal maps
-# record a constant weight per phonon. At inelastic (anharmonic) internal scattering
-# events the branch and frequency are re-drawn from the collision-rate-weighted
-# distribution (Peraud & Hadjiconstantinou, PRB 84, 205331 (2011)), restoring local
-# thermal equilibrium of the phonon population. Elastic internal events (impurity/alloy
-# scattering) conserve the mode and only randomize the direction. This applies to the
-# phonon tracing mode; MFP sampling and electron modes keep the particle identity by
-# construction.
+# Phonon hydrodynamic transport.
+PHONON_HYDRODYNAMIC              = False
+NUMBER_OF_HYDRODYNAMIC_PRERUNS   = 5
+HYDRODYNAMIC_PRERUNS_WEIGHT      = 0.8
+NUMBER_OF_HYDRODYNAMIC_PRERUN_PARTICLES = None
 
-# Convert deposited particle energy into the temperature profile using the
-# dispersion-only heat capacity (Material.dispersion_heat_capacity, summed only
-# over the branches in the tabulated dispersion) instead of the experimental
-# heat capacity fit (Material.assign_heat_capacity). On by default because it
-# makes the reported temperature and kappa self-consistent with the
-# dispersion-based sampling/rethermalization scheme and the model's own RTA
-# integral. Set to False to use the real material heat capacity instead (e.g.
-# including optical branches absent from the tabulated dispersion):
-USE_DISPERSION_HEAT_CAPACITY     = True
+# Diagnostic control: when True, Normal events still fire but redraw the direction 
+# randomly instead of biased toward the local drift
+HYDRODYNAMIC_NORMAL_RESISTIVE    = False
+ISOTOPE_C13_CONCENTRATION        = 0.0
 
-# MFP sampling mode only (no effect in phonon tracing, where particles must keep
-# going for the full budget to build the flux map): end a phonon's flight early
-# once it has accumulated this many free-path segments, instead of always running
-# to NUMBER_OF_TIMESTEPS. A short-tau, low-velocity phonon takes tiny hops and
-# diffuses so slowly that it essentially never reaches a domain boundary, but its
-# mean free path already converges after a modest number of scattering events, so
-# running it to the full timestep budget is wasted compute. 1000 is on by default,
-# since it was validated (bulk Si MFP-sampling convergence study, Data/BulkSi_Phonon_MFP/)
-# to give the same result as 5000 while being far cheaper. Set to None to disable
-# (run to the timestep budget or a boundary, as before):
 MAX_NUMBER_OF_SCATTERING_EVENTS  = 1000
 
 # Grain boundary scattering (polycrystalline materials):
-# GRAIN_SIZE sets the mean grain diameter [m]. None disables grain boundary scattering entirely.
-# GRAIN_SIZE_STD sets the standard deviation [m]; the grain size is drawn per phonon from a
-# lognormal distribution with this mean and std. Set to 0 for monodisperse (single grain size).
-# GRAIN_ROUGHNESS is the RMS disorder width of the grain boundary [m], used in a Soffer-type
-# specularity factor: at low frequencies (long wavelengths) the boundary appears smooth and
-# phonons pass through; at high frequencies it acts as a classical diffuse scatterer.
-# Typical values: GRAIN_SIZE 100 nm – 10 µm, GRAIN_ROUGHNESS 0.5–2 nm.
 GRAIN_SIZE                       = None
 GRAIN_SIZE_STD                   = 0.0
 GRAIN_ROUGHNESS                  = 1e-9

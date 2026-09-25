@@ -1,7 +1,6 @@
 """Module that calculates and outputs vaious plots and distributions from the saved files"""
 
 import logging
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -11,9 +10,8 @@ from scipy.constants import electron_volt
 
 from freepaths.config import cf
 from freepaths.options import SimulationMode
-from freepaths.materials import get_media_class
+from freepaths.materials import create_material
 from freepaths.output_structure import draw_structure_top_view, draw_structure_side_view
-from freepaths.materials import Si, SiC, Graphite, SiGe
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['pdf.compression'] = 9   # compresse PDF flux
@@ -294,7 +292,7 @@ def plot_scattering_rate_vs_frequency():
         pass
 
     # Theoretical internal scattering rate from material model:
-    material = get_media_class(cf.media)(cf.temp)
+    material = create_material(cf.media, cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
     f_range = np.linspace(f_masked.min(), f_masked.max(), 500)
     tau_internal = np.array([material.phonon_relaxation_time(w) for w in 2 * np.pi * f_range])
     step_rate_ns = 1e-9 / cf.timestep  # 1/TIMESTEP in ns⁻¹
@@ -679,17 +677,7 @@ def plot_material_properties():
     """Plot phonon dispersion and display some other material properties"""
 
     # Initialize the material:
-    if cf.media == "Si":
-        material = Si(cf.temp)
-    elif cf.media == "SiGe":
-        material = SiGe(cf.temp)
-    elif cf.media == "SiC":
-        material = SiC(cf.temp)
-    elif cf.media == "Graphite":
-        material = Graphite(cf.temp)
-    else:
-        logging.error(f"Material {cf.media} is not supported")
-        sys.exit()
+    material = create_material(cf.media, cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
 
     # Plot phonon dispersion:
     n_branches = material.dispersion.shape[1] - 1
@@ -706,18 +694,11 @@ def plot_material_properties():
     ax.set_ylim(bottom=0)
     ax.set_xlim(left=0)
 
-    # Add material properties. Show whichever heat capacity is actually used for the
-    # temperature-profile conversion in maps.py (cf.use_dispersion_heat_capacity),
-    # not always the real experimental one, since the two differ substantially
-    # (dispersion-only excludes optical branches) and showing the unused one here
-    # would misrepresent what the simulation is doing:
-    if cf.use_dispersion_heat_capacity:
-        heat_capacity = material.dispersion_heat_capacity / material.density
-        heat_capacity_label = "C$_v$ (dispersion-only)"
-    else:
-        heat_capacity = material.heat_capacity
-        heat_capacity_label = "C$_p$ (experimental)"
-    ax.set_title(f'{material.name},  T = {cf.temp} K,  {heat_capacity_label} = {heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
+    # Add material properties. The heat capacity shown is the dispersion-only C_v used for the
+    # temperature-profile conversion in maps.py (it counts only the tabulated dispersion
+    # branches, self-consistent with the dispersion-based sampling):
+    heat_capacity = material.dispersion_heat_capacity / material.density
+    ax.set_title(f'{material.name},  T = {cf.temp} K,  C$_v$ (dispersion-only) = {heat_capacity:.3f} J/kg·K,  ρ = {material.density} kg/m³', color="grey")
 
     fig.savefig("Material properties.pdf", format='pdf', bbox_inches="tight")
     plt.close(fig)

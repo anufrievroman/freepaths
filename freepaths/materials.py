@@ -1,6 +1,7 @@
 """Module that assigns physical properties according to chosen material"""
 
 from abc import ABC, abstractmethod
+from inspect import signature
 import numpy as np
 from scipy.constants import electron_volt, electron_mass, k as k_B, hbar, pi
 
@@ -32,29 +33,83 @@ class Material(ABC):
         """
         return 1 / self.phonon_relaxation_time(omega), 0.0
 
-    @abstractmethod
-    def assign_heat_capacity(self):
-        """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
-        pass
+    def phonon_normal_rate(self, omega):
+        """
+        Normal (momentum-conserving) three-phonon scattering rate [1/s] at angular
+        frequency omega. N-processes keep all three phonons inside the first Brillouin
+        zone and conserve total crystal momentum hbar*q, so they are NON-resistive:
+        they redistribute momentum among modes rather than destroying it. They are
+        therefore deliberately EXCLUDED from phonon_relaxation_time and the kappa_RTA
+        integral. Adding 1/tau_N to the Matthiessen sum and randomizing direction at
+        the event would make N a second Umklapp, add fake resistance, and underestimate
+        kappa at low T. This rate is consumed only by the hydrodynamic tracing path
+        (cf.phonon_hydrodynamic), which at an N-event resamples the outgoing mode from
+        the drifting Bose-Einstein distribution (conserving the local crystal momentum)
+        instead of rethermalizing isotropically. Default: 0 (no N model, pure RTA).
+        """
+        return 0.0
+
+    def assign_isotope_scattering(self, concentration):
+        """
+        Precompute the Tamura point-defect (isotope mass-disorder) scattering-rate table
+        1/tau_iso(w) = (pi/6) g^2 w^2 D(w) from the tabulated dispersion, where
+        g^2 = sum_i c_i (1 - m_i/<m>)^2 is the mass variance of the two isotopes
+        `_isotope_mass_light`/`_isotope_mass_heavy` (the heavy one at fractional abundance
+        `concentration`) and D(w) is the total phonon DOS per unit cell, built by
+        histogramming the k^2 dk mode weight over the three branches and normalized so each
+        branch integrates to one mode/cell (the Tamura final-state sum rule). That
+        normalization makes the rate independent of the fitted BZ k-extent and, in the Debye
+        limit D -> 3 V0 w^2 / (2 pi^2 v^3), recovers the Klemens form
+        1/tau = V0 g^2 w^4 / (4 pi v^3).
+        Tamura, PRB 27, 858 (1983); Klemens, Proc. Phys. Soc. A 68, 1113 (1955).
+        """
+        c_heavy = concentration
+        c_light = 1.0 - c_heavy
+        m_avg = c_light * self._isotope_mass_light + c_heavy * self._isotope_mass_heavy
+        self._isotope_g2 = (c_light * (1 - self._isotope_mass_light / m_avg) ** 2
+                            + c_heavy * (1 - self._isotope_mass_heavy / m_avg) ** 2)
+        if self._isotope_g2 == 0.0:
+            self._isotope_f_grid = None
+            self._isotope_rate_grid = None
+            return
+        # Total DOS per unit cell, summed over branches, on a uniform frequency histogram.
+        # Each k-bin holds 3 k^2 dk / k_max^3 modes/cell (so each branch integrates to 1);
+        # dividing the binned mode count by the bin's angular-frequency width gives D(w) [s].
+        k_vec = self.dispersion[:, 0]
+        k_max = k_vec[-1]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        mode_weight = 3.0 * k_mid ** 2 * d_k / k_max ** 3
+        f_max = self.dispersion[:, 1:4].max()
+        n_bins = 400
+        f_edges = np.linspace(0, f_max, n_bins + 1)
+        modes_per_cell = np.zeros(n_bins)
+        for branch in range(1, 4):
+            f_mid = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            modes_per_cell += np.histogram(f_mid, bins=f_edges, weights=mode_weight)[0]
+        d_omega = 2 * pi * (f_edges[1] - f_edges[0])
+        dos_per_cell = modes_per_cell / d_omega                       # D(w) [s], total integral = 3
+        omega_grid = 2 * pi * (f_edges[1:] + f_edges[:-1]) / 2
+        self._isotope_f_grid = omega_grid / (2 * pi)
+        self._isotope_rate_grid = (pi / 6) * self._isotope_g2 * omega_grid ** 2 * dos_per_cell
+
+    def phonon_isotope_rate(self, omega):
+        """Elastic isotope (mass-disorder) scattering rate [1/s] at angular frequency omega,
+        interpolated from the precomputed Tamura table; 0 for an isotopically pure crystal."""
+        if self._isotope_rate_grid is None:
+            return 0.0
+        return float(np.interp(omega / (2 * pi), self._isotope_f_grid, self._isotope_rate_grid))
 
     def group_velocity(self, branch_number, f):
         """
         Group velocity dw/dk [m/s] at ordinary frequency f [Hz] on the given branch,
         as a finite difference between the two tabulated points closest to f.
-        Nearest-point search rather than bisection because some branches are not
-        monotonic in frequency (e.g. the TA branches of SiC and Graphite).
+        Nearest-point search rather than bisection because some branches are not monotonic in frequency
         """
         f_branch = self.dispersion[:, branch_number + 1]
         diffs = np.abs(f_branch - f)
         nearest = diffs.argmin()
         n = len(f_branch)
-        # Interval between the nearest point and whichever of its two neighbors
-        # is itself closer to f, so the difference is taken on the side f
-        # actually sits on. Using only "nearest - 1" here (as an earlier version
-        # did) makes two different phonons whose frequencies straddle the same
-        # nearest grid point collapse onto the same interval, giving them the
-        # exact same (wrong) velocity instead of two distinct, locally correct
-        # ones; comparing both neighbors and picking the closer one avoids that.
         if nearest == 0:
             point_num = 0
         elif nearest == n - 1:
@@ -66,6 +121,46 @@ class Material(ABC):
         d_omega = 2 * pi * abs(f_branch[point_num + 1] - f_branch[point_num])
         d_k = abs(self.dispersion[point_num + 1, 0] - self.dispersion[point_num, 0])
         return d_omega / d_k
+
+    def wavevector(self, branch_number, f):
+        """Wavevector magnitude k [1/m] at ordinary frequency f [Hz] on the given branch"""
+        f_branch = self.dispersion[:, branch_number + 1]
+        nearest = np.abs(f_branch - f).argmin()
+        return self.dispersion[nearest, 0]
+
+    def mean_inverse_phase_velocity_sq(self):
+        """
+        Heat-capacity-weighted average of (k/omega)^2 = 1/v_phase^2 over all tabulated
+        dispersion modes [s^2/m^2], = sum(DOS*C*(k/omega)^2) / sum(DOS*C). This is the
+        material constant that converts the recorded crystal-momentum density into a
+        drift velocity in the linearized (small-drift) displaced-Bose-Einstein picture:
+        the crystal momentum density is P = chi*u with chi = (T/3) sum(DOS*C*(k/omega)^2),
+        and the deviational energy density is e = C_v*T with C_v = sum(DOS*C)
+        (dispersion_heat_capacity), so
+            u = 3 * (P / e) / <(k/omega)^2>_C ,
+        with T, volume and sample count cancelling. Dominated by the slow, large-k/omega
+        modes (the quadratic ZA branch), consistent with the flexural branch carrying the
+        phonon hydrodynamics. Cached after the first call.
+        """
+        if getattr(self, "_mean_inv_vp2", None) is not None:
+            return self._mean_inv_vp2
+        k_vec = self.dispersion[:, 0]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        numerator = 0.0
+        denominator = 0.0
+        for branch in range(1, self.dispersion.shape[1]):
+            freqs = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            valid = freqs > 0
+            omegas = 2 * pi * freqs[valid]
+            x = hbar * omegas / (k_B * self.temp)
+            mode_heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
+            dos = k_mid[valid]**2 * d_k[valid]
+            inv_vp2 = (k_mid[valid] / omegas)**2
+            numerator += np.sum(dos * mode_heat_capacity * inv_vp2)
+            denominator += np.sum(dos * mode_heat_capacity)
+        self._mean_inv_vp2 = numerator / denominator
+        return self._mean_inv_vp2
 
     def assign_phonon_sampling_tables(self):
         """
@@ -157,9 +252,10 @@ class Material(ABC):
         """
         Volumetric heat capacity [J/K/m^3] summed over only the branches present in self.dispersion
         mode C(w) = k*x^2*exp(x)/expm1(x)^2 weighted by the k^2 dk density of states.
-        Unlike the experimental fit in assign_heat_capacity, it excludes any physics not in
-        the tabulated dispersion (e.g. optical branches), which makes it self-consistent
-        with the dispersion-based sampling and the RTA integral.
+        Unlike an experimental heat-capacity fit, it excludes any physics not in the tabulated
+        dispersion (e.g. optical branches), which makes it self-consistent with the
+        dispersion-based sampling and the RTA integral. This is the heat capacity used for the
+        temperature-profile conversion (maps.py).
         """
         k_vec = self.dispersion[:, 0]
         k_mid = (k_vec[1:] + k_vec[:-1]) / 2
@@ -175,27 +271,46 @@ class Material(ABC):
             total += np.sum(dos * mode_heat_capacity)
         self.dispersion_heat_capacity = total
 
+    def ballistic_conductance(self):
+        """
+        Landauer ballistic thermal conductance per unit cross-sectional area [W/m^2/K]:
+            G = (1/4) sum_branches int (d^3k / (2 pi)^3) v(w) C(w),
+        where C(w) = hbar*w * df_eq/dT is the mode heat capacity and the 1/4 is the
+        isotropic forward-flux projection <v_x * Theta(v_x)> = v/4.
+        Huang et al., Nat. Commun. 14, 2044 (2023), Eq. 1
+        """
+        k_vec = self.dispersion[:, 0]
+        k_mid = (k_vec[1:] + k_vec[:-1]) / 2
+        d_k = np.diff(k_vec)
+        total = 0.0
+        for branch in range(1, self.dispersion.shape[1]):
+            freqs = (self.dispersion[1:, branch] + self.dispersion[:-1, branch]) / 2
+            group_velocity = 2 * pi * np.abs(np.diff(self.dispersion[:, branch])) / d_k
+            valid = freqs > 0
+            omegas = 2 * pi * freqs[valid]
+            x = hbar * omegas / (k_B * self.temp)
+            mode_heat_capacity = k_B * x**2 * np.exp(x) / np.expm1(x)**2
+            dos = k_mid[valid]**2 * d_k[valid] / (2 * pi**2)
+            total += np.sum(dos * mode_heat_capacity * group_velocity[valid]) / 4.0
+        return total
+
 
 class Si(Material):
     """
     Physical properties of silicon.
     Dispersion - Ref. Hopkins et al., APL 95, 161902 (2009)
-    Relaxation time - impurity and Umklapp coefficients (A, B) fit to bulk
-      single-crystal kappa(T), Glassbrenner & Slack, Phys. Rev. 134, A1058
-      (1964); see Data/Fitting_BulkSi/ for the fit script and data.
+    Impurity and Umklapp coefficients (A, B) fit to bulk kappa(T), Glassbrenner & Slack, Phys. Rev. 134, A1058 (1964)
     Heat capacity - Desai P.D. Journal of Physical and Chemical Reference Data 15, 67 (1986)
     Effective mass - H.D. Barber, Effective mass and intrinsic concentration in silicon, Solid-State Electronics, Volume 10, Issue 11 (1967)
     """
 
     def __init__(self, temp, num_points=1000, fermi_level=None):
         self.name = "Si"
-        self.default_speed = 6000   # [m/s] where ??
         self.density = 2330         # [kg/m^3]
         self.vg = 6000              # vitesse de groupe moyenne approx 24/06
         self.temp = temp
         self.assign_electrical_properties(fermi_level)
         self.assign_phonon_dispersion(num_points)
-        self.assign_heat_capacity()
         self.assign_dispersion_heat_capacity()
         self.assign_phonon_sampling_tables()
 
@@ -223,27 +338,14 @@ class Si(Material):
         inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
         return 1 / (inelastic_rate + elastic_rate)
 
-    def assign_heat_capacity(self):
-        """Calculate heat capacity [J/kg/K] in 3 - 300K range using the polynomial fits"""
-        below_20K_coeffs = np.array([0.00044801, -0.00239681,  0.00756769])
-        between_20_and_50K_coeffs = np.array([-9.26222400e-04, 1.49879304e-01, -4.37458293e+00, 3.84245589e+01])
-        above_50K_coeffs = np.array([-2.75839317e-06, -5.16662077e-03, 4.66701391e+00, -1.49876958e+02])
-        if self.temp < 20:
-            coeffs = below_20K_coeffs
-        elif 20 <= self.temp <= 50:
-            coeffs = between_20_and_50K_coeffs
-        else:
-            coeffs = above_50K_coeffs
-        self.heat_capacity = np.polyval(coeffs, self.temp)
-
     def assign_electrical_properties(self, fermi_level):
         """Assign differents electrical properties to the material."""
-        self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si, supposed constant for all temperatures (~1-5% error)
+        self.effective_electron_dos_mass = 1.18 * electron_mass # [kg] at 300K for pure Si
         self.effective_electron_susceptibility_mass = 0.54 * electron_mass
         self.effective_hole_dos_mass = 0.81 * electron_mass
         self.effective_electron_mass = 0.26 * electron_mass
         self.effective_hole_mass = 0.23 * electron_mass # light hole
-        self.dielectric_constant = 11.7  # static relative permittivity of Si (for Brooks-Herring ionized-impurity scattering)
+        self.dielectric_constant = 11.7  # static relative permittivity of Si
 
         if fermi_level:
             self.fermi_level = fermi_level
@@ -255,7 +357,6 @@ class Vacuum:
     def __init__(self, temp=300):
         self.name = "Vacuum"
         self.density = 0.0
-        self.heat_capacity = 0.0
         self.temp = temp
         self.dispersion_table = None
 
@@ -287,10 +388,8 @@ class SiC(Material):
     def __init__(self, temp, num_points=1000, fermi_level=None):
         self.name = "SiC"
         self.density = 3215         # [kg/m^3]
-        self.default_speed = 6500   # [m/s] Need to change this probably...
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
-        self.assign_heat_capacity()
         self.assign_dispersion_heat_capacity()
         self.assign_phonon_sampling_tables()
 
@@ -341,20 +440,6 @@ class SiC(Material):
         return 1 / (inelastic_rate + elastic_rate)
 
 
-    def assign_heat_capacity(self):
-        """Calculate heat capacity [J/kg/K] in 3 - 500K range using the polynomial fits of experimental data"""
-
-        below_90K_coeffs = np.array([7.08396921e-05, -9.66654246e-04, 9.03926727e-02, 2.99362037e-01])
-        between_90_and_200K_coeffs = np.array([-6.59772636e-04, 3.02766713e-01, -4.12089642e+01, 1.82434354e+03])
-        above_200K_coeffs = np.array([-3.57059689e-06, 1.21917876e-03, 2.28676930e+00, -7.23941447e+01])
-        if self.temp < 90:
-            coeffs = below_90K_coeffs
-        elif 90 <= self.temp <= 200:
-            coeffs = between_90_and_200K_coeffs
-        else:
-            coeffs = above_200K_coeffs
-        self.heat_capacity = np.polyval(coeffs, self.temp)
-
 
 class Graphite(Material):
     """
@@ -365,13 +450,13 @@ class Graphite(Material):
     """
     dispersion_branch_names = ['LA', 'TA', 'ZA']
 
-    def __init__(self, temp, num_points=1000):
+    def __init__(self, temp, num_points=1000, isotope_c13_concentration=0.0):
         self.name = "Graphite"
         self.density = 2230            # [kg/m^3]
-        self.default_speed = 12900     # [m/s]
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
-        self.assign_heat_capacity()
+        # Isotope table before the sampling tables, which query phonon_scattering_rates:
+        self.assign_isotope_scattering(isotope_c13_concentration)
         self.assign_dispersion_heat_capacity()
         self.assign_phonon_sampling_tables()
 
@@ -380,31 +465,67 @@ class Graphite(Material):
 
         coefficients_LA = [-1.24989e-18, -4.11304e-08, 3640.918, 0]
         coefficients_TA = [-1.52298e-18, -4.72535e-08, 2304.367, 0]
-        coefficients_ZA = [-3.50255e-18, 1.114371e-07, 106.8250, 0]
 
         self.dispersion = np.zeros((num_points, 4))
         self.dispersion[:, 0] = np.linspace(0, 14500000000, num_points)  # Wavevectors
         self.dispersion[:, 1] = np.abs(np.polyval(coefficients_LA, self.dispersion[:, 0]))  # LA branch
         self.dispersion[:, 2] = np.abs(np.polyval(coefficients_TA, self.dispersion[:, 0]))  # TA branch
-        self.dispersion[:, 3] = np.abs(np.polyval(coefficients_ZA, self.dispersion[:, 0]))  # ZA branch
+
+        # ZA (flexural) branch: quadratic near Gamma, omega = b_ZA * k^2 (Nihira & Iwata
+        # semicontinuum model via Alofi & Srivastava, PRB 87, 115421 (2013), Eqs. 5/13;
+        # bending parameter b = 3.13e-3 cm^2/s = 3.13e-7 m^2/s). 
+        b_ZA = 3.13e-7  # [m^2/s]
+        self.dispersion[:, 3] = b_ZA * self.dispersion[:, 0] ** 2 / (2 * pi)  # ZA branch [Hz]
+
+    # Three-phonon Umklapp rate, Klemens/Slack high-T form
+    #   1/tau_U = B_U * omega^2 * T * exp(-deb_temp/(alpha*T))
+    _B_N = 2.12e-25      # Normal-process prefactor (momentum-conserving) [Alofi, unused; see phonon_normal_rate]
+    _B_U = 4.003e-21     # Umklapp prefactor (resistive), Slack omega^2*T*exp form, fit to bulk kappa via Callaway
+    _deb_temp = 100.0    # effective Umklapp activation temperature theta* [K] (with alpha=1); NOT the thermodynamic Debye temp
+    _alpha = 1.0         # (theta* = deb_temp/alpha)
+
+    # Normal-process prefactor [Hz/K^3], calibrated so the high-frequency plateau reaches the
+    # first-principles graphite N-rate ~1e10 Hz at 100 K (Guo et al., PRB 104, 075450 (2021),
+    # Fig. 1a). 
+    _C_N = 1.0e4
+    # Normal-process frequency shape g(w) = (w/wc)^p / (1 + (w/wc)^p): a saturating rise that
+    # suppresses the low-frequency N and preserves the high-f plateau. Fit to Guo Fig. 1a (-m)
+    # Normal rate at 100 K (which falls to ~1e9 at low f, 10x below the plateau); it also brings
+    # l_N(60 K) to ~4-11 um (Huang SI Fig. 6, ~2-5 um) instead of the old flat-rate ~1 um.
+    _N_shape_wc = 2 * pi * 2.93e12   # crossover angular frequency [rad/s]
+    _N_shape_p = 1.38                # crossover sharpness
+
+    # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines the amu;
+    # natural 13-C abundance 0.0107 -> g^2 ~ 7.4e-5). Consumed by Material.assign_isotope_scattering.
+    _isotope_mass_light = 12.0
+    _isotope_mass_heavy = 13.003355
+
+    def phonon_scattering_rates(self, omega):
+        """Return (inelastic, elastic) scattering rates [1/s] """
+        rate_umklapp = self._B_U * (omega ** 2) * self.temp * np.exp(-self._deb_temp / (self._alpha * self.temp))
+        return rate_umklapp, self.phonon_isotope_rate(omega)
 
     def phonon_relaxation_time(self, omega):
+        """Calculate relaxation time at a given frequency and temperature"""
+        inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
+        return 1 / (inelastic_rate + elastic_rate)
+
+    def phonon_normal_rate(self, omega):
         """
-        Calculate relaxation time at a given frequency and temperature.
-        In graphite, we assume that material is perfect, i.e. without impurity scattering.
+        Normal (momentum-conserving) three-phonon rate [1/s]: Callaway T^3 scaling with a
+        saturating frequency shape, 1/tau_N = C_N * T^3 * (w/wc)^p / (1 + (w/wc)^p).
+        The shape -> 1 at high frequency (the ~1e10 Hz plateau at 100 K, Guo et al., PRB 104, 075450
+        (2021), Fig. 1a) and suppresses the low-frequency N, where the ab-initio Normal rate
+        falls to ~1e9 (10x below the plateau). This brings the Normal mean free path at 60 K to
+        ~4-11 um (Huang et al., Nat. Commun. 14, 2044 (2023), SI Fig. 6, ~2-5 um), versus the
+        old frequency-INDEPENDENT 1/tau_N = C_N*T^3 which gave l_N ~ 1 um at low f (too
+        collisional) and thus an over-driven drift / over-inflated hydrodynamic hump. N is
+        momentum-CONSERVING, so this does NOT affect kappa_RTA; it only softens the drift.
         """
-        deb_temp = 1000.0
-        tau_umklapp = 1 / (3.18e-25 * (omega ** 2) * (self.temp ** 3) * np.exp(-deb_temp / (3*self.temp)))
-        return 1 / ( 1 / tau_umklapp)
+        shape = (omega / self._N_shape_wc) ** self._N_shape_p
+        return self._C_N * (self.temp ** 3) * shape / (1.0 + shape)
 
 
-    def assign_heat_capacity(self):
-        """Calculate heat capacity [J/kg/K] from the equation"""
-        coeffs = np.array([6.309e-9, 6.27e-6, 8.729e-4, 0])
-        self.heat_capacity = 1000 * np.polyval(coeffs, self.temp)
-
-
-# Materials below are not fully supported and don't have the relaxation times:
 
 class SiGe(Material):
     """
@@ -420,7 +541,6 @@ class SiGe(Material):
 
     def __init__(self, temp, num_points=1000):
         self.name = "SiGe"
-        self.default_speed = 3700   # [m/s] – average LA/TA
         self.density = 3008         # [kg/m^3] Si1-xGex: (2.329+3.493x-0.499x**2) g/cm^3, x=0.2, Schaffler (2001)
         self.temp = temp
         self.vg = 3700              # average group velocity approximation 24/06
@@ -429,7 +549,6 @@ class SiGe(Material):
         self.effective_hole_dos_mass = 0.71 * electron_mass      # [kg] linear interp. Si(0.81) and Ge(0.29)
         self.effective_hole_mass = 0.19 * electron_mass          # [kg] light hole, linear interp. Si(0.23) and Ge(0.044)
         self.assign_phonon_dispersion(num_points)
-        self.assign_heat_capacity()
         self.assign_dispersion_heat_capacity()
         self.assign_phonon_sampling_tables()
 
@@ -460,51 +579,115 @@ class SiGe(Material):
         inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
         return 1 / (inelastic_rate + elastic_rate)
 
-    def assign_heat_capacity(self):
-        """Empirical polynomial fits for Cp vs T"""
-
-        # Fit from experimental data of Desai + Wunderlich
-        if self.temp < 20:
-            coeffs = np.array([0.00052, -0.0025, 0.0078])
-        elif 20 <= self.temp <= 50:
-            coeffs = np.array([-0.001, 0.15, -4.1, 36])
-        else:
-            coeffs = np.array([-3.2e-6, -4.9e-3, 4.5, -145])
-
-        self.heat_capacity = np.polyval(coeffs, self.temp)
 
 
 class Diamond(Material):
     """
-    Physical properties of diamond
-    Dispersion - Ref. PRB 58 12899 (1998)
+    Physical properties of diamond.
+    Dispersion - Warren et al., Phys. Rev. 158, 805 (1967);
+    Relaxation times - Umklapp (Slack/Klemens high-T form) + isotope (Tamura 13-C mass
+      disorder, shared with Graphite via Material.assign_isotope_scattering) + a
+      momentum-conserving Normal rate.  The Umklapp and Normal constants come from a joint
+      Callaway (kappa_1 + kappa_2) fit to the natural type-IIa kappa(T) curve of Onn et al.,
+      PRL 68, 2806 (1992) over 10-400 K plus three anchors from Wei et al., PRL 70, 3764
+      (1993); see Data/Fitting_BulkDiamond/fit_bulk_diamond_callaway.py.
     """
 
-    def __init__(self, temp, num_points=1000):
+    # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines
+    # the amu; natural 13-C abundance 0.0107). Consumed by Material.assign_isotope_scattering.
+    _isotope_mass_light = 12.0
+    _isotope_mass_heavy = 13.003355
+
+    # Three-phonon Umklapp rate, Slack/Klemens high-T form:
+    #   1/tau_U = B_U * omega^2 * T * exp(-deb_temp / (alpha * T))
+    # B_U and the activation temperature theta/alpha = 683 K come from the joint Callaway
+    # fit described in the class docstring -- i.e. they are pinned by the SHAPE of kappa(T)
+    # from 10 to 400 K, not by a single 300 K value as before (that earlier single-point fit
+    # gave B_U = 8.5e-20 with theta/alpha = 733 K, which was 2.5x low at 1000 K and was also
+    # silently absorbing the vacancy / interstitial-nitrogen scattering of Berman's
+    # particular stones into the intrinsic Umklapp).  For cross-checking: Wei1993's
+    # independently fitted Umklapp is B/(4 pi^2 v) = 2.90e-20 s/K with C = 670 K, i.e. within
+    # 9% and 2% of these -- from a different dispersion model and a different data set.
+    # Sample-specific point defects (vacancies, nitrogen) are deliberately NOT included here;
+    # they belong in an input file. The fit's value for Onn's stones was D = 1.89e-47 s^3.
+    _B_U = 3.1655e-20    # Umklapp prefactor [s/K]
+    _deb_temp = 2200.0   # Umklapp activation temperature (~diamond Debye temperature) [K]
+    _alpha = 3.220       # activation scaling (theta*/alpha = 683.3 K)
+
+    def __init__(self, temp, num_points=1000, isotope_c13_concentration=0.0):
         self.name = "Diamond"
-        self.density = 3500         # [kg/m^3]
-        self.default_speed = 20000  # [m/s]
+        self.density = 3515         # [kg/m^3]
         self.temp = temp
         self.assign_phonon_dispersion(num_points)
+        # Isotope table before the sampling tables, which query phonon_scattering_rates:
+        self.assign_isotope_scattering(isotope_c13_concentration)
+        self.assign_dispersion_heat_capacity()
+        self.assign_phonon_sampling_tables()
 
     def assign_phonon_dispersion(self, num_points):
-        """Assign phonon dispersion"""
+        """
+        Acoustic branches f(k) = A*k + B*k^2 + C*k^3 on the Gamma-X k-axis, with the three
+        coefficients fixed by: the long-wavelength sound velocity (f'(0) = v_sound / 2pi),
+        the measured zone-edge frequency (f(k_X) = f_X), and a vanishing group velocity at
+        the zone boundary (f'(k_X) = 0). TA2 is set equal to TA1.
+        """
+        a = 3.567e-10                 # lattice constant [m]
+        k_X = 2 * pi / a              # Gamma-X zone-boundary wavevector [1/m]
 
-        A1 = 4309.95222
-        B1 = -8.855338e-08
-        C1 = -1.347265e-18
-        A2 = 3185.66561
-        B2 = -4.104260e-08
-        C2 = -5.042335e-18
+        def branch_coeffs(v_sound, f_X):
+            A = v_sound / (2 * pi)
+            B = 3 * f_X / k_X ** 2 - 2 * A / k_X
+            C = A / k_X ** 2 - 2 * f_X / k_X ** 3
+            return [C, B, A, 0]
+
+        coeffs_LA = branch_coeffs(17520.0, 35.9e12)  # LA: v = 17520 m/s, LA(X) = 35.9 THz
+        coeffs_TA = branch_coeffs(12820.0, 24.2e12)  # TA: v = 12820 m/s, TA(X) = 24.2 THz
 
         self.dispersion = np.zeros((num_points, 4))
-        self.dispersion[:, 0] = [k * 11707071561.7 / (num_points - 1) for k in range(num_points)]     # Wavevectors
-        self.dispersion[:, 1] = [abs(C1 * k**3 + B1 * k**2 + A1 * k) for k in self.dispersion[:, 0]]  # LA branch
-        self.dispersion[:, 2] = [abs(C2 * k**3 + B2 * k**2 + A2 * k) for k in self.dispersion[:, 0]]  # TA branch
+        self.dispersion[:, 0] = np.linspace(0, k_X, num_points)                       # Wavevectors
+        self.dispersion[:, 1] = np.abs(np.polyval(coeffs_LA, self.dispersion[:, 0]))  # LA branch
+        self.dispersion[:, 2] = np.abs(np.polyval(coeffs_TA, self.dispersion[:, 0]))  # TA branch
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
+    def phonon_scattering_rates(self, omega):
+        """Umklapp (inelastic) and isotope mass-disorder (elastic) scattering rates [1/s]."""
+        rate_umklapp = self._B_U * (omega ** 2) * self.temp * np.exp(-self._deb_temp / (self._alpha * self.temp))
+        return rate_umklapp, self.phonon_isotope_rate(omega)
+
     def phonon_relaxation_time(self, omega):
-        pass
+        """Relaxation time from the sum of the Umklapp and isotope rates."""
+        inelastic_rate, elastic_rate = self.phonon_scattering_rates(omega)
+        return 1 / (inelastic_rate + elastic_rate)
+
+    # Normal (momentum-conserving) three-phonon rate, Wei1993 Eq. (1):
+    #   1/tau_N = A * v * T^3 / lambda  ==  (A / 2 pi) * omega * T^3
+    # NON-resistive (excluded from phonon_relaxation_time and kappa_RTA; see
+    # Material.phonon_normal_rate); consumed only by the Callaway-kappa2 / hydrodynamic path.
+    #
+    # This replaces an earlier Herring omega^2 T^3 form whose prefactor was anchored to an
+    # N = resistive crossover at the ~100 K kappa peak. That form is the wrong SHAPE: against
+    # Wei's omega^1 rate it was 33x too weak at 1 THz, 6.7x at 5 THz and only 1.1x at 30 THz,
+    # i.e. it under-weighted N precisely on the low-frequency modes that carry the heat and
+    # generate kappa_2. The consequence was a badly under-predicted isotope effect (pure /
+    # natural kappa ratio 1.06 at 300 K against a measured ~1.45): with N too weak the model
+    # reproduces bulk kappa but cannot reproduce the ISOTOPE dependence, which is exactly the
+    # failure Wei1993 attribute to Onn1992's N-free analysis.
+    #
+    # The FORM is Wei's and transfers cleanly (it is velocity-independent). The VALUE is
+    # refitted on our real dispersion: at Wei's own A = 7.2e-11 this model over-predicts the
+    # isotope ratio (2.0 vs ~1.45), because our v_g -> 0 zone boundary concentrates the heat
+    # in low-omega modes where an omega^1 N-rate bites hardest, buying ~2x the kappa_2 of
+    # Wei's constant-velocity Debye model.
+    #
+    # CAVEAT: the T^3 factor is a low-temperature form, fitted over 10-400 K. It extrapolates
+    # catastrophically above that (at 1250 K it drives tau_N far below tau_R, sending
+    # kappa_2/kappa_1 to ~11 and the isotope ratio to ~29) -- the same pathology already
+    # documented for Graphite. Do not trust kappa_2 above ~400 K.
+    _A_N = 1.5537e-11    # Normal-process prefactor [K^-3]; 1/tau_N = (_A_N / 2 pi) omega T^3
+
+    def phonon_normal_rate(self, omega):
+        """Momentum-conserving Normal three-phonon rate [1/s], 1/tau_N = (A/2pi) omega T^3."""
+        return (self._A_N / (2 * pi)) * omega * (self.temp ** 3)
 
 
 class AlN(Material):
@@ -516,7 +699,6 @@ class AlN(Material):
     def __init__(self, temp, num_points=1000):
         self.name = "AlN"
         self.density = 3255           # [kg/m^3]
-        self.default_speed = 6200     # [m/s]
         self.temp = temp              # [K]
         self.dispersion = np.zeros((num_points, 4))
         self.assign_phonon_dispersion(num_points)
@@ -539,6 +721,28 @@ class AlN(Material):
     def phonon_relaxation_time(self, omega):
         pass
 
+
+def create_material(material_name: str, temp, num_points=1000, fermi_level=None,
+                    isotope_c13_concentration=0.0) -> Material:
+    """
+    Build a material instance, passing only those keyword arguments that the chosen
+    material's constructor actually accepts (e.g. only Si/SiGe take a Fermi level,
+    only Graphite/Diamond take an isotope concentration). This is the single place
+    where materials are constructed from configuration, so a new material or a new
+    constructor argument does not have to be threaded through every call site.
+    """
+    material_class = get_media_class(material_name)
+    parameters = signature(material_class).parameters
+    kwargs = {}
+    if "num_points" in parameters:
+        kwargs["num_points"] = num_points
+    if "fermi_level" in parameters:
+        kwargs["fermi_level"] = fermi_level
+    if "isotope_c13_concentration" in parameters:
+        kwargs["isotope_c13_concentration"] = isotope_c13_concentration
+    return material_class(temp, **kwargs)
+
+
 def get_media_class(material_name: str) -> Material:
     if material_name == "Si":
         return Si
@@ -546,5 +750,9 @@ def get_media_class(material_name: str) -> Material:
         return SiC
     elif material_name == "Graphite":
         return Graphite
+    elif material_name == "SiGe":
+        return SiGe
+    elif material_name == "Diamond":
+        return Diamond
     else:
         raise Exception(f"Material {material_name} is not supported")

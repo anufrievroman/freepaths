@@ -91,6 +91,7 @@ class Config:
         self.number_of_virtual_timesteps = NUMBER_OF_VIRTUAL_TIMESTEPS
         self.ignore_faulty_particles = IGNORE_FAULTY_PARTICLES
         self.gradient_fit_range = GRADIENT_FIT_RANGE
+        self.temperature_profile_x_range = TEMPERATURE_PROFILE_X_RANGE
 
         # Material parameters:
         self.media = MEDIA
@@ -98,7 +99,12 @@ class Config:
 
         # Internal scattering:
         self.include_internal_scattering = INCLUDE_INTERNAL_SCATTERING
-        self.use_dispersion_heat_capacity = USE_DISPERSION_HEAT_CAPACITY
+        self.phonon_hydrodynamic = PHONON_HYDRODYNAMIC
+        self.number_of_hydrodynamic_preruns = NUMBER_OF_HYDRODYNAMIC_PRERUNS
+        self.hydrodynamic_preruns_weight = HYDRODYNAMIC_PRERUNS_WEIGHT
+        self.number_of_hydrodynamic_prerun_particles = NUMBER_OF_HYDRODYNAMIC_PRERUN_PARTICLES
+        self.hydrodynamic_normal_resistive = HYDRODYNAMIC_NORMAL_RESISTIVE
+        self.isotope_c13_concentration = ISOTOPE_C13_CONCENTRATION
         self.max_number_of_scattering_events = MAX_NUMBER_OF_SCATTERING_EVENTS
         self.grain_size = GRAIN_SIZE
         self.grain_size_std = GRAIN_SIZE_STD
@@ -168,6 +174,11 @@ class Config:
 
         if not (0.0 <= self.gradient_fit_range[0] < self.gradient_fit_range[1] <= 1.0):
             logging.error("Parameter GRADIENT_FIT_RANGE must be a pair (start, end) with 0 <= start < end <= 1.\n" +
+                          f"See the documentation at {WEBSITE}")
+            sys.exit()
+
+        if not (0.0 <= self.temperature_profile_x_range[0] < self.temperature_profile_x_range[1] <= 1.0):
+            logging.error("Parameter TEMPERATURE_PROFILE_X_RANGE must be a pair (start, end) with 0 <= start < end <= 1.\n" +
                           f"See the documentation at {WEBSITE}")
             sys.exit()
 
