@@ -534,7 +534,7 @@ class SiGe(Material):
     Relaxation time - Umklapp coefficient carried over from the pre-refit Si values
       (Maire et al., Sci. Rep. 7, 41794 (2017) era), impurity/alloy coefficient an
       ad-hoc adaptation of the same; NOT refit against bulk SiGe kappa data, unlike
-      Si (see Data/Fitting_BulkSi/). Treat absolute SiGe kappa values with caution.
+      Si (see FreePATHS_Paper/Data/Fitting_BulkSi/). Treat absolute SiGe kappa values with caution.
     Heat capacity - Fit based on Desai P.D., J. Phys. Chem. Ref. Data 13, 1069 (1984) and Wunderlich, Thermophysical Properties of Materials, Springer (2005)
     Effective masses - linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
@@ -590,7 +590,7 @@ class Diamond(Material):
       momentum-conserving Normal rate.  The Umklapp and Normal constants come from a joint
       Callaway (kappa_1 + kappa_2) fit to the natural type-IIa kappa(T) curve of Onn et al.,
       PRL 68, 2806 (1992) over 10-400 K plus three anchors from Wei et al., PRL 70, 3764
-      (1993); see Data/Fitting_BulkDiamond/fit_bulk_diamond_callaway.py.
+      (1993); see FreePATHS_Paper/Data/Fitting_BulkDiamond/fit_bulk_diamond_callaway.py.
     """
 
     # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines
