@@ -164,6 +164,63 @@ class GeneralData(Data):
         }
 
 
+class SpecularityData(Data):
+    """
+    Running sums behind the specular scattering probability report (MFP-sampling mode).
+
+    The reported kappa-weighted specularity is a weighted mean over modes,
+    sum(kappa_i * f_i) / sum(kappa_i) with f_i = specular_i / (specular_i + diffuse_i),
+    so it accumulates in four fixed-size arrays and never needs the per-mode tallies
+    kept around. That matters: storing them was one 10-integer row per phonon in memory
+    and on disk, which scales with NUMBER_OF_PARTICLES for a result that is 10 numbers.
+    Arrays are indexed by flight.BOUNDARY_CATEGORIES and merged across the branch
+    workers by Data.read_data, whose "+" is elementwise on numpy arrays.
+    """
+
+    def __init__(self):
+        """Initialize the accumulators, one entry per boundary category"""
+        from freepaths.flight import BOUNDARY_CATEGORIES
+        self.specular_events = np.zeros(len(BOUNDARY_CATEGORIES))
+        self.diffuse_events = np.zeros(len(BOUNDARY_CATEGORIES))
+        self.kappa_weighted_specular = np.zeros(len(BOUNDARY_CATEGORIES))
+        self.kappa_of_scattered = np.zeros(len(BOUNDARY_CATEGORIES))
+
+    def add_particle(self, flight):
+        """Fold one finished flight into the running sums"""
+        events = np.array(flight.boundary_events, dtype=float).reshape(-1, 2)
+        specular, diffuse = events[:, 0], events[:, 1]
+        total = specular + diffuse
+        self.specular_events += specular
+        self.diffuse_events += diffuse
+        # Only modes that actually hit a given boundary enter that boundary's mean:
+        scattered = total > 0
+        kappa = flight.thermal_conductivity
+        self.kappa_weighted_specular[scattered] += kappa * specular[scattered] / total[scattered]
+        self.kappa_of_scattered[scattered] += kappa
+
+    def write_into_files(self):
+        """Write the specular scattering probabilities into a file"""
+        from freepaths.flight import BOUNDARY_CATEGORIES
+        total = self.specular_events + self.diffuse_events
+        with np.errstate(invalid='ignore', divide='ignore'):
+            per_event = 100 * self.specular_events / total
+            per_kappa = 100 * self.kappa_weighted_specular / self.kappa_of_scattered
+        rows = [[per_event[i], per_kappa[i], total[i]] for i in range(len(BOUNDARY_CATEGORIES))]
+        np.savetxt("Data/Specular scattering probability.csv", np.array(rows), fmt='%2.4e', delimiter=',',
+                   header="Boundary: " + ", ".join(BOUNDARY_CATEGORIES)
+                          + "\nSpecular per event [%], Specular kappa-weighted [%], Total events",
+                   encoding='utf-8')
+
+    def dump_data(self):
+        """Return data of a process in the form of a dictionary to be attached to the global data"""
+        return {
+            'specular_events': self.specular_events,
+            'diffuse_events': self.diffuse_events,
+            'kappa_weighted_specular': self.kappa_weighted_specular,
+            'kappa_of_scattered': self.kappa_of_scattered,
+        }
+
+
 class ScatteringData(Data):
     """Statistics of particle scattering events"""
 

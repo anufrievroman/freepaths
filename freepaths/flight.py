@@ -4,6 +4,13 @@ from math import cos
 import numpy as np
 
 from freepaths.config import cf
+from freepaths.scattering_types import Scattering
+
+
+# Boundary categories tallied per particle by Flight.record_boundary_events. The order
+# fixes the index order of Flight.boundary_events, of the data.SpecularityData
+# accumulators, and of the rows of "Data/Specular scattering probability.csv".
+BOUNDARY_CATEGORIES = ('Side walls', 'Top and bottom walls', 'Hole walls', 'Pillar walls', 'Interfaces')
 
 
 class Path:
@@ -50,6 +57,16 @@ class Flight:
         # impurity) and boundary (diffuse surface) spectra in the MFP-sampling mode:
         self._internal_count = 0
         self._boundary_count = 0
+        # Specular and diffuse boundary event counts of THIS particle, as flat
+        # [specular, diffuse] pairs per entry of BOUNDARY_CATEGORIES. The aggregate
+        # ScatteringData counters cannot answer "how specular is a given mode", because
+        # they sum events over all particles: a mode that scatters diffusely lingers in
+        # the structure and accumulates far more events than one that reflects
+        # specularly and streams straight out. Folded into data.SpecularityData as soon
+        # as the flight ends and then discarded with the Flight, so nothing per-mode
+        # accumulates; only filled in the MFP-sampling mode, which is where it is
+        # reported (see output_info.weighted_specularity_information).
+        self.boundary_events = [0] * (2 * len(BOUNDARY_CATEGORIES))
         self.hole_diff_scattering_angles = []
         self.hole_spec_scattering_angles = []
         self.thermal_conductivity = 0.0
@@ -96,6 +113,19 @@ class Flight:
         self._mfp_count += 1
         if not cf.low_memory_usage:
             self.free_paths.append(self.free_path)
+
+    def record_boundary_events(self, scattering_types):
+        """Tally this timestep's boundary events by category and by specularity."""
+        categories = (scattering_types.walls, scattering_types.top_bottom,
+                      scattering_types.holes, scattering_types.pillars,
+                      # interfaces covers reflection AND transmission, so counting
+                      # interfaces_transmission as well would double-count them:
+                      scattering_types.interfaces)
+        for index, scattering in enumerate(categories):
+            if scattering is Scattering.SPECULAR:
+                self.boundary_events[2 * index] += 1
+            elif scattering is Scattering.DIFFUSE:
+                self.boundary_events[2 * index + 1] += 1
 
     def record_scattering_channel(self, is_internal, is_boundary):
         """Tally the channel of a diffuse event that ends a free-path segment, so the

@@ -46,6 +46,8 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             if not cf.low_memory_usage:
                 flight.add_point_to_path()
             scatter_stats.save_scattering_events(particle.y, scattering_types)
+            if mode is SimulationMode.PHONON_MFP_SAMPLING:
+                flight.record_boundary_events(scattering_types)
             if cf.output_scattering_map:
                 scatter_maps.add_scattering_to_map(particle, scattering_types)
 
