@@ -127,30 +127,3 @@ def alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, material
     T2 = P_j * a_s2 + (1 - P_j) * a_d2
 
     return T1 * T2
-
-
-def alpha_total_1T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, material_i, material_j, branch_number, roughness):
-    """Transmission model for 1 transmission : ex: Si → Ge for small rectangle inside single crystal Si"""
-
-    k_i = get_k_from_omega(omega_i, material_i, branch_number)
-    k_j = get_k_from_omega(omega_j, material_j, branch_number)
-
-    wavelength_i = lambda_from_k(k_i)
-    wavelength_j = lambda_from_k(k_j)
-
-    P_i = math.exp(-16 * math.pi**2 * roughness**2 / wavelength_i**2)
-    P_j = math.exp(-16 * math.pi**2 * roughness**2 / wavelength_j**2)
-
-    try:
-        sin_theta_t = (vg_i / vg_j) * math.sin(theta_i)
-        if abs(sin_theta_t) > 1:
-            return 0.0  # Totle reflection at the entry
-    except:
-        return 0.0
-
-    a_s = alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j)
-    a_d = alpha_diff(k_i, k_j, P_i, P_j)
-    T_1T = P_i * a_s + (1 - P_i) * a_d
-
-    return T_1T
-
