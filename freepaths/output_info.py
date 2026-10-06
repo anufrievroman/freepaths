@@ -35,12 +35,12 @@ def output_general_information(start_time, general_stats, mode):
             f'\nLength = {cf.length * 1e9:.1f} nm',
             f'\nWidth = {cf.width * 1e9:.1f} nm',
             f'\nThickness = {cf.thickness * 1e9:.1f} nm\n',
-            f'\nSide wall roughness = {cf.side_wall_roughness * 1e9:.1f} nm',
-            f'\nTop roughness = {cf.top_roughness * 1e9:.1f} nm',
-            f'\nBottom roughness = {cf.bottom_roughness * 1e9:.1f} nm',
-            *([ f'\nHole roughness = {cf.hole_roughness * 1e9:.1f} nm'] if cf.holes else []),
-            *([ f'\nInterface roughness = {cf.interface_roughness * 1e9:.1f} nm'] if cf.interfaces else []),
-            *([ f'\nGrain size = {cf.grain_size * 1e9:.1f} nm, std = {cf.grain_size_std * 1e9:.1f} nm, roughness = {cf.grain_roughness * 1e9:.1f} nm'] if cf.grain_size else []),
+            f'\nSide wall roughness = {cf.side_wall_roughness * 1e9:.3g} nm',
+            f'\nTop roughness = {cf.top_roughness * 1e9:.3g} nm',
+            f'\nBottom roughness = {cf.bottom_roughness * 1e9:.3g} nm',
+            *([ f'\nHole roughness = {cf.hole_roughness * 1e9:.3g} nm'] if cf.holes else []),
+            *([ f'\nInterface roughness = {cf.interface_roughness * 1e9:.3g} nm'] if cf.interfaces else []),
+            *([ f'\nGrain size = {cf.grain_size * 1e9:.1f} nm, std = {cf.grain_size_std * 1e9:.1f} nm, roughness = {cf.grain_roughness * 1e9:.3g} nm'] if cf.grain_size else []),
             '\n',
             f'\n{percentage:.0f}% of particles reached the cold side\n'
             ]
@@ -48,8 +48,51 @@ def output_general_information(start_time, general_stats, mode):
         file.writelines(info)
 
 
-def output_scattering_information(scatter_stats):
+def weighted_specularity_information(specularity_stats):
+    """
+    Specular scattering probability per boundary category (MFP-sampling mode), reported
+    two ways: averaged over events, and over each mode's own specular fraction weighted
+    by that mode's contribution to kappa.
+
+    Fed by the running sums in data.SpecularityData, so nothing per-mode is retained.
+
+    Read the kappa-weighted number. The per-event average answers a different question,
+    and in this mode a misleading one. The particles here are not a thermal population:
+    _run_branch sweeps the dispersion k-grid with one phonon per k-interval and equal
+    weight, and the temperature enters only afterwards, as the heat capacity in the
+    kappa integral. So an average over events is an unweighted average over the whole
+    Brillouin zone, with no temperature dependence whatsoever - half the modes sit
+    beyond k_max/2, where the wavelength is a few angstrom and the Soffer specularity is
+    ~0. It is skewed a second time by residence time: a mode that scatters diffusely
+    lingers in the structure and accumulates hundreds of events, while a specular one
+    streams straight out after a handful.
+
+    Taking each mode's own specular fraction removes the residence-time bias, and
+    weighting those by kappa gives the specularity actually seen by the heat carriers,
+    which does depend on temperature (low T shifts the population to long wavelengths,
+    where surfaces look smooth).
+    """
+    from freepaths.flight import BOUNDARY_CATEGORIES
+    total_events = specularity_stats.specular_events + specularity_stats.diffuse_events
+
+    rows = []
+    for index, name in enumerate(BOUNDARY_CATEGORIES):
+        if total_events[index] == 0:
+            continue
+        per_event = 100 * specularity_stats.specular_events[index] / total_events[index]
+        kappa_total = specularity_stats.kappa_of_scattered[index]
+        per_kappa = (100 * specularity_stats.kappa_weighted_specular[index] / kappa_total
+                     if kappa_total > 0 else float('nan'))
+        rows.append(f'\n  {name + ":":24s}{per_event:6.2f}% per event, {per_kappa:6.2f}% kappa-weighted')
+    if not rows:
+        return []
+
+    return ['\n\nSpecular scattering probability:', *rows, '\n']
+
+
+def output_scattering_information(scatter_stats, specularity_stats=None, mode=None):
     """Calculate and output general statistics on scattering events"""
+    from freepaths.options import SimulationMode
 
     # Calculate the percentage of different scattering events:
     total_wall = np.sum(scatter_stats.wall_diffuse) + np.sum(scatter_stats.wall_specular)
@@ -130,6 +173,11 @@ def output_scattering_information(scatter_stats):
                     f'of which {trans_on_interf:.2f}% - transmission, ',
                     f'{refl_on_interf:.2f}% - reflection',
                     ])
+
+    # Per-mode and kappa-weighted specularity, which the per-event percentages above
+    # cannot express (MFP-sampling mode only - it needs the per-mode kappa contributions):
+    if mode is SimulationMode.PHONON_MFP_SAMPLING and specularity_stats is not None:
+        info.extend(weighted_specularity_information(specularity_stats))
 
     # Write the file:
     with open("Information.txt", "a", encoding="utf-8") as file:

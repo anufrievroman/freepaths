@@ -149,7 +149,6 @@ class Config:
         self.holes = HOLES
         self.pillars = PILLARS
         self.interfaces = INTERFACES
-        self.bulks = BULKS
 
         # Multiprocessing:
         self.num_workers = NUMBER_OF_PROCESSES

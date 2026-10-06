@@ -123,10 +123,17 @@ class Material(ABC):
         return d_omega / d_k
 
     def wavevector(self, branch_number, f):
-        """Wavevector magnitude k [1/m] at ordinary frequency f [Hz] on the given branch"""
-        f_branch = self.dispersion[:, branch_number + 1]
+        """
+        Wavevector magnitude k [1/m] at ordinary frequency f [Hz] on the given branch,
+        taken from the tabulated point closest to f. Nearest-point search rather than
+        interpolation for the same reason as in group_velocity(): the SiC/Graphite TA
+        branches are non-monotonic in f. The k = 0 point is excluded from the search so
+        that a finite frequency can never map onto k = 0, which would make the phonon
+        wavelength 2*pi/k infinite.
+        """
+        f_branch = self.dispersion[1:, branch_number + 1]
         nearest = np.abs(f_branch - f).argmin()
-        return self.dispersion[nearest, 0]
+        return self.dispersion[nearest + 1, 0]
 
     def mean_inverse_phase_velocity_sq(self):
         """
@@ -198,6 +205,7 @@ class Material(ABC):
         Assigned attributes (each a list of 3 per-branch arrays, except the
         branch probabilities, which are single arrays of 3 cumulative values):
         - frequencies_table: bin-midpoint frequency [Hz] of each dispersion bin;
+        - wavevector_table: bin-midpoint wavevector k [1/m] of each bin;
         - group_velocity_table: group velocity dw/dk [m/s] of each bin;
         - emission_frequency_probabilities, scattering_frequency_probabilities:
           cumulative probabilities of the frequency bins within each branch;
@@ -206,6 +214,7 @@ class Material(ABC):
           a branch before picking a frequency.
         """
         self.frequencies_table = []
+        self.wavevector_table = []
         self.group_velocity_table = []
         self.emission_frequency_probabilities = []
         self.scattering_frequency_probabilities = []
@@ -234,6 +243,7 @@ class Material(ABC):
             dos = k_mid[valid]**2 * d_k[valid]
 
             self.frequencies_table.append(freqs[valid])
+            self.wavevector_table.append(k_mid[valid])
             self.group_velocity_table.append(group_velocity[valid])
 
             # Cumulative bin weights; the last element is the total weight of
@@ -534,7 +544,7 @@ class SiGe(Material):
     Relaxation time - Umklapp coefficient carried over from the pre-refit Si values
       (Maire et al., Sci. Rep. 7, 41794 (2017) era), impurity/alloy coefficient an
       ad-hoc adaptation of the same; NOT refit against bulk SiGe kappa data, unlike
-      Si (see Data/Fitting_BulkSi/). Treat absolute SiGe kappa values with caution.
+      Si (see FreePATHS_Paper/Data/Fitting_BulkSi/). Treat absolute SiGe kappa values with caution.
     Heat capacity - Fit based on Desai P.D., J. Phys. Chem. Ref. Data 13, 1069 (1984) and Wunderlich, Thermophysical Properties of Materials, Springer (2005)
     Effective masses - linearly interpolated between Si and Ge at x=0.2 (Schaffler, 2001)
     """
@@ -590,7 +600,7 @@ class Diamond(Material):
       momentum-conserving Normal rate.  The Umklapp and Normal constants come from a joint
       Callaway (kappa_1 + kappa_2) fit to the natural type-IIa kappa(T) curve of Onn et al.,
       PRL 68, 2806 (1992) over 10-400 K plus three anchors from Wei et al., PRL 70, 3764
-      (1993); see Data/Fitting_BulkDiamond/fit_bulk_diamond_callaway.py.
+      (1993); see FreePATHS_Paper/Data/Fitting_BulkDiamond/fit_bulk_diamond_callaway.py.
     """
 
     # Carbon isotope masses [amu] for the Tamura mass-variance parameter (12-C defines

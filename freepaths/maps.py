@@ -215,7 +215,7 @@ class ThermalMaps(Maps):
             # is formed as the ratio to the thermal map (calculate_drift_velocity).
             if self.record_momentum:
                 cos_phi = abs(cos(pt.phi))
-                k_over_omega = material.wavevector(pt.branch_number, pt.f) / (2 * np.pi * pt.f)
+                k_over_omega = pt.k / (2 * np.pi * pt.f)
                 p = energy * k_over_omega
                 self.crystal_momentum_map_x[index_y, index_x] += p * sin(pt.theta) * cos_phi
                 self.crystal_momentum_map_y[index_y, index_x] += p * cos(pt.theta) * cos_phi

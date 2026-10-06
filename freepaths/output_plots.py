@@ -93,11 +93,16 @@ def launch_exit_frequency_distribution_calculation(number_of_nodes):
 
 
 def wavelength_distribution_calculation(number_of_nodes):
-    """Calculate particle wavelength distribution from their frequencies and velocities"""
-    frequencies = np.loadtxt("Data/All final frequencies.csv", encoding='utf-8')
-    speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
-    wavelengths = np.zeros((len(speeds)))
-    wavelengths[:] = speeds[:] / frequencies[:]
+    """Calculate particle wavelength distribution, lam = 2*pi/k (see Phonon.wavelength)"""
+    try:
+        wavevectors = np.loadtxt("Data/All wavevectors.csv", encoding='utf-8')
+        wavelengths = 2 * np.pi / wavevectors
+    except OSError:
+        # Result folders written before the wavevector was recorded: fall back to the old
+        # v_g/f estimate, which underestimates the wavelength away from the Gamma point.
+        frequencies = np.loadtxt("Data/All final frequencies.csv", encoding='utf-8')
+        speeds = np.loadtxt("Data/All group velocities.csv", encoding='utf-8')
+        wavelengths = speeds / frequencies
     data_range = np.amax(wavelengths)
     distribution = np.zeros((number_of_nodes, 2))
     distribution[:, 0] = np.linspace(0, data_range, number_of_nodes)

@@ -26,6 +26,11 @@ class Particle(ABC):
         # Physical properties
         self.speed = None
         self.f = None
+        # Wavevector magnitude k [1/m]. Tracked alongside f because the two are not
+        # interchangeable on a real (curved) dispersion: the wavelength that enters the
+        # Soffer specularity is 2*pi/k, which equals speed/f only in the Debye limit
+        # where the group and phase velocities coincide. Unused by electrons.
+        self.k = None
         self.time_of_internal_scattering = None
 
         # Assign random first timestep
@@ -80,9 +85,17 @@ class Particle(ABC):
         pass
 
     @abstractmethod
+    def speed_in(self, material):
+        """
+        Speed the particle would have in the given material, WITHOUT mutating it.
+        Needed because the interface models have to compare the particle's velocity on
+        both sides of a boundary before deciding what happens to it.
+        """
+        pass
+
     def assign_speed(self, material):
         """Assigning speed to the particle"""
-        pass
+        self.speed = self.speed_in(material)
 
     @abstractmethod
     def assign_internal_scattering_time(self, material):

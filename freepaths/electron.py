@@ -127,15 +127,16 @@ class Electron(Particle):
         """
         self.f = self.energy / h
 
-    def assign_speed(self, material):
+    def speed_in(self, material):
         """
-        Assign speed to an electron using group velocity and considering parabolic energy-k relation and conduction minimum at 0
+        Speed of an electron in the given material from the parabolic energy-k relation,
+        with the conduction minimum at 0
         """
         if self.is_electron_carrier:
             effective_mass = material.effective_electron_dos_mass
         else:
             effective_mass = material.effective_hole_dos_mass
-        self.speed = (2*self.energy/(effective_mass))**(0.5)
+        return (2*self.energy/(effective_mass))**(0.5)
 
     def assign_internal_scattering_time(self, material):
         """

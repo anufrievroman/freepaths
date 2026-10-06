@@ -139,12 +139,6 @@ def surface_scattering(pt, scattering_types, triangle_scattering_places):
             if scattering_types.pillars is not None:
                 break
 
-    # Check for bulks shape:
-    if cf.bulks:
-        for bulk in cf.bulks:
-            if bulk.is_crossed(pt, x, y, z):
-                bulk.scatter(pt, scattering_types, x, y, z, cf)
-
     # Scattering on interfaces (thin layers):
     if cf.interfaces:
         for interface in cf.interfaces:

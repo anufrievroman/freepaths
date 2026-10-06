@@ -20,7 +20,7 @@ from freepaths.run_particle import run_particle
 from freepaths.phonon import Phonon
 from freepaths.flight import Flight
 from freepaths.options import SimulationMode
-from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData
+from freepaths.data import ScatteringData, GeneralData, SegmentData, PathData, TriangleScatteringData, SpecularityData
 from freepaths.materials import create_material, get_media_class
 from freepaths.maps import ScatteringMap
 from freepaths.output_info import output_general_information, output_scattering_information, output_parameter_warnings
@@ -87,6 +87,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
     places_stats = TriangleScatteringData()
     path_stats = PathData()
     scatter_maps = ScatteringMap()
+    specularity_stats = SpecularityData()
 
     total_thermal_conductivity = 0.0
     total_kappa_variance = 0.0
@@ -148,6 +149,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
 
         general_stats.save_particle_data(phonon, SimulationMode.PHONON_MFP_SAMPLING)
         general_stats.save_flight_data(flight, SimulationMode.PHONON_MFP_SAMPLING)
+        specularity_stats.add_particle(flight)
 
         if index < cf.output_trajectories_of_first:
             path_stats.save_particle_path(flight)
@@ -165,6 +167,7 @@ def _run_branch(branch_number, shared_list, shared_progress):
         'places_stats': places_stats.dump_data(),
         'path_stats': path_stats.dump_data(),
         'scatter_maps': scatter_maps.dump_data(),
+        'specularity_stats': specularity_stats.dump_data(),
     })
 
 
@@ -227,6 +230,7 @@ def main(input_file, mode: SimulationMode):
     places_stats = TriangleScatteringData()
     path_stats = PathData()
     scatter_maps = ScatteringMap()
+    specularity_stats = SpecularityData()
     total_thermal_conductivity = 0.0
     total_kappa_variance = 0.0
     total_kappa1 = 0.0
@@ -245,6 +249,7 @@ def main(input_file, mode: SimulationMode):
         places_stats.read_data(result['places_stats'])
         path_stats.read_data(result['path_stats'])
         scatter_maps.read_data(result['scatter_maps'])
+        specularity_stats.read_data(result['specularity_stats'])
 
     # Create the output folder and copy input file:
     if not os.path.exists("Results/" + cf.output_folder_name):
@@ -257,6 +262,7 @@ def main(input_file, mode: SimulationMode):
     # Save data and generate plots:
     general_stats.write_into_files(mode)
     scatter_stats.write_into_files()
+    specularity_stats.write_into_files()
     segment_stats.write_into_files()
     if cf.output_scattering_map:
         scatter_maps.write_into_files()
@@ -306,7 +312,7 @@ def main(input_file, mode: SimulationMode):
     plot_data(mode, cf)
 
     output_general_information(start_time, general_stats, mode)
-    output_scattering_information(scatter_stats)
+    output_scattering_information(scatter_stats, specularity_stats, mode)
     output_parameter_warnings(mode, general_stats)
     sys.stdout.write(f'\rSee the results in {Fore.GREEN}Results/{cf.output_folder_name}{Style.RESET_ALL}\n')
     if cf.phonon_hydrodynamic:
