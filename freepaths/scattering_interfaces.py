@@ -1,30 +1,14 @@
 """Module that provides scattering functions on through the interfaces made of other materials"""
 
-from math import pi, cos, sin, tan, exp, atan, asin, acos
+from math import pi, cos, sin, asin, acos
 from random import random
-from numpy import sign
 
-from freepaths.options import ParticleType
-from freepaths.move import move
 from freepaths.scattering_types import Scattering
-from freepaths.materials import Si, SiGe
 
-
-def specularity(angle, roughness, particle):
-    """Calculate probability of specular scattering with Soffer's equation"""
-    if particle.type is ParticleType.ELECTRON: # No Soffer's equation for electrons, scattering is always diffusive
-        return 0
-    return exp(-16 * pi**2 * roughness**2 * ((cos(angle))**2) / particle.wavelength**2)
-
-
-def no_new_scattering(pt, cf):
-    """
-    Check if new angles do not immediately lead to a new top/bottom or sidewall scattering event.
-    Such additional scatering event may cause troubles because at this stage we already checked the domain boundaries.
-    Thus, this check is necessary to prevent particles leaving the structure boundaries.
-    """
-    x, y, z = move(pt, cf.timestep)
-    return abs(z) < cf.thickness / 2 and abs(x) < cf.width / 2 and cf.length > y > 0
+# Single definitions, shared with the free-surface primitives. They used to be duplicated
+# here verbatim, and since scatterers.py star-imports both modules this copy shadowed the
+# original, so any change to the Soffer equation had to be made twice to take effect.
+from freepaths.scattering_primitives import specularity, no_new_scattering
 
 
 def vertical_surface_left_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_diffuse=False):

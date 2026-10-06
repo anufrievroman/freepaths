@@ -123,10 +123,17 @@ class Material(ABC):
         return d_omega / d_k
 
     def wavevector(self, branch_number, f):
-        """Wavevector magnitude k [1/m] at ordinary frequency f [Hz] on the given branch"""
-        f_branch = self.dispersion[:, branch_number + 1]
+        """
+        Wavevector magnitude k [1/m] at ordinary frequency f [Hz] on the given branch,
+        taken from the tabulated point closest to f. Nearest-point search rather than
+        interpolation for the same reason as in group_velocity(): the SiC/Graphite TA
+        branches are non-monotonic in f. The k = 0 point is excluded from the search so
+        that a finite frequency can never map onto k = 0, which would make the phonon
+        wavelength 2*pi/k infinite.
+        """
+        f_branch = self.dispersion[1:, branch_number + 1]
         nearest = np.abs(f_branch - f).argmin()
-        return self.dispersion[nearest, 0]
+        return self.dispersion[nearest + 1, 0]
 
     def mean_inverse_phase_velocity_sq(self):
         """
@@ -198,6 +205,7 @@ class Material(ABC):
         Assigned attributes (each a list of 3 per-branch arrays, except the
         branch probabilities, which are single arrays of 3 cumulative values):
         - frequencies_table: bin-midpoint frequency [Hz] of each dispersion bin;
+        - wavevector_table: bin-midpoint wavevector k [1/m] of each bin;
         - group_velocity_table: group velocity dw/dk [m/s] of each bin;
         - emission_frequency_probabilities, scattering_frequency_probabilities:
           cumulative probabilities of the frequency bins within each branch;
@@ -206,6 +214,7 @@ class Material(ABC):
           a branch before picking a frequency.
         """
         self.frequencies_table = []
+        self.wavevector_table = []
         self.group_velocity_table = []
         self.emission_frequency_probabilities = []
         self.scattering_frequency_probabilities = []
@@ -234,6 +243,7 @@ class Material(ABC):
             dos = k_mid[valid]**2 * d_k[valid]
 
             self.frequencies_table.append(freqs[valid])
+            self.wavevector_table.append(k_mid[valid])
             self.group_velocity_table.append(group_velocity[valid])
 
             # Cumulative bin weights; the last element is the total weight of

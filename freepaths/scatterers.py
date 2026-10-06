@@ -762,11 +762,10 @@ class VerticalPlane(Interface):
         rho_i = self.outer_material.density # getattr(mat_0, 'density', None)
         rho_j = self.inner_material.density #getattr(mat_j, 'density', None)
 
-        # Assign velocities:
+        # Assign velocities. vg_i is the particle's current speed (it is already in the
+        # outer material); vg_j is read off the inner material without mutating it:
         vg_i = pt.speed
-        pt.assign_speed(self.inner_material)
-        vg_j = pt.speed
-        pt.speed = vg_i
+        vg_j = pt.speed_in(self.inner_material)
         omega_i = 2 * np.pi * pt.f
         omega_j = omega_i  #conservation
 

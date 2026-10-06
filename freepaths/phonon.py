@@ -47,16 +47,29 @@ class Phonon(Particle):
         else:
             self.assign_frequency(material)
 
-        # draw_from_table already sets the speed from the drawn dispersion bin:
+        # draw_from_table already sets the speed and wavevector of the drawn dispersion bin:
         if self.speed is None:
             self.assign_speed(material)
+        if self.k is None:
+            self.assign_wavevector(material)
         self.grain_size = self._draw_grain_size()
         self.assign_internal_scattering_time(material)
 
     @property
     def wavelength(self):
-        """Calculate wavelength of the phonon"""
-        return self.speed / self.f
+        """
+        Wavelength of the phonon, 2*pi/k.
+
+        This is the quantity the Soffer specularity needs: p = exp(-(4*pi*sigma*cos(a)/lam)^2)
+        is a phase argument (the extra path 2*sigma*cos(a) between rays reflecting off a peak
+        and off a valley), and phase is set by the wavevector. NOT speed/f: that is the same
+        number only in the Debye limit, where the group velocity equals the phase velocity.
+        On the real tabulated dispersion speed/f = (2*pi/k)*(v_group/v_phase) underestimates
+        the wavelength everywhere off the Gamma point, and collapses to zero at the zone
+        boundary where v_group -> 0, artificially killing the specularity of large-k modes.
+        Consistent with interface_smmm.lambda_from_k, which already uses 2*pi/k.
+        """
+        return 2 * pi / self.k
 
     @property
     def energy(self):
@@ -68,6 +81,11 @@ class Phonon(Particle):
         f_upper = abs(material.dispersion[self.phonon_number + 1, self.branch_number + 1])
         f_lower = abs(material.dispersion[self.phonon_number, self.branch_number + 1])
         self.f = (f_upper + f_lower) / 2
+        # Midpoint of the same k interval, i.e. exactly the k_vector that
+        # main_mfp_sampling uses as the integration node for this phonon:
+        k_upper = material.dispersion[self.phonon_number + 1, 0]
+        k_lower = material.dispersion[self.phonon_number, 0]
+        self.k = (k_upper + k_lower) / 2
 
     def assign_frequency(self, material):
         """
@@ -92,7 +110,9 @@ class Phonon(Particle):
         # Pick the frequency bin via inverse sampling within the chosen branch
         index = min(np.searchsorted(frequency_probabilities[self.branch_number], random()), len(freqs) - 1)
         self.f = freqs[index]
-        # Group velocity of exactly the drawn dispersion bin:
+        # Wavevector and group velocity of exactly the drawn dispersion bin, with no
+        # frequency-to-bin re-lookup (the branches are not monotonic in f):
+        self.k = material.wavevector_table[self.branch_number][index]
         self.speed = material.group_velocity_table[self.branch_number][index]
 
     def _draw_grain_size(self):
@@ -111,8 +131,11 @@ class Phonon(Particle):
         Vanishes at low omega (long wavelength passes through); approaches v_g/d at high omega."""
         if self.grain_size is None:
             return 0.0
-        omega = 2 * pi * self.f
-        soffer = exp(-4 * cf.grain_roughness ** 2 * omega ** 2 / self.speed ** 2)
+        # exp(-4 sigma_GB^2 k^2) is exp(-16 pi^2 sigma_GB^2 / lam^2) at normal incidence,
+        # i.e. the same Soffer factor as the free surfaces, so it takes the same wavelength
+        # 2*pi/k (see the wavelength property). The earlier form 4 sigma^2 omega^2 / v_g^2
+        # was this expression with lam = v_g/f substituted in.
+        soffer = exp(-4 * cf.grain_roughness ** 2 * self.k ** 2)
         return (self.speed / self.grain_size) * (1 - soffer)
 
     def classify_internal_event(self, material):
@@ -184,9 +207,8 @@ class Phonon(Particle):
             return
 
         omega = 2 * pi * self.f
-        k = material.wavevector(self.branch_number, self.f)
         n0 = 1.0 / expm1(hbar * omega / (k_B * material.temp))
-        a = (1.0 + n0) * hbar * k * u_mag / (k_B * material.temp)
+        a = (1.0 + n0) * hbar * self.k * u_mag / (k_B * material.temp)
 
         if cf.is_two_dimensional_material:
             # In-plane: draw the angle delta from u_hat, von Mises P(delta) ~ exp(a cos delta).
@@ -252,9 +274,18 @@ class Phonon(Particle):
         # the group velocity of the drawn bin is set by draw_from_table
         self.draw_from_table(material, material.scattering_branch_probabilities, material.scattering_frequency_probabilities)
 
-    def assign_speed(self, material):
-        """Set group velocity dw/dk at the phonon's frequency and branch."""
-        self.speed = material.group_velocity(self.branch_number, self.f)
+    def speed_in(self, material):
+        """Group velocity dw/dk at the phonon's frequency and branch in the given material."""
+        return material.group_velocity(self.branch_number, self.f)
+
+    def assign_wavevector(self, material):
+        """
+        Set the wavevector by looking up the dispersion at the phonon's frequency and
+        branch. Fallback for any frequency-assignment path that does not come from a
+        sampling table; the table draws and the MFP-sampling sweep set k directly from
+        the bin they drew, which is exact.
+        """
+        self.k = material.wavevector(self.branch_number, self.f)
 
     def assign_internal_scattering_time(self, material):
         """Determine relaxation time after which this phonon will undergo internal scattering"""

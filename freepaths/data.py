@@ -67,6 +67,10 @@ class GeneralData(Data):
         self.final_frequencies = []
         self.initial_energies = []
         self.group_velocities = []
+        # Wavevector of each particle, row-aligned with final_frequencies/group_velocities.
+        # Recorded separately because k cannot be recovered from f and v_g on a curved
+        # dispersion, and the physical wavelength is 2*pi/k (see Phonon.wavelength):
+        self.wavevectors = []
         self.travel_times = []
         self.mean_free_paths = []
         self.thermal_conductivity = []
@@ -86,6 +90,7 @@ class GeneralData(Data):
         else:
             self.final_frequencies.append(pt.f)
             self.group_velocities.append(pt.speed)
+            self.wavevectors.append(pt.k)
             self.branches.append(pt.branch_number)
 
     def save_flight_data(self, flight, mode=None):
@@ -120,6 +125,7 @@ class GeneralData(Data):
         else:
             np.savetxt("Data/All final frequencies.csv", self.final_frequencies, fmt='%2.4e', header="f [Hz]", encoding='utf-8')
             np.savetxt("Data/All group velocities.csv", self.group_velocities, fmt='%.4f', header="Vg [m//s]", encoding='utf-8')
+            np.savetxt("Data/All wavevectors.csv", self.wavevectors, fmt='%2.4e', header="k [1//m]", encoding='utf-8')
         if mode is SimulationMode.PHONON_TRACING:
             np.savetxt("Data/All exit angles.csv", self.exit_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
             np.savetxt("Data/All initial angles.csv", self.initial_angles, fmt='%.4f', header="Angle [rad]", encoding='utf-8')
@@ -147,6 +153,7 @@ class GeneralData(Data):
             'free_paths': self.free_paths,
             'final_frequencies': self.final_frequencies,
             'group_velocities': self.group_velocities,
+            'wavevectors': self.wavevectors,
             'travel_times': self.travel_times,
             'mean_free_paths': self.mean_free_paths,
             'thermal_conductivity': self.thermal_conductivity,
