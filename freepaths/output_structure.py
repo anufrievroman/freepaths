@@ -2,7 +2,7 @@
 
 from matplotlib.patches import Rectangle
 from freepaths.config import cf
-from freepaths.scatterers import HorizontalPlane, VerticalPlane
+from freepaths.scatterers import VerticalPlane
 
 def draw_structure_top_view(cf, color_holes="white", color_back="gray"):
     """Draw shape of the structure using patches from matplotlib"""
@@ -61,10 +61,10 @@ def draw_structure_side_view(cf, color_holes="white", color_back="gray"):
         )
     ]
 
-    # Interfaces as white patches:
-    for interface in cf.interfaces:
-        if isinstance(interface, HorizontalPlane):
-            patch = interface.get_patch(color_holes, cf)
-            patches.extend(patch if isinstance(patch, list) else [patch])
+    # Interfaces as white patches (only HorizontalPlane is visible in this view; it is disabled for now):
+    # for interface in cf.interfaces:
+    #     if isinstance(interface, HorizontalPlane):
+    #         patch = interface.get_patch(color_holes, cf)
+    #         patches.extend(patch if isinstance(patch, list) else [patch])
 
     return patches

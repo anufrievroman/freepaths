@@ -59,6 +59,16 @@ Alternatively, you can run FreePATHS in the mean free path sampling mode, which 
 The calculated thermal conductivity will be output in the terminal. However, other statistical quantities and plots will still be calculated and output in the `Results` folder.
 
 
+## Testing
+
+The `tests` folder holds the validation tests that must pass before a new version is published. They run against the source tree, not an installed copy. From the repository root:
+
+```
+pip install pytest
+pytest tests
+```
+
+
 ## Troubleshooting
 
 - [Troubles with installation](https://anufrievroman.gitbook.io/freepaths/installation)

@@ -1,6 +1,6 @@
 """Module that provides scattering functions on through the interfaces made of other materials"""
 
-from math import pi, cos, sin, asin, acos
+from math import pi, cos, sin, acos
 from random import random
 
 from freepaths.scattering_types import Scattering
@@ -8,7 +8,7 @@ from freepaths.scattering_types import Scattering
 # Single definitions, shared with the free-surface primitives. They used to be duplicated
 # here verbatim, and since scatterers.py star-imports both modules this copy shadowed the
 # original, so any change to the Soffer equation had to be made twice to take effect.
-from freepaths.scattering_primitives import specularity, no_new_scattering
+from freepaths.scattering_primitives import specularity, no_new_scattering, lambert_angles
 
 
 def vertical_surface_left_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_diffuse=False):
@@ -41,8 +41,7 @@ def vertical_surface_left_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_diff
     else:
 
         # Lambert cosine distribution:
-        pt.theta = -pi/2 + asin(2*random() - 1)
-        pt.phi = asin((asin(2*random() - 1))/(pi/2))
+        pt.theta, pt.phi = lambert_angles(-pi/2)
 
         # Accept the angles if they do not cause new scattering:
         if no_new_scattering(pt, cf):
@@ -76,8 +75,7 @@ def vertical_surface_right_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_dif
     else:
 
         # Lambert cosine distribution:
-        pt.theta = +pi/2 + asin(2*random() - 1)
-        pt.phi = asin((asin(2*random() - 1))/(pi/2))
+        pt.theta, pt.phi = lambert_angles(+pi/2)
 
         # Accept the angles if they do not cause new scattering:
         if no_new_scattering(pt, cf):

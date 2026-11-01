@@ -1,6 +1,6 @@
 """Module that provides scattering functions on basic objects like various walls"""
 
-from math import pi, cos, sin, tan, exp, atan, asin, acos
+from math import pi, cos, sin, tan, exp, atan, atan2, asin, acos, sqrt
 from random import random
 from numpy import sign
 
@@ -26,6 +26,27 @@ def no_new_scattering(pt, cf):
     return abs(z) < cf.thickness / 2 and abs(x) < cf.width / 2 and cf.length > y > 0
 
 
+def lambert_angles(normal_theta, normal_phi=0.0):
+    """
+    Draw a direction from the Lambert cosine law about the surface normal
+    given by (normal_theta, normal_phi), in the direction convention of move.py:
+    d = (sin(theta)*cos(phi), cos(theta)*cos(phi), sin(phi)).
+    The cosine to the normal is mu = sqrt(random()) (density 2*mu), and the azimuth
+    around the normal is uniform. Returns the (theta, phi) of the new direction.
+    """
+    mu = sqrt(random())
+    s = sqrt(1 - mu**2)
+    psi = 2*pi*random()
+    sin_t, cos_t = sin(normal_theta), cos(normal_theta)
+    sin_p, cos_p = sin(normal_phi), cos(normal_phi)
+
+    # Normal and two unit tangents (along d/dtheta and d/dphi of the normal):
+    d_x = mu*sin_t*cos_p + s*cos(psi)*cos_t - s*sin(psi)*sin_t*sin_p
+    d_y = mu*cos_t*cos_p - s*cos(psi)*sin_t - s*sin(psi)*cos_t*sin_p
+    d_z = mu*sin_p + s*sin(psi)*cos_p
+    return atan2(d_x, d_y), asin(max(-1.0, min(1.0, d_z)))
+
+
 def random_scattering(pt):
     """Scattering in a random direction"""
     pt.theta = -pi + random()*2*pi
@@ -49,8 +70,7 @@ def vertical_surface_left_scattering(pt, roughness, cf, is_diffuse=False):
     else:
 
         # Lambert cosine distribution:
-        pt.theta = -pi/2 + asin(2*random() - 1)
-        pt.phi = asin((asin(2*random() - 1))/(pi/2))
+        pt.theta, pt.phi = lambert_angles(-pi/2)
 
         # Accept the angles if they do not cause new scattering:
         if no_new_scattering(pt, cf):
@@ -73,8 +93,7 @@ def vertical_surface_right_scattering(pt, roughness, cf, is_diffuse=False):
     else:
 
         # Lambert cosine distribution:
-        pt.theta = +pi/2 + asin(2*random() - 1)
-        pt.phi = asin((asin(2*random() - 1))/(pi/2))
+        pt.theta, pt.phi = lambert_angles(+pi/2)
 
         # Accept the angles if they do not cause new scattering:
         if no_new_scattering(pt, cf):
@@ -95,9 +114,7 @@ def horizontal_surface_down_scattering(pt, roughness, is_diffuse=False):
 
     # Diffuse scattering:
     # Lambert cosine distribution:
-    rand_sign = sign((2*random() - 1))
-    pt.theta = rand_sign*pi/2 + rand_sign*acos(random())
-    pt.phi = asin((asin(2*random() - 1))/(pi/2))
+    pt.theta, pt.phi = lambert_angles(pi)
     return Scattering.DIFFUSE
 
 
@@ -115,8 +132,7 @@ def horizontal_surface_up_scattering(pt, roughness, is_diffuse=False):
 
     # Diffuse scattering:
     # Lambert cosine distribution:
-    pt.theta = asin(2*random() - 1)
-    pt.phi = asin((asin(2*random() - 1))/(pi/2))
+    pt.theta, pt.phi = lambert_angles(0)
     return Scattering.DIFFUSE
 
 
@@ -133,9 +149,7 @@ def inclined_surfaces_down_scattering(pt, beta, x, x0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    rand_sign = sign((2*random() - 1))
-    pt.theta = rand_sign*pi - rand_sign*asin(random()) - sign(x - x0)*(pi/2 - beta)
-    pt.phi = asin((asin(2*random() - 1))/(pi/2))
+    pt.theta, pt.phi = lambert_angles(pi - sign(x - x0)*(pi/2 - beta))
     return Scattering.DIFFUSE
 
 
@@ -152,8 +166,7 @@ def inclined_surfaces_up_scattering(pt, beta, x, x0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    pt.theta = asin(2*random() - 1) + sign(x - x0)*(pi/2 - beta)
-    pt.phi = asin((asin(2*random() - 1))/(pi/2))
+    pt.theta, pt.phi = lambert_angles(sign(x - x0)*(pi/2 - beta))
     return Scattering.DIFFUSE
 
 
@@ -175,8 +188,7 @@ def in_plane_surface_scattering(pt, roughness):
     # phi = -asin(random())
 
     # Lambert cosine distribution:
-    pt.theta = - pi + random()*2*pi
-    pt.phi = - sign(pt.phi) *  random()*pi/2
+    pt.theta, pt.phi = lambert_angles(0, -sign(pt.phi)*pi/2)
     return Scattering.DIFFUSE
 
 
@@ -200,8 +212,7 @@ def circle_outer_scattering(pt, tangent_theta, y, y0, roughness, cf):
         # phi = asin(2*random() - 1)
 
         # Lambert cosine distribution:
-        pt.theta = tangent_theta - (asin(2*random() - 1)) - pi*(y < y0)
-        pt.phi = asin((asin(2*random() - 1))/(pi/2))
+        pt.theta, pt.phi = lambert_angles(tangent_theta - pi*(y < y0))
 
         # Accept the angles only if they do not immediately cause new scattering:
         if no_new_scattering(pt, cf):
@@ -220,8 +231,7 @@ def circle_inner_scattering(pt, tangent_theta, y, y0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    pt.theta = tangent_theta - asin(2*random()-1) + pi*(y >= y0)
-    pt.phi = asin((asin(2*random() - 1))/(pi/2))
+    pt.theta, pt.phi = lambert_angles(tangent_theta + pi*(y >= y0))
     return Scattering.DIFFUSE
 
 

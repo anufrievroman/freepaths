@@ -583,8 +583,7 @@ class ParabolaTop(Hole):
             scattering_types.walls = Scattering.DIFFUSE
             for _ in range(10):
                 # Lambert distribution
-                pt.theta = normal_theta + asin(2 * random() - 1) - pi / 2
-                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta, pt.phi = lambert_angles(normal_theta - pi / 2)
 
                 # Accept the angles only if they do not immediately cause new scattering:
                 if no_new_scattering(pt, cf):
@@ -632,8 +631,7 @@ class ParabolaBottom(Hole):
             scattering_types.walls = Scattering.DIFFUSE
             for _ in range(10):
                 # Lambertian distribution
-                pt.theta = normal_theta + asin(2 * random() - 1) - pi / 2
-                pt.phi = asin((asin(2 * random() - 1)) / (pi / 2))
+                pt.theta, pt.phi = lambert_angles(normal_theta - pi / 2)
 
                 # Accept the angles only if they do not immediately cause new scattering:
                 if no_new_scattering(pt, cf):
@@ -823,36 +821,40 @@ class VerticalPlane(Interface):
         )
 
 
-class HorizontalPlane(Interface):
-    """Horizontal plane that represents an interface"""
-
-    def __init__(self, position_z=0, transmission=0):
-        self.position_z = position_z
-        self.transmission = transmission
-
-    def is_crossed(self, pt, x, y, z):
-        """Check if particle with traverses the vertical plane at given coordinate"""
-        return (pt.z < self.position_z < z) or (pt.z > self.position_z > z)
-
-    def is_transmitted(self):
-        """Check if particle traverses the plane given the transmission probability"""
-        return random() < self.transmission
-
-    def scatter(self, pt, scattering_types, x, y, z, cf):
-        """Calculate the new direction after scattering on the interface wall"""
-
-        # Scattering on the left wall:
-        if z < self.position_z:
-            scattering_types.interfaces = horizontal_surface_up_scattering(pt, cf.interface_roughness, cf)
-
-        # Scattering on the right wall:
-        else:
-            scattering_types.interfaces = horizontal_surface_down_scattering(pt, cf.interface_roughness, cf)
-
-    def get_patch(self, color_holes, cf):
-        """Create a patch in the shape of a thin line to use in the plots"""
-        return Rectangle(
-            (0, 1e6 * self.position_z),
-            1e6 * cf.length, 1e6 * 0.005*cf.thickness,
-            facecolor=color_holes,
-        )
+# HorizontalPlane is disabled until it is fixed. It cannot run as written: scattering.py calls
+# interface.scatter(pt, cf, scattering_types), which does not match its signature below; it scatters a
+# z-normal plane with the y-normal horizontal_surface_*_scattering functions; and it passes cf into
+# their is_diffuse slot, which would make every event diffuse.
+# class HorizontalPlane(Interface):
+#     """Horizontal plane that represents an interface"""
+#
+#     def __init__(self, position_z=0, transmission=0):
+#         self.position_z = position_z
+#         self.transmission = transmission
+#
+#     def is_crossed(self, pt, x, y, z):
+#         """Check if particle with traverses the vertical plane at given coordinate"""
+#         return (pt.z < self.position_z < z) or (pt.z > self.position_z > z)
+#
+#     def is_transmitted(self):
+#         """Check if particle traverses the plane given the transmission probability"""
+#         return random() < self.transmission
+#
+#     def scatter(self, pt, scattering_types, x, y, z, cf):
+#         """Calculate the new direction after scattering on the interface wall"""
+#
+#         # Scattering on the left wall:
+#         if z < self.position_z:
+#             scattering_types.interfaces = horizontal_surface_up_scattering(pt, cf.interface_roughness, cf)
+#
+#         # Scattering on the right wall:
+#         else:
+#             scattering_types.interfaces = horizontal_surface_down_scattering(pt, cf.interface_roughness, cf)
+#
+#     def get_patch(self, color_holes, cf):
+#         """Create a patch in the shape of a thin line to use in the plots"""
+#         return Rectangle(
+#             (0, 1e6 * self.position_z),
+#             1e6 * cf.length, 1e6 * 0.005*cf.thickness,
+#             facecolor=color_holes,
+#         )

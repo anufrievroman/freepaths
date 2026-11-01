@@ -5,6 +5,8 @@ import enum
 from random import random
 from math import pi, asin
 
+from freepaths.scattering_primitives import lambert_angles
+
 
 class Distributions(enum.Enum):
     """Possible distributions of angles"""
@@ -42,8 +44,7 @@ class Source:
             theta = self.angle + 1e-10
             phi = -pi/2 + pi*random()
         elif self.angle_distribution == Distributions.LAMBERT:
-            theta = asin(2*random() - 1) + self.angle
-            phi = asin((asin(2*random() - 1))/(pi/2))
+            theta, phi = lambert_angles(self.angle)
         elif self.angle_distribution == Distributions.UNIFORM:
             theta = -pi + 2*pi*random()
             phi = asin(2*random() - 1)
