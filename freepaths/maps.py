@@ -5,6 +5,7 @@ from scipy.constants import k as k_B
 import numpy as np
 from freepaths.config import cf
 from freepaths.options import SimulationMode
+import freepaths.move
 
 class Maps:
     """Parent maps class with functions common to all classes below"""
@@ -182,9 +183,18 @@ class ThermalMaps(Maps):
         This first time step is unique for each phonon. This is done to simulate more relistic continious heat flow.
         """
 
+        # The phonon is recorded at the middle of the step it is about to make, not at its start.
+        # A sample stands for the whole step, and the start of the step is a first-order (left
+        # rectangle) rule: in a temperature gradient it undercounts the heat flux by a fraction
+        # step / (2 * MFP), which made the Fourier kappa low by -10% at MFP/step = 5. The midpoint
+        # is second-order accurate, so the bias disappears (tests/test_end_to_end.py, gray medium):
+        d_x, d_y, _ = freepaths.move.step(pt.theta, pt.phi, pt.speed, cf.timestep)
+        x = pt.x + d_x / 2
+        y = pt.y + d_y / 2
+
         # Calculate the index of the pixel in which we record this phonon:
-        index_x = int(((pt.x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
-        index_y = int(pt.y // (cf.length / cf.number_of_pixels_y))
+        index_x = int(((x + cf.width / 2) * cf.number_of_pixels_x) // cf.width)
+        index_y = int(y // (cf.length / cf.number_of_pixels_y))
 
         # Prevent error if the phonon is outside the structure:
         if (0 <= index_x < cf.number_of_pixels_x) and (0 <= index_y < cf.number_of_pixels_y):
