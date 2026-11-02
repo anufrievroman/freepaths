@@ -158,3 +158,16 @@ def test_internal_event_channel_split(monkeypatch):
         hits = sum(Phonon.classify_internal_event(phonon, material) == "inelastic" for _ in range(n))
         sigma = np.sqrt(expected * (1 - expected) / n)
         assert abs(hits / n - expected) < 5 * sigma, f"f = {f:.1e}: inelastic share {hits/n:.4f}, expected {expected:.4f}"
+
+
+def test_ballistic_conductance():
+    """Landauer G = (1/4) sum over branches of int d^3k/(2 pi)^3 C v: for one speed v it is C v / 4"""
+    import gray_material
+    gray = gray_material.Gray(300)
+    assert gray.ballistic_conductance() == pytest.approx(gray.dispersion_heat_capacity * gray_material.VELOCITY / 4, rel=1e-9)
+    silicon = Si(300)
+    total = 0.0
+    for branch in range(3):
+        f, dos, velocity = bins(silicon, branch)
+        total += np.sum(dos / (2 * pi**2) * heat_capacity(f, silicon.temp) * velocity) / 4
+    assert silicon.ballistic_conductance() == pytest.approx(total, rel=1e-6)

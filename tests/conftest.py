@@ -14,6 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.argv = sys.argv[:1]
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: end-to-end runs of the freepaths CLI (minutes); deselect with -m 'not slow'")
+
+
 @pytest.fixture(autouse=True)
 def restore_scattering_config():
     """Several tests point scattering.cf at a minimal stand-in config; put the real one back"""

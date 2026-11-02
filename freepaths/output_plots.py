@@ -495,7 +495,8 @@ def plot_thermal_map():
     """Plot thermal map as color map"""
     fig = plt.figure()
     thermal_map = np.genfromtxt("Data/Thermal map.csv", unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
-    thermal_map = np.flipud(thermal_map)
+    # A map one pixel wide or long is read back as a 1D array, which imshow rejects:
+    thermal_map = np.flipud(np.reshape(thermal_map, (cf.number_of_pixels_y, cf.number_of_pixels_x)))
     minimum_of_colorbar = 1e-20  # Cannot be zero!
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
     plt.imshow(thermal_map, cmap='hot', interpolation='none', extent=boundaries,
@@ -513,6 +514,8 @@ def plot_heat_flux_map(file, label, units="a.u."):
     """Plot heat flux map as color map"""
     fig = plt.figure()
     heat_flux_map = np.genfromtxt(file, unpack=False, delimiter=',', skip_header=0, encoding='utf-8')
+    # A map one pixel wide or long is read back as a 1D array, which imshow rejects:
+    heat_flux_map = np.reshape(heat_flux_map, (cf.number_of_pixels_y, cf.number_of_pixels_x))
     heat_flux_map = np.abs(np.flipud(heat_flux_map))
     minimum_of_colorbar = 1e5
     boundaries = [(-cf.width / 2) * 1e6, (cf.width / 2) * 1e6, 0, cf.length * 1e6]
