@@ -2,9 +2,10 @@
 Electron physics and post-processing, checked against closed forms:
   - parabolic-band speed, Brooks-Herring ionized-impurity MFP (Matthiessen with the acoustic MFP),
     surface-depletion width;
-  - BTE conductivity and Seebeck coefficient for a constant MFP, where Xi(E) is linear in E and
-    the integrals reduce to Fermi-Dirac integrals: sigma = e^2 A kT F0(eta),
-    S = -/+ (k/e) (2 F1(eta) / F0(eta) - eta);
+  - BTE conductivity, Seebeck coefficient and electronic thermal conductivity for a constant MFP,
+    where Xi(E) is linear in E and the integrals reduce to Fermi-Dirac integrals
+    G_n = int x^n f dx: sigma = e^2 A kT G0, S = -/+ (k/e) (2 G1/G0 - eta),
+    kappa_e = A k^3 T^2 (3 G2 - 4 eta G1 + eta^2 G0) - S^2 sigma T;
   - the MC-to-BTE calibration: a diffusive 1/ToF ~ v reproduces the BTE exactly, a fixed
     mapping constant scales sigma but not S;
   - the kappa-weighted specularity accumulators (SpecularityData) against a direct per-phonon sum.
@@ -104,10 +105,11 @@ def test_depletion_width(config, monkeypatch, silicon):
 
 # ---------------------------------------------------------------- post-processing
 
-def run_post_processing(time_of_flight, n_per_energy=3, n_lost=50):
-    """ElectronPostComputation on synthetic data: every energy of the grid gets the same
-    ToF for each of its electrons, plus some electrons that never arrived (ToF = 0)"""
-    energies = np.arange(1, 801) * 1e-3 * electron_volt
+def run_post_processing(time_of_flight, n_per_energy=3, n_lost=50, energy_top=0.8):
+    """ElectronPostComputation on synthetic data: every energy of the grid (1 meV steps up to
+    energy_top eV) gets the same ToF for each of its electrons, plus some electrons that never
+    arrived (ToF = 0)"""
+    energies = np.arange(1, round(energy_top * 1000) + 1) * 1e-3 * electron_volt
     initial = np.repeat(energies, n_per_energy)
     times = np.repeat(time_of_flight(energies), n_per_energy)
     initial = np.concatenate((initial, energies[:n_lost]))
@@ -118,9 +120,9 @@ def run_post_processing(time_of_flight, n_per_energy=3, n_lost=50):
 
 
 def fermi_integrals(eta):
-    f0 = np.log1p(np.exp(eta))
-    f1 = quad(lambda x: x / (1 + np.exp(x - eta)), 0, max(eta, 0) + 60)[0]
-    return f0, f1
+    """G_n = int_0^inf x^n / (1 + exp(x - eta)) dx for n = 0, 1, 2"""
+    upper = max(eta, 0) + 60
+    return [quad(lambda x: x**n / (1 + np.exp(x - eta)), 0, upper)[0] for n in range(3)]
 
 
 @pytest.mark.parametrize("is_electron", [True, False])
@@ -136,12 +138,28 @@ def test_bte_conductivity_and_seebeck_match_closed_forms(config, monkeypatch, is
     sign = -1 if is_electron else 1
     for row in range(0, len(post.fermi_levels), 40):
         eta = post.fermi_levels[row] / kT
-        f0, f1 = fermi_integrals(eta)
-        sigma = e**2 * A * kT * f0
-        seebeck = sign * (k_B / e) * (2 * f1 / f0 - eta)
+        g0, g1, g2 = fermi_integrals(eta)
+        sigma = e**2 * A * kT * g0
+        seebeck = sign * (k_B / e) * (2 * g1 / g0 - eta)
+        kappa_e = A * k_B**3 * cf.temp**2 * (3 * g2 - 4 * eta * g1 + eta**2 * g0) - seebeck**2 * sigma * cf.temp
         assert post.bte_conductivity[row, 1] == pytest.approx(sigma, rel=1e-2)
         assert post.bte_seebeck[row, 1] == pytest.approx(seebeck, rel=1e-2)
         assert np.sign(post.bte_seebeck[row, 1]) == sign
+        assert post.bte_thermal_conductivity[row, 1] == pytest.approx(kappa_e, rel=1e-2)
+        assert post.bte_thermal_conductivity[row, 1] > 0
+
+
+def test_lorenz_number_limits(config, monkeypatch):
+    """L = kappa_e / (sigma T) = (k/e)^2 (3 G2/G0 - (2 G1/G0)^2) for Xi ~ E: it tends to 2 (k/e)^2 in
+    the nondegenerate limit (G_n = n! e^eta) and to the Wiedemann-Franz pi^2/3 (k/e)^2 deep in the
+    degenerate one"""
+    monkeypatch.setattr(cf, "fermi_level_upper_bound", 0.6)
+    post = run_post_processing(lambda E: np.ones_like(E), energy_top=1.6)
+    lorenz = post.bte_thermal_conductivity[:, 1] / (post.bte_conductivity[:, 1] * cf.temp)
+    unit = (k_B / e)**2
+    eta = post.fermi_levels / (k_B * cf.temp)
+    assert lorenz[np.argmin(abs(eta + 6))] == pytest.approx(2 * unit, rel=1e-2)
+    assert lorenz[np.argmin(abs(eta - 20))] == pytest.approx(np.pi**2 / 3 * unit, rel=2e-2)
 
 
 def test_diffusive_monte_carlo_reproduces_the_bte(config, silicon):

@@ -100,8 +100,11 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         # If interface transmission has occurred, record it:
         if scattering_types.interfaces_transmission:
             places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission)
-        else:
-            flight.add_step(cf.timestep)
+
+        # The particle moves on every timestep, so its free path and scattering clock advance on every
+        # timestep too (they used to skip timesteps with an interface transmission, losing one step of
+        # free path per transmission):
+        flight.add_step(cf.timestep)
 
 
         # Record presence of the particle at this timestep and move on:

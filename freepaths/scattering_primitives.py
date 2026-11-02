@@ -69,12 +69,13 @@ def vertical_surface_left_scattering(pt, roughness, cf, is_diffuse=False):
     # Diffuse scattering
     else:
 
-        # Lambert cosine distribution:
-        pt.theta, pt.phi = lambert_angles(-pi/2)
-
-        # Accept the angles if they do not cause new scattering:
-        if no_new_scattering(pt, cf):
-            return Scattering.DIFFUSE
+        # Lambert cosine distribution, redrawn if the new direction would immediately leave the domain
+        # (near an edge with the ceiling or floor). The event is diffuse whatever the draw:
+        for attempt in range(10):
+            pt.theta, pt.phi = lambert_angles(-pi/2)
+            if no_new_scattering(pt, cf):
+                break
+        return Scattering.DIFFUSE
 
 
 def vertical_surface_right_scattering(pt, roughness, cf, is_diffuse=False):
@@ -92,12 +93,13 @@ def vertical_surface_right_scattering(pt, roughness, cf, is_diffuse=False):
     # Diffuse scattering:
     else:
 
-        # Lambert cosine distribution:
-        pt.theta, pt.phi = lambert_angles(+pi/2)
-
-        # Accept the angles if they do not cause new scattering:
-        if no_new_scattering(pt, cf):
-            return Scattering.DIFFUSE
+        # Lambert cosine distribution, redrawn if the new direction would immediately leave the domain
+        # (near an edge with the ceiling or floor). The event is diffuse whatever the draw:
+        for attempt in range(10):
+            pt.theta, pt.phi = lambert_angles(+pi/2)
+            if no_new_scattering(pt, cf):
+                break
+        return Scattering.DIFFUSE
 
 
 def horizontal_surface_down_scattering(pt, roughness, is_diffuse=False):

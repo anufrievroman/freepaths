@@ -750,7 +750,9 @@ class VerticalPlane(Interface):
 
         self.assign_materials(cf)
 
-        theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
+        # Angle of incidence from the interface normal (x) in 3D. The in-plane pi/2 - theta alone ignored phi,
+        # treating out-of-plane phonons as closer to normal incidence than they are:
+        theta_i = np.arccos(abs(np.cos(pt.phi) * np.sin(pt.theta)))
 
         mat_0 = self.outer_material
         mat_j = self.inner_material
@@ -785,7 +787,6 @@ class VerticalPlane(Interface):
         """
         # Crossing the interface:
         transmission = self.transmission_probability(cf, pt)
-        theta_i = np.pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
 
         # else:
         if random() < transmission:

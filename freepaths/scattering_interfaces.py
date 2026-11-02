@@ -18,7 +18,9 @@ def vertical_surface_left_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_diff
     a = acos(cos(pt.phi)*sin(abs(pt.theta)))
     p = specularity(a, roughness, pt)
 
-    theta_i = pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
+    # Angle of incidence from the interface normal (x) in 3D. The in-plane pi/2 - theta alone ignored phi,
+    # treating out-of-plane phonons as closer to normal incidence than they are:
+    theta_i = acos(abs(cos(pt.phi) * sin(pt.theta)))
 
     # Specular scattering:
     if random() < p and (not is_diffuse):
@@ -40,12 +42,13 @@ def vertical_surface_left_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_diff
     # Diffuse scattering:
     else:
 
-        # Lambert cosine distribution:
-        pt.theta, pt.phi = lambert_angles(-pi/2)
-
-        # Accept the angles if they do not cause new scattering:
-        if no_new_scattering(pt, cf):
-            return Scattering.DIFFUSE
+        # Lambert cosine distribution, redrawn if the new direction would immediately leave the domain
+        # (near an edge with the ceiling or floor). The event is diffuse whatever the draw:
+        for attempt in range(10):
+            pt.theta, pt.phi = lambert_angles(-pi/2)
+            if no_new_scattering(pt, cf):
+                break
+        return Scattering.DIFFUSE
 
 
 def vertical_surface_right_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_diffuse=False):
@@ -55,7 +58,9 @@ def vertical_surface_right_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_dif
     a = acos(cos(pt.phi)*sin(abs(pt.theta)))
     p = specularity(a, roughness, pt)
 
-    theta_i = pi / 2 - pt.theta # because in the paper is the projection angle of the x axis
+    # Angle of incidence from the interface normal (x) in 3D. The in-plane pi/2 - theta alone ignored phi,
+    # treating out-of-plane phonons as closer to normal incidence than they are:
+    theta_i = acos(abs(cos(pt.phi) * sin(pt.theta)))
 
     # Specular scattering:
     if random() < p and (not is_diffuse):
@@ -74,9 +79,10 @@ def vertical_surface_right_scattering_2T(pt, roughness, cf, vg_i_to_vg_j, is_dif
     # Diffuse scattering:
     else:
 
-        # Lambert cosine distribution:
-        pt.theta, pt.phi = lambert_angles(+pi/2)
-
-        # Accept the angles if they do not cause new scattering:
-        if no_new_scattering(pt, cf):
-            return Scattering.DIFFUSE
+        # Lambert cosine distribution, redrawn if the new direction would immediately leave the domain
+        # (near an edge with the ceiling or floor). The event is diffuse whatever the draw:
+        for attempt in range(10):
+            pt.theta, pt.phi = lambert_angles(+pi/2)
+            if no_new_scattering(pt, cf):
+                break
+        return Scattering.DIFFUSE

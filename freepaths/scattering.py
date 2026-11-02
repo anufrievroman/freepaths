@@ -11,6 +11,7 @@ from freepaths.config import cf
 from freepaths.move import move
 from freepaths.scattering_primitives import *
 from freepaths.options import ParticleType
+from freepaths.scattering_types import ScatteringTypes
 
 
 def internal_scattering(pt, flight, scattering_types):
@@ -95,8 +96,38 @@ def ceiling_scattering(pt, scattering_types, x, y, z, depletion=0.0):
         scattering_types.top_bottom = in_plane_surface_scattering(pt, cf.top_roughness)
 
 
+# A scattering event changes the direction, and the new direction can cross a boundary that was
+# checked with the old one: e.g. a diffuse redraw on the ceiling right next to a side wall points
+# straight out through the wall. So the boundaries are checked again with every new direction,
+# up to this many passes, until the step is clear:
+MAX_SCATTERING_PASSES = 4
+
+
 def surface_scattering(pt, scattering_types, triangle_scattering_places):
-    """Check for a surface scattering on this step"""
+    """Check for a surface scattering on this step, until the step with the final direction is clear"""
+    direction = (pt.theta, pt.phi)
+    _surface_scattering_pass(pt, scattering_types, triangle_scattering_places)
+
+    # Only a step whose direction was changed by a scattering event needs another look (a few % of steps):
+    for _ in range(MAX_SCATTERING_PASSES - 1):
+        if (pt.theta, pt.phi) == direction:
+            break
+        direction = (pt.theta, pt.phi)
+        this_pass = ScatteringTypes()
+        # An interface already met on this step is not met again: a transmitted particle still has to
+        # cross the plane, and that crossing is the transmission itself, not a second encounter:
+        _surface_scattering_pass(pt, this_pass, triangle_scattering_places,
+                                 check_interfaces=scattering_types.interfaces is None)
+        for name, value in vars(this_pass).items():
+            if value is not None:
+                setattr(scattering_types, name, value)
+
+    # Correct angle if it became more than 180 degrees:
+    pt.correct_angle()
+
+
+def _surface_scattering_pass(pt, scattering_types, triangle_scattering_places, check_interfaces=True):
+    """Check every boundary once against the step with the current direction"""
 
     # Preliminary move to see if particle would cross something:
     x, y, z = move(pt, cf.timestep)
@@ -140,7 +171,7 @@ def surface_scattering(pt, scattering_types, triangle_scattering_places):
                 break
 
     # Scattering on interfaces (thin layers):
-    if cf.interfaces:
+    if cf.interfaces and check_interfaces:
         for interface in cf.interfaces:
             if interface.is_crossed(pt, x, y, z):
                 interface.scatter(pt, cf, scattering_types)
@@ -148,6 +179,3 @@ def surface_scattering(pt, scattering_types, triangle_scattering_places):
             # If there was any scattering, then no need to check other interfaces:
             if scattering_types.interfaces is not None:
                 break
-
-    # Correct angle if it became more than 180 degrees:
-    pt.correct_angle()
