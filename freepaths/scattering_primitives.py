@@ -139,8 +139,9 @@ def horizontal_surface_up_scattering(pt, roughness, is_diffuse=False):
 def inclined_surfaces_down_scattering(pt, beta, x, x0, roughness):
     """Scattering from a inclined surfaces pointing down like V"""
 
-    # Calculate angle to the surface and specular scattering probability:
-    a = acos(cos(pt.phi)*cos(pi/2 - abs(pt.theta) - beta))
+    # Calculate angle to the surface normal and specular scattering probability:
+    normal_theta = pi - sign(x - x0)*(pi/2 - beta)
+    a = acos(abs(cos(pt.phi)*cos(pt.theta - normal_theta)))
     p = specularity(a, roughness, pt)
 
     # Specular scattering:
@@ -149,15 +150,16 @@ def inclined_surfaces_down_scattering(pt, beta, x, x0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    pt.theta, pt.phi = lambert_angles(pi - sign(x - x0)*(pi/2 - beta))
+    pt.theta, pt.phi = lambert_angles(normal_theta)
     return Scattering.DIFFUSE
 
 
 def inclined_surfaces_up_scattering(pt, beta, x, x0, roughness):
     """Scattering from a inclined surfaces pointing up like ^"""
 
-    # Calculate angle to the surface and specular scattering probability:
-    a = acos(cos(pt.phi)*cos(pi/2 - abs(pt.theta) + beta))
+    # Calculate angle to the surface normal and specular scattering probability:
+    normal_theta = sign(x - x0)*(pi/2 - beta)
+    a = acos(abs(cos(pt.phi)*cos(pt.theta - normal_theta)))
     p = specularity(a, roughness, pt)
 
     # Specular scattering:
@@ -166,7 +168,7 @@ def inclined_surfaces_up_scattering(pt, beta, x, x0, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    pt.theta, pt.phi = lambert_angles(sign(x - x0)*(pi/2 - beta))
+    pt.theta, pt.phi = lambert_angles(normal_theta)
     return Scattering.DIFFUSE
 
 
@@ -222,7 +224,8 @@ def circle_outer_scattering(pt, tangent_theta, y, y0, roughness, cf):
 def circle_inner_scattering(pt, tangent_theta, y, y0, roughness):
     """Scattering from the inner surface of the circle"""
 
-    a = atan(tan((pi/2 - pt.theta) + tangent_theta) * cos(pt.phi))
+    # Calculate angle to the surface normal (radial, at angle tangent_theta up to pi) and specular scattering probability:
+    a = acos(abs(cos(pt.phi)*cos(pt.theta - tangent_theta)))
     p = specularity(a, roughness, pt)
 
     # Specular scattering:

@@ -572,10 +572,8 @@ class ParabolaTop(Hole):
 
         # Specular scattering:
         if random() < p:
-            if abs(pt.theta) > pi / 2:
-                pt.theta = pt.theta - 2 * normal_theta
-            else:
-                pt.theta = 2 * normal_theta - pt.theta
+            # Mirror about the tangent, whose angle is normal_theta (the same form as ParabolaBottom):
+            pt.theta = 2 * normal_theta - pt.theta
             scattering_types.walls = Scattering.SPECULAR
 
         # Diffuse scattering:
