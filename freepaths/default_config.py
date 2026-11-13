@@ -35,6 +35,10 @@ ELECTRON_MFP                     = 10e-9 # [m] crystal (acoustic-phonon-limited)
 # 1/Lambda_ii(E), where Lambda_ii is the Brooks-Herring contribution from N_I ionized
 # dopants (screened Coulomb scattering). This shortens the MFP with doping and raises
 # the Seebeck coefficient. 0 -> pure crystal MFP.
+# It ALSO acts on phonons (Si only): the free carriers it describes scatter phonons via
+# deformation-potential coupling, adding an elastic channel whose carrier type is taken
+# from IS_CARRIER_ELECTRON. That term is cut off above q = 2*kF, so it suppresses kappa
+# strongly at low temperature and weakly near room temperature. 0 -> no such scattering.
 DOPING_CONCENTRATION             = 0.0   # [m^-3] ionized-impurity (dopant) concentration N_I
 # Surface depletion of carriers: with SURFACE_POTENTIAL > 0, a dead layer of width
 # W = sqrt(2*eps_s*phi_s/(e*N_D)) (abrupt-junction depletion) is excluded around every

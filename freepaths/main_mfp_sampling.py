@@ -78,7 +78,9 @@ def _run_branch(branch_number, shared_list, shared_progress):
     # sampled with the correct number of points (number_of_particles + 1
     # intervals → number_of_particles midpoints):
     material = create_material(cf.media, cf.temp, num_points=cf.number_of_particles + 1,
-                               isotope_c13_concentration=cf.isotope_c13_concentration)
+                               isotope_c13_concentration=cf.isotope_c13_concentration,
+                               doping_concentration=cf.doping_concentration,
+                               is_carrier_electron=cf.is_carrier_electron)
 
     # Local data structures — merged into the global ones after all workers finish:
     scatter_stats = ScatteringData()

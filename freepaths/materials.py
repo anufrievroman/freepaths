@@ -314,12 +314,14 @@ class Si(Material):
     Effective mass - H.D. Barber, Effective mass and intrinsic concentration in silicon, Solid-State Electronics, Volume 10, Issue 11 (1967)
     """
 
-    def __init__(self, temp, num_points=1000, fermi_level=None):
+    def __init__(self, temp, num_points=1000, fermi_level=None, doping_concentration=0.0, is_carrier_electron=True):
         self.name = "Si"
         self.density = 2330         # [kg/m^3]
         self.vg = 6000              # vitesse de groupe moyenne approx 24/06
         self.temp = temp
         self.assign_electrical_properties(fermi_level)
+        # Must precede assign_phonon_sampling_tables, which queries phonon_scattering_rates:
+        self.assign_phonon_carrier_scattering(doping_concentration, is_carrier_electron)
         self.assign_phonon_dispersion(num_points)
         self.assign_dispersion_heat_capacity()
         self.assign_phonon_sampling_tables()
@@ -337,11 +339,79 @@ class Si(Material):
         self.dispersion[:, 3] = self.dispersion[:, 2]
 
     def phonon_scattering_rates(self, omega):
-        """Umklapp (inelastic) and impurity (elastic) scattering rates [1/s]"""
+        """Umklapp (inelastic) and impurity+carrier (elastic) scattering rates [1/s]"""
         deb_temp = 152.0  # Debye temperature normal constant calculated for Si
-        rate_impurity = 1.8516e-45 * (omega ** 4)
+        # The free-carrier term is cut off at q = 2*kF; the boolean factor keeps this
+        # valid for both scalar and array omega without allocating:
+        rate_carrier = (self._phonon_carrier_rate_prefactor * omega
+                        * (omega < self._phonon_carrier_cutoff_omega))
+        rate_impurity = 1.8516e-45 * (omega ** 4) + rate_carrier
         rate_umklapp = 1.1026e-19 * (omega ** 2) * self.temp * np.exp(-deb_temp / self.temp)
         return rate_umklapp, rate_impurity
+
+    def assign_phonon_carrier_scattering(self, doping_concentration, is_carrier_electron):
+        """
+        Precompute the prefactor and hard cutoff of the phonon-free-carrier
+        (deformation-potential) elastic scattering rate, so phonon_scattering_rates
+        only has to multiply by omega (and apply the cutoff) per call. Quasi-elastic:
+        the electron/hole gas is a large reservoir at fixed T, so (as with impurity
+        scattering) the event randomizes direction but conserves the phonon's
+        mode/frequency - it does not need to rethermalize.
+
+        Formula: Asheghi, Kurabayashi, Kasnavi, Goodson, J. Appl. Phys. 91, 5079 (2002),
+        their Eq. 11 (p. 5084) - the degenerate-semiconductor ("metallic state")
+        simplification of Ziman's general free-carrier scattering rate:
+
+            1/tau(w) = (m* * E_D)^2 * w / (2*pi*rho*hbar^3*v),   q = w/v < 2*kF
+
+        with a hard cutoff at q = 2*kF (elastic scattering across the Fermi surface
+        needs q < 2*kF by momentum conservation). m* is the carrier effective mass, E_D
+        the dilatation deformation potential, rho the mass density (self.density), v the
+        sound velocity (self.vg - branch-independent, like the other rates in this
+        class), kF = (3*pi^2*n)^(1/3), n = doping_concentration (full ionization).
+
+        NOTE: Eq. 11 as printed has v_j^2 in the denominator, which makes it come out in
+        1/m rather than 1/s; v_j^1 (used here) is the only single-symbol change that
+        restores 1/s, so the published exponent is taken to be a typo.
+
+        E_D is NOT the shear deformation potential Ju (= 9 eV electrons / 4.5 eV holes in
+        the same tables). Ju belongs to Asheghi's BOUND-carrier equations (8) and (13),
+        for lightly doped samples below the Mott transition; the free-carrier Eq. 11 used
+        here takes E_D, which they fit per sample and which rises with concentration.
+        Their fitted values (Table I bulk + Table III films), interpolated in log10(n)
+        and clamped outside the tabulated range:
+
+            electrons (P): 7.5e16 -> 0.00 eV, 2.5e17 -> 0.05, 4.7e17 -> 0.22,
+                           1.0e18 -> 0.50,    2.0e19 -> 1.33, 1.7e20 -> 2.33;  m* = 0.90*m0
+            holes     (B): 1.0e17 -> 0.16 eV, 1.0e18 -> 4.00, 1.0e19 -> 5.00;  m* = 0.58*m0
+
+        E_D -> 0 at low concentration is physical, not a gap in the fit: below the Mott
+        transition the carriers are bound to their dopants, so the free-carrier channel
+        switches off (that regime is Asheghi's Eqs. 8/13, not modelled here).
+
+        doping_concentration = 0 (default) recovers the undoped rates exactly.
+        """
+        self._phonon_carrier_rate_prefactor = 0.0
+        self._phonon_carrier_cutoff_omega = 0.0
+        if doping_concentration <= 0:
+            return
+
+        doping_cm3 = doping_concentration * 1e-6
+        if is_carrier_electron:
+            carrier_mass = 0.90 * electron_mass
+            log_n = [16.875, 17.398, 17.672, 18.000, 19.301, 20.230]
+            e_d_ev = [0.00, 0.05, 0.22, 0.50, 1.33, 2.33]
+        else:
+            carrier_mass = 0.58 * electron_mass
+            log_n = [17.000, 18.000, 19.000]
+            e_d_ev = [0.16, 4.00, 5.00]
+        deformation_potential = np.interp(np.log10(doping_cm3), log_n, e_d_ev) * electron_volt
+
+        self._phonon_carrier_rate_prefactor = (
+            (carrier_mass * deformation_potential) ** 2
+            / (2 * pi * self.density * hbar ** 3 * self.vg)
+        )
+        self._phonon_carrier_cutoff_omega = 2 * (3 * pi ** 2 * doping_concentration) ** (1 / 3) * self.vg
 
     def phonon_relaxation_time(self, omega):
         """Calculate relaxation time at a given frequency and temperature"""
@@ -733,7 +803,8 @@ class AlN(Material):
 
 
 def create_material(material_name: str, temp, num_points=1000, fermi_level=None,
-                    isotope_c13_concentration=0.0) -> Material:
+                    isotope_c13_concentration=0.0, doping_concentration=0.0,
+                    is_carrier_electron=True) -> Material:
     """
     Build a material instance, passing only those keyword arguments that the chosen
     material's constructor actually accepts (e.g. only Si/SiGe take a Fermi level,
@@ -746,6 +817,10 @@ def create_material(material_name: str, temp, num_points=1000, fermi_level=None,
     kwargs = {}
     if "num_points" in parameters:
         kwargs["num_points"] = num_points
+    if "doping_concentration" in parameters:
+        kwargs["doping_concentration"] = doping_concentration
+    if "is_carrier_electron" in parameters:
+        kwargs["is_carrier_electron"] = is_carrier_electron
     if "fermi_level" in parameters:
         kwargs["fermi_level"] = fermi_level
     if "isotope_c13_concentration" in parameters:

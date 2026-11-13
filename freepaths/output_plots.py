@@ -297,7 +297,10 @@ def plot_scattering_rate_vs_frequency():
         pass
 
     # Theoretical internal scattering rate from material model:
-    material = create_material(cf.media, cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
+    material = create_material(cf.media, cf.temp,
+                               isotope_c13_concentration=cf.isotope_c13_concentration,
+                               doping_concentration=cf.doping_concentration,
+                               is_carrier_electron=cf.is_carrier_electron)
     f_range = np.linspace(f_masked.min(), f_masked.max(), 500)
     tau_internal = np.array([material.phonon_relaxation_time(w) for w in 2 * np.pi * f_range])
     step_rate_ns = 1e-9 / cf.timestep  # 1/TIMESTEP in ns⁻¹
@@ -685,7 +688,10 @@ def plot_material_properties():
     """Plot phonon dispersion and display some other material properties"""
 
     # Initialize the material:
-    material = create_material(cf.media, cf.temp, isotope_c13_concentration=cf.isotope_c13_concentration)
+    material = create_material(cf.media, cf.temp,
+                               isotope_c13_concentration=cf.isotope_c13_concentration,
+                               doping_concentration=cf.doping_concentration,
+                               is_carrier_electron=cf.is_carrier_electron)
 
     # Plot phonon dispersion:
     n_branches = material.dispersion.shape[1] - 1

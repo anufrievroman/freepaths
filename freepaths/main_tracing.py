@@ -39,7 +39,9 @@ class ParticleSimulator:
 
         # Initialize the material:
         self.material = create_material(cf.media, cf.temp,
-                                        isotope_c13_concentration=cf.isotope_c13_concentration)
+                                        isotope_c13_concentration=cf.isotope_c13_concentration,
+                                        doping_concentration=cf.doping_concentration,
+                                        is_carrier_electron=cf.is_carrier_electron)
 
         # Frozen hydrodynamic drift field for this pass (None in the bootstrap pass and
         # in non-hydrodynamic runs); read by momentum-conserving Normal scattering events:
@@ -264,7 +266,9 @@ def main(input_file, mode: SimulationMode):
 
     # Material instance for the momentum-susceptibility constant (drift-field derivation):
     hydro_material = create_material(cf.media, cf.temp,
-                                    isotope_c13_concentration=cf.isotope_c13_concentration) if hydrodynamic else None
+                                    isotope_c13_concentration=cf.isotope_c13_concentration,
+                                    doping_concentration=cf.doping_concentration,
+                                    is_carrier_electron=cf.is_carrier_electron) if hydrodynamic else None
 
     drift_field = None
     drift_convergence = []   # per-prerun (n, mean|u_fresh|, mean|u_field|, rel_change) for the convergence test
