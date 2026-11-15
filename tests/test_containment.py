@@ -27,7 +27,6 @@ PILLAR = dict(x=-150e-9, y=150e-9, diameter=80e-9, height=100e-9)
 def structure():
     interface = H.VerticalPlane(position_x=250e-9, outer_material="Si", inner_material="SiGe")
     interface.transmission_probability = lambda cf, pt: 0.5
-    interface.vg_i_to_vg_j = 1.0
     holes = [
         H.CircularHole(x=-150e-9, y=400e-9, diameter=120e-9),
         H.RectangularHole(x=100e-9, y=250e-9, size_x=120e-9, size_y=90e-9),

@@ -97,3 +97,41 @@ def test_surfaces_pass_the_angle_to_their_normal(name, cf, sampler, kind, monkey
             worst = (error, (P, n, d_in, angles[0]))
     assert worst[0] < 2e-3, (f"{name}: angle passed to specularity() is not the angle to the normal; "
                              f"worst |cos a| - |d.n| = {worst[0]:.3f} at (P, n, d_in, a) = {worst[1]}")
+
+
+# ---------------------------------------------------------------- which roughness each surface uses
+
+ROUGH = 1e-6     # p ~ 0 for the Probe phonon (wavelength 6.3 nm) at steep incidence
+STEEP = 1.2      # out-of-plane angle phi of the test direction [rad]
+
+
+def hit(function, cf, phi, z_next, x=0.0, y=1e-6):
+    """Scatter a steep phonon on the floor or the ceiling and return the scattering type"""
+    SC.cf = cf
+    scattering_types = ScatteringTypes()
+    direction = (0.0, np.cos(phi), np.sin(phi))
+    function(Probe((x, y, 0.0), direction, ParticleType.PHONON), scattering_types, x, y, z_next)
+    return scattering_types.top_bottom
+
+
+def test_floor_uses_the_bottom_roughness_and_ceiling_the_top_one():
+    from surface_cases import make_cf, T
+    from freepaths.scattering_types import Scattering
+    random.seed(3)
+    for top, bottom in ((0.0, ROUGH), (ROUGH, 0.0)):
+        cf = make_cf(top_roughness=top, bottom_roughness=bottom)
+        expected = {0.0: Scattering.SPECULAR, ROUGH: Scattering.DIFFUSE}
+        assert hit(SC.floor_scattering, cf, -STEEP, -T / 2 - EPS) is expected[bottom], "floor must use BOTTOM_ROUGHNESS"
+        assert hit(SC.ceiling_scattering, cf, STEEP, T / 2 + EPS) is expected[top], "ceiling must use TOP_ROUGHNESS"
+
+
+def test_pillar_top_uses_the_pillar_top_roughness():
+    from surface_cases import make_cf, T
+    from freepaths.scattering_types import Scattering
+    random.seed(3)
+    pillar = scatterers.CircularPillar(x=0.0, y=1e-6, diameter=200e-9, height=300e-9)
+    for top, pillar_top in ((0.0, ROUGH), (ROUGH, 0.0)):
+        cf = make_cf(top_roughness=top, pillar_top_roughness=pillar_top, pillars=[pillar])
+        expected = Scattering.DIFFUSE if pillar_top else Scattering.SPECULAR
+        assert hit(SC.ceiling_scattering, cf, STEEP, T / 2 + 300e-9 + EPS) is expected, \
+            "the top of a pillar must use PILLAR_TOP_ROUGHNESS"

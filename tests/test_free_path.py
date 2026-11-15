@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 import freepaths.scatterers as H
-from freepaths.options import ParticleType
+from freepaths.options import ParticleType, SimulationMode
 
 from particle_loop import SPEED, TIMESTEP, LoopParticle, configure, run
 from surface_cases import unit
@@ -60,7 +60,6 @@ def test_specular_interface_transmission_does_not_end_the_free_path(monkeypatch)
     for x in np.arange(-86e-9, 86e-9, 14e-9):
         plane = H.VerticalPlane(position_x=float(x), outer_material="Si", inner_material="SiGe")
         plane.transmission_probability = lambda cf, pt: 1.0
-        plane.vg_i_to_vg_j = 1.0
         interfaces.append(plane)
     configure(monkeypatch, interfaces=interfaces)
     random.seed(31)
@@ -86,3 +85,50 @@ def test_diffuse_events_end_the_free_path(monkeypatch):
         assert flight._mfp_sum == pytest.approx(moves * STEP, rel=1e-9), \
             f"free paths add up to {flight._mfp_sum*1e9:.1f} nm, distance travelled {moves*STEP*1e9:.1f} nm"
     assert total_diffuse > 100, "the walls should have scattered the electrons many times"
+
+
+# ---------------------------------------------------------------- internal scattering and hot-side re-emission
+
+class ScatteringParticle(LoopParticle):
+    """A particle with a constant relaxation time, drawn the way Phonon and Electron draw it"""
+    relaxation_time = 2 * TIMESTEP
+
+    def assign_internal_scattering_time(self, material):
+        self.time_of_internal_scattering = -np.log(random.random()) * self.relaxation_time
+
+
+def test_internal_free_path_is_not_rounded_up_to_the_timestep(monkeypatch):
+    """In a bulk the mean free path must be v*tau. The loop notices an internal event on the
+    first step after its drawn time; counting whole steps gives v*dt/(1 - exp(-dt/tau)), which
+    is +27% at dt = tau/2 (and +dt/2tau in general), and biased the MFP-sampling kappa high."""
+    events = 20000
+    configure(monkeypatch, width=1.0, length=1.0, thickness=1.0, include_internal_scattering=True,
+              max_number_of_scattering_events=events, number_of_timesteps=10**7)
+    random.seed(17)
+    particle = ScatteringParticle((0.0, 0.5, 0.0), (0.0, 1.0, 0.0))
+    particle.assign_internal_scattering_time(None)
+    flight = run(particle, monkeypatch, mode=SimulationMode.PHONON_MFP_SAMPLING)
+    assert flight._mfp_count == events
+    expected = SPEED * ScatteringParticle.relaxation_time
+    assert flight.mean_free_path == pytest.approx(expected, rel=0.03), \
+        f"mean free path {flight.mean_free_path*1e9:.3f} nm, v*tau = {expected*1e9:.3f} nm"
+
+
+class CountingParticle(LoopParticle):
+    redraws = 0
+
+    def assign_frequency(self, material):
+        self.redraws += 1
+
+
+@pytest.mark.parametrize("mode, redraws", [(SimulationMode.PHONON_TRACING, 1), (SimulationMode.PHONON_MFP_SAMPLING, 0)])
+def test_hot_side_reemission_redraws_the_mode_in_tracing_only(monkeypatch, mode, redraws):
+    """A phonon back at the hot side is absorbed and a new one emitted, so its mode must be
+    redrawn from the emission distribution (kappa of non-gray media is wrong otherwise, see
+    test_end_to_end.py). In the MFP-sampling mode every phonon keeps its mode by construction."""
+    configure(monkeypatch, rethermalization_on_hot_sides=True)
+    random.seed(23)
+    particle = CountingParticle((0.0, 5e-9, 0.0), (0.0, -1.0, 0.0), ParticleType.PHONON)
+    run(particle, monkeypatch, mode=mode)
+    assert particle.y > 0, "the particle should have been re-emitted and reached the cold side"
+    assert particle.redraws == redraws

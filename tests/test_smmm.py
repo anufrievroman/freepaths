@@ -21,7 +21,8 @@ rng = np.random.default_rng(31)
 
 
 def snell_angle(theta_i, vg_i, vg_j):
-    return math.asin(vg_i / vg_j * math.sin(theta_i))
+    """sin(theta_i) / vg_i = sin(theta_j) / vg_j"""
+    return math.asin(vg_j / vg_i * math.sin(theta_i))
 
 
 def test_alpha_spec_at_normal_incidence():
@@ -35,7 +36,7 @@ def test_alpha_spec_is_the_oblique_acoustic_mismatch():
         rho_i, rho_j = rng.uniform(1000, 6000, 2)
         vg_i, vg_j = rng.uniform(2000, 9000, 2)
         theta_i = rng.uniform(0, math.pi / 2 * 0.99)
-        if vg_i / vg_j * math.sin(theta_i) >= 1:
+        if vg_j / vg_i * math.sin(theta_i) >= 1:
             continue
         theta_j = snell_angle(theta_i, vg_i, vg_j)
         w_i = rho_i * vg_i / math.cos(theta_i)
@@ -48,7 +49,7 @@ def test_alpha_spec_is_reciprocal_and_bounded():
         rho_i, rho_j = rng.uniform(1000, 6000, 2)
         vg_i, vg_j = rng.uniform(2000, 9000, 2)
         theta_i = rng.uniform(0, math.pi / 2 * 0.99)
-        if vg_i / vg_j * math.sin(theta_i) >= 1:
+        if vg_j / vg_i * math.sin(theta_i) >= 1:
             assert alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j) == 0.0     # total internal reflection
             continue
         forward = alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j)
@@ -116,11 +117,59 @@ def test_alpha_total_diffuse_plateau(si_sige):
         assert 1 - value >= 0.75 - 1e-12
 
 
-def test_alpha_total_vanishes_past_the_critical_angle(si_sige):
-    """Si is the faster medium, so past arcsin(v_SiGe / v_Si) nothing gets through"""
+def test_total_reflection_only_on_the_way_into_the_faster_medium():
+    """Snell's law written out with numbers, not through snell_angle(): from 3000 to 6000 m/s the
+    critical angle is arcsin(3000/6000) = 30 deg; from 6000 to 3000 m/s there is none (the phonon
+    bends towards the normal). The inverted law, sin(theta_j) = (vg_i/vg_j) sin(theta_i), has it
+    the other way round."""
+    slow, fast, rho = 3000.0, 6000.0, 2500.0
+    assert alpha_spec(math.radians(29.9), slow, fast, rho, rho) > 0
+    for degrees in (30.1, 45, 60, 89):
+        assert alpha_spec(math.radians(degrees), slow, fast, rho, rho) == 0.0
+    for degrees in (0, 30, 45, 60, 80, 89):
+        assert alpha_spec(math.radians(degrees), fast, slow, rho, rho) > 0
+    # Refraction at 30 deg from fast to slow: sin(theta_j) = 0.25
+    theta_j = math.asin(0.25)
+    w_i, w_j = rho * fast / math.cos(math.radians(30)), rho * slow / math.cos(theta_j)
+    assert alpha_spec(math.radians(30), fast, slow, rho, rho) == pytest.approx(4 * w_i * w_j / (w_i + w_j)**2, rel=1e-12)
+
+
+def test_a_slower_layer_transmits_at_every_angle(si_sige):
+    """SiGe is the slower medium for these modes, so a phonon from Si is never totally reflected
+    by a SiGe layer, however grazing: it bends towards the normal on the way in, and is back at
+    its incidence angle on the way out."""
+    si, sige = si_sige
+    for f, branch in [(1e12, 0), (3e12, 0), (1e12, 1), (3e12, 1)]:
+        assert sige.group_velocity(branch, f) < si.group_velocity(branch, f)
+        for theta in np.linspace(0, math.pi / 2 * 0.999, 40):
+            assert total(theta, f, branch, 0.5e-9, si, sige) > 0
+
+
+def test_a_faster_layer_reflects_totally_past_the_critical_angle(si_sige):
+    """The same pair the other way round: a Si layer in SiGe, critical angle arcsin(v_SiGe / v_Si)"""
     si, sige = si_sige
     f, branch = 1e12, 0
-    critical = math.asin(sige.group_velocity(branch, f) / si.group_velocity(branch, f))
-    assert total(critical * 0.98, f, branch, 0.5e-9, si, sige) > 0
+    omega = 2 * math.pi * f
+    v_sige, v_si = sige.group_velocity(branch, f), si.group_velocity(branch, f)
+    critical = math.asin(v_sige / v_si)
+
+    def through_si_layer(theta):
+        return alpha_total_2T(theta, v_sige, v_si, sige.density, si.density, omega, omega, sige, si, branch, 0.5e-9)
+    assert through_si_layer(critical * 0.98) > 0
     for theta in np.linspace(critical * 1.001, math.pi / 2 * 0.999, 20):
-        assert total(theta, f, branch, 0.5e-9, si, sige) == 0.0
+        assert through_si_layer(theta) == 0.0
+
+
+def test_no_transmission_above_the_top_of_the_branch_in_the_layer(si_sige):
+    """A mode with no counterpart in the layer (frequency above the top of the branch there) cannot enter it"""
+    si, sige = si_sige
+    for branch in range(3):
+        top_si, top_sige = si.dispersion[:, branch + 1].max(), sige.dispersion[:, branch + 1].max()
+        if top_si > top_sige:
+            f = (top_si + top_sige) / 2
+            assert total(0.3, f, branch, 0.5e-9, si, sige) == 0.0
+        else:
+            f = (top_si + top_sige) / 2
+            omega = 2 * math.pi * f
+            assert alpha_total_2T(0.3, sige.group_velocity(branch, f), si.group_velocity(branch, f), sige.density,
+                                  si.density, omega, omega, sige, si, branch, 0.5e-9) == 0.0

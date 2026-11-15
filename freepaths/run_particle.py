@@ -36,6 +36,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         if cf.include_internal_scattering:
             internal_scattering(particle, flight, scattering_types)
         surface_scattering(particle, scattering_types, triangle_scattering_places)
+        reinitialized = False
         if cf.rethermalization_on_hot_sides:
             reinitialized = reinitialization(particle, scattering_types)
             if reinitialized:
@@ -59,8 +60,21 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
         # If diffuse scattering has occurred, reset particle free path:
         if scattering_types.is_diffuse or scattering_types.is_internal:
             flight.record_scattering_channel(scattering_types.is_internal, scattering_types.is_diffuse)
+            # An internal event is noticed on the first timestep after the drawn scattering time,
+            # so the free path ends at the drawn time, not at the end of that timestep:
+            if scattering_types.is_internal:
+                flight.end_free_path_at(particle.time_of_internal_scattering)
             flight.save_free_paths()
             flight.restart()
+            # A phonon that returns to the hot side is absorbed by the reservoir, which emits a
+            # new one: the mode is redrawn from the emission distribution. Keeping the mode would
+            # let every mode through eventually, whatever its mean free path, so that the modes
+            # would carry heat in proportion to their emission rate only. Applied only in the
+            # phonon tracing mode: in the MFP sampling mode each phonon must keep its mode identity.
+            if (reinitialized
+                    and particle.type is ParticleType.PHONON
+                    and mode is SimulationMode.PHONON_TRACING):
+                particle.assign_frequency(material)
             # Attribute the internal event to a channel and act accordingly. Inelastic
             # (Umklapp / 4-phonon) rethermalizes the phonon (isotropic mode redraw);
             # elastic (impurity/grain) conserves the mode, so the direction randomization
@@ -68,7 +82,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             # hydrodynamic mode) redraws the mode and a drift-biased direction from the
             # local drift field. Applied only in the phonon tracing mode: in the MFP
             # sampling mode each phonon must keep its mode identity.
-            if (scattering_types.is_internal
+            elif (scattering_types.is_internal
                     and particle.type is ParticleType.PHONON
                     and mode is SimulationMode.PHONON_TRACING):
                 event = particle.classify_internal_event(material)
@@ -102,8 +116,7 @@ def run_particle(particle, flight, scatter_stats, places_stats, segment_stats, t
             places_stats.save_scattering_events(particle, scattering_types.interfaces_transmission)
 
         # The particle moves on every timestep, so its free path and scattering clock advance on every
-        # timestep too (they used to skip timesteps with an interface transmission, losing one step of
-        # free path per transmission):
+        # timestep too, including the timesteps with an interface transmission:
         flight.add_step(cf.timestep)
 
 

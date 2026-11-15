@@ -559,7 +559,6 @@ class Graphite(Material):
 
     # Three-phonon Umklapp rate, Klemens/Slack high-T form
     #   1/tau_U = B_U * omega^2 * T * exp(-deb_temp/(alpha*T))
-    _B_N = 2.12e-25      # Normal-process prefactor (momentum-conserving) [Alofi, unused; see phonon_normal_rate]
     _B_U = 4.003e-21     # Umklapp prefactor (resistive), Slack omega^2*T*exp form, fit to bulk kappa via Callaway
     _deb_temp = 100.0    # effective Umklapp activation temperature theta* [K] (with alpha=1); NOT the thermodynamic Debye temp
     _alpha = 1.0         # (theta* = deb_temp/alpha)
@@ -570,8 +569,8 @@ class Graphite(Material):
     _C_N = 1.0e4
     # Normal-process frequency shape g(w) = (w/wc)^p / (1 + (w/wc)^p): a saturating rise that
     # suppresses the low-frequency N and preserves the high-f plateau. Fit to Guo Fig. 1a (-m)
-    # Normal rate at 100 K (which falls to ~1e9 at low f, 10x below the plateau); it also brings
-    # l_N(60 K) to ~4-11 um (Huang SI Fig. 6, ~2-5 um) instead of the old flat-rate ~1 um.
+    # Normal rate at 100 K (which falls to ~1e9 at low f, 10x below the plateau); it gives
+    # l_N(60 K) of ~4-11 um (Huang SI Fig. 6, ~2-5 um).
     _N_shape_wc = 2 * pi * 2.93e12   # crossover angular frequency [rad/s]
     _N_shape_p = 1.38                # crossover sharpness
 
@@ -596,11 +595,9 @@ class Graphite(Material):
         saturating frequency shape, 1/tau_N = C_N * T^3 * (w/wc)^p / (1 + (w/wc)^p).
         The shape -> 1 at high frequency (the ~1e10 Hz plateau at 100 K, Guo et al., PRB 104, 075450
         (2021), Fig. 1a) and suppresses the low-frequency N, where the ab-initio Normal rate
-        falls to ~1e9 (10x below the plateau). This brings the Normal mean free path at 60 K to
-        ~4-11 um (Huang et al., Nat. Commun. 14, 2044 (2023), SI Fig. 6, ~2-5 um), versus the
-        old frequency-INDEPENDENT 1/tau_N = C_N*T^3 which gave l_N ~ 1 um at low f (too
-        collisional) and thus an over-driven drift / over-inflated hydrodynamic hump. N is
-        momentum-CONSERVING, so this does NOT affect kappa_RTA; it only softens the drift.
+        falls to ~1e9 (10x below the plateau). This gives a Normal mean free path at 60 K of
+        ~4-11 um (Huang et al., Nat. Commun. 14, 2044 (2023), SI Fig. 6, ~2-5 um). N is
+        momentum-CONSERVING, so it does NOT affect kappa_RTA.
         """
         shape = (omega / self._N_shape_wc) ** self._N_shape_p
         return self._C_N * (self.temp ** 3) * shape / (1.0 + shape)
@@ -682,10 +679,7 @@ class Diamond(Material):
     #   1/tau_U = B_U * omega^2 * T * exp(-deb_temp / (alpha * T))
     # B_U and the activation temperature theta/alpha = 683 K come from the joint Callaway
     # fit described in the class docstring -- i.e. they are pinned by the SHAPE of kappa(T)
-    # from 10 to 400 K, not by a single 300 K value as before (that earlier single-point fit
-    # gave B_U = 8.5e-20 with theta/alpha = 733 K, which was 2.5x low at 1000 K and was also
-    # silently absorbing the vacancy / interstitial-nitrogen scattering of Berman's
-    # particular stones into the intrinsic Umklapp).  For cross-checking: Wei1993's
+    # from 10 to 400 K.  For cross-checking: Wei1993's
     # independently fitted Umklapp is B/(4 pi^2 v) = 2.90e-20 s/K with C = 670 K, i.e. within
     # 9% and 2% of these -- from a different dispersion model and a different data set.
     # Sample-specific point defects (vacancies, nitrogen) are deliberately NOT included here;
@@ -743,15 +737,6 @@ class Diamond(Material):
     #   1/tau_N = A * v * T^3 / lambda  ==  (A / 2 pi) * omega * T^3
     # NON-resistive (excluded from phonon_relaxation_time and kappa_RTA; see
     # Material.phonon_normal_rate); consumed only by the Callaway-kappa2 / hydrodynamic path.
-    #
-    # This replaces an earlier Herring omega^2 T^3 form whose prefactor was anchored to an
-    # N = resistive crossover at the ~100 K kappa peak. That form is the wrong SHAPE: against
-    # Wei's omega^1 rate it was 33x too weak at 1 THz, 6.7x at 5 THz and only 1.1x at 30 THz,
-    # i.e. it under-weighted N precisely on the low-frequency modes that carry the heat and
-    # generate kappa_2. The consequence was a badly under-predicted isotope effect (pure /
-    # natural kappa ratio 1.06 at 300 K against a measured ~1.45): with N too weak the model
-    # reproduces bulk kappa but cannot reproduce the ISOTOPE dependence, which is exactly the
-    # failure Wei1993 attribute to Onn1992's N-free analysis.
     #
     # The FORM is Wei's and transfers cleanly (it is velocity-independent). The VALUE is
     # refitted on our real dispersion: at Wei's own A = 7.2e-11 this model over-predicts the

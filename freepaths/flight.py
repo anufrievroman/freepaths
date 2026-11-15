@@ -107,6 +107,15 @@ class Flight:
         """Add a scattering point to the path"""
         self.path.add_point(self.particle.x, self.particle.y, self.particle.z)
 
+    def end_free_path_at(self, time):
+        """End the current free path at the given time since the previous scattering, if that
+        time has already passed. The loop notices an internal scattering event on the first
+        timestep after its drawn time, so without this every such free path would be rounded
+        up to a whole number of steps, i.e. long by half a step on average."""
+        overshoot = self.time_since_previous_scattering - time
+        if overshoot > 0:
+            self.free_path -= self.particle.speed * overshoot
+
     def save_free_paths(self):
         """Save current free path to the list of free paths"""
         self._mfp_sum += self.free_path

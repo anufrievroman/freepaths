@@ -112,3 +112,17 @@ def test_lambert_angles_about_arbitrary_normals(normal_theta, normal_phi):
     n = angles_to_direction(normal_theta, normal_phi)
     samples = [(angles_to_direction(*lambert_angles(normal_theta, normal_phi)), n) for _ in range(N)]
     assert_lambert(samples, f"normal ({normal_theta}, {normal_phi})")
+
+
+def test_diffuse_scattering_on_a_circle_is_always_registered():
+    """Even if every redrawn direction is rejected (here the domain has no room at all), the
+    event must be reported as diffuse, not as None: None leaves the rejected direction on the
+    particle while the loop believes nothing happened, so the free path is not reset."""
+    from freepaths.scattering_primitives import circle_outer_scattering
+    from freepaths.scattering_types import Scattering
+    from surface_cases import Probe, make_cf
+    random.seed(5)
+    cf = make_cf(length=0.0)
+    for tangent_theta in np.linspace(-1.5, 1.5, 7):
+        probe = Probe((0.0, 0.0, 0.0), (0.0, 1.0, 0.0))    # an electron: always diffuse
+        assert circle_outer_scattering(probe, tangent_theta, 1e-9, 0.0, 0.0, cf) is Scattering.DIFFUSE

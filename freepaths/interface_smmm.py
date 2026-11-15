@@ -41,6 +41,11 @@ def alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j):
     uncrossed agrees at normal incidence but over-estimates transmission at oblique
     incidence (Si/SiGe LA at 1 THz: 0.990 vs 0.928 at 60 deg).
 
+    The transmitted angle follows Snell's law, Eq. (18): vg_i/sin(theta_i) = vg_j/sin(theta_j),
+    i.e. sin(theta_j) = (vg_j/vg_i)*sin(theta_i). A phonon entering a slower medium bends
+    towards the normal; total reflection happens only on the way into a faster medium, past
+    arcsin(vg_i/vg_j).
+
     Note this is Eq. (20), not Eq. (25): the MTM detailed-balance prefactor
     min{1, P_j*C_j*vg_j**3 / (P_i*C_i*vg_i**3)} of Eq. (25) is deliberately not applied.
 
@@ -52,20 +57,19 @@ def alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j):
     Returns:
     Specular transmission coefficient, between 0 and 1
     """
-    try:
-        sin_theta_j = (vg_i / vg_j) * math.sin(theta_i)
-        if abs(sin_theta_j) >= 1:
-            return 0.0  #  totale reflexion
-
-        theta_j = math.asin(sin_theta_j)
-        Z_i = rho_i * vg_i
-        Z_j = rho_j * vg_j
-
-        num = 4 * Z_i * Z_j * abs(math.cos(theta_i)) * abs(math.cos(theta_j))
-        den = (Z_i * abs(math.cos(theta_j)) + Z_j * abs(math.cos(theta_i))) ** 2
-        return num / den
-    except:
+    if vg_i <= 0 or vg_j <= 0:
         return 0.0
+    sin_theta_j = (vg_j / vg_i) * math.sin(theta_i)
+    if abs(sin_theta_j) >= 1:
+        return 0.0  # Total reflection
+
+    theta_j = math.asin(sin_theta_j)
+    Z_i = rho_i * vg_i
+    Z_j = rho_j * vg_j
+
+    num = 4 * Z_i * Z_j * abs(math.cos(theta_i)) * abs(math.cos(theta_j))
+    den = (Z_i * abs(math.cos(theta_j)) + Z_j * abs(math.cos(theta_i))) ** 2
+    return num / den
 
 
 def alpha_diff(k_i, k_j, P_i, P_j):
@@ -92,6 +96,12 @@ def alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, material
     T1 = P1 * a_s1 + (1 - P1) * a_d1   (Si → Ge)
     T2 = P2 * a_s2 + (1 - P2) * a_d2   (Ge → Si)
     """
+    # A mode above the top of its branch in the layer has no state to go to:
+    if omega_j > 2 * math.pi * material_j.dispersion[:, branch_number + 1].max():
+        return 0.0
+    if vg_i <= 0 or vg_j <= 0:
+        return 0.0
+
     # First transition: from outer crystal to inside the layer
     k_i = get_k_from_omega(omega_i, material_i, branch_number)
     k_j = get_k_from_omega(omega_j, material_j, branch_number)
@@ -102,26 +112,19 @@ def alpha_total_2T(theta_i, vg_i, vg_j, rho_i, rho_j, omega_i, omega_j, material
     P_i = math.exp(-16 * math.pi**2 * roughness**2 / wavelength_i**2)
     P_j = math.exp(-16 * math.pi**2 * roughness**2 / wavelength_j**2)
 
-    try:
-        sin_theta_t1 = (vg_i / vg_j) * math.sin(theta_i)
-        if abs(sin_theta_t1) >= 1:
-            return 0.0  # Total reflecion at the entry
-        theta_t1 = math.asin(sin_theta_t1)
-    except:
+    # Snell's law, sin(theta_t) = (vg_j/vg_i)*sin(theta_i): total reflection at the entry is
+    # possible only if the layer is the faster medium. At the exit the phonon is back at its
+    # incidence angle theta_i, so it is never totally reflected there:
+    sin_theta_t1 = (vg_j / vg_i) * math.sin(theta_i)
+    if abs(sin_theta_t1) >= 1:
         return 0.0
+    theta_t1 = math.asin(sin_theta_t1)
 
     a_s1 = alpha_spec(theta_i, vg_i, vg_j, rho_i, rho_j)
     a_d1 = alpha_diff(k_i, k_j, P_i, P_j)
     T1 = P_i * a_s1 + (1 - P_i) * a_d1
 
     # Second transition: From inside the layer to outer crystal
-    try:
-        sin_theta_t2 = (vg_j / vg_i) * math.sin(theta_t1)
-        if abs(sin_theta_t2) > 1:
-            return 0.0  # Total reflection at the exit
-    except:
-        return 0.0
-
     a_s2 = alpha_spec(theta_t1, vg_j, vg_i, rho_j, rho_i)
     a_d2 = alpha_diff(k_j, k_i, P_j, P_i)
     T2 = P_j * a_s2 + (1 - P_j) * a_d2

@@ -7,7 +7,7 @@ from colorama import Fore, Style
 
 from freepaths.options import SimulationMode
 
-__version__ = "2.7"
+__version__ = "2.7.1"
 
 colorama.init()
 

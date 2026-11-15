@@ -92,8 +92,8 @@ class Phonon(Particle):
         Assign branch and frequency for phonon tracing mode by inverse sampling of the
         pre-tabulated, dispersion-weighted cumulative probabilities
         (see Material.assign_phonon_sampling_tables). Particles are equal-energy bundles
-        of deviational energy, so the source emits with the heat-capacity weight C(w),
-        consistent with rethermalize().
+        of deviational energy, and the source is a flux source, so it emits with the
+        weight D(w)*C(w)*v(w).
         """
         self.draw_from_table(material, material.emission_branch_probabilities, material.emission_frequency_probabilities)
 
@@ -104,8 +104,6 @@ class Phonon(Particle):
         """
         # Pick the branch via inverse sampling of the cumulative branch probabilities
         self.branch_number = int(np.searchsorted(branch_probabilities, random()))
-        # Upper frequency bound for this branch, used elsewhere to reject invalid draws
-        self.f_max = max(material.dispersion[:, self.branch_number + 1])
         freqs = material.frequencies_table[self.branch_number]
         # Pick the frequency bin via inverse sampling within the chosen branch
         index = min(np.searchsorted(frequency_probabilities[self.branch_number], random()), len(freqs) - 1)
@@ -127,14 +125,12 @@ class Phonon(Particle):
 
     def _grain_boundary_rate(self):
         """Grain boundary scattering rate with Soffer-type low-frequency transparency.
-        Rate = (v_g / d) * (1 - exp(-4 sigma_GB^2 omega^2 / v_g^2)).
-        Vanishes at low omega (long wavelength passes through); approaches v_g/d at high omega."""
+        Rate = (v_g / d) * (1 - exp(-4 sigma_GB^2 k^2)).
+        Vanishes at low k (long wavelength passes through); approaches v_g/d at high k."""
         if self.grain_size is None:
             return 0.0
         # exp(-4 sigma_GB^2 k^2) is exp(-16 pi^2 sigma_GB^2 / lam^2) at normal incidence,
-        # i.e. the same Soffer factor as the free surfaces, so it takes the same wavelength
-        # 2*pi/k (see the wavelength property). The earlier form 4 sigma^2 omega^2 / v_g^2
-        # was this expression with lam = v_g/f substituted in.
+        # i.e. the same Soffer factor as the free surfaces, with the same wavelength 2*pi/k:
         soffer = exp(-4 * cf.grain_roughness ** 2 * self.k ** 2)
         return (self.speed / self.grain_size) * (1 - soffer)
 
@@ -217,14 +213,6 @@ class Phonon(Particle):
             # modes that carry the hydrodynamics are exactly the large-a population:
             theta_u = atan2(u_x, u_y)
             delta = np.random.vonmises(0.0, a)
-            # Previous linearized form P(delta) ~ 1 + a cos(delta), a clamped to <=1 so P >= 0
-            # (kept for reference; gives essentially the same profile - the clamp was not the
-            # cause of the flat cross-width profile):
-            #     a_lin = min(a, 1.0)
-            #     while True:
-            #         delta = -pi + random() * 2 * pi
-            #         if random() * (1.0 + a_lin) <= 1.0 + a_lin * cos(delta):
-            #             break
             self.theta = theta_u + delta
             self.phi = 0.0
             self.correct_angle()
@@ -235,12 +223,6 @@ class Phonon(Particle):
         r = random()
         cos_psi = 1.0 + log(r + (1.0 - r) * exp(-2.0 * a)) / a
         cos_psi = max(-1.0, min(1.0, cos_psi))
-        # Previous linearized form P(cos psi) ~ 1 + a cos psi, a clamped to <=1 (kept for reference):
-        #     a_lin = min(a, 1.0)
-        #     while True:
-        #         cos_psi = 2 * random() - 1
-        #         if random() * (1.0 + a_lin) <= 1.0 + a_lin * cos_psi:
-        #             break
         sin_psi = sqrt(max(0.0, 1.0 - cos_psi**2))
         azimuth = 2 * pi * random()
 

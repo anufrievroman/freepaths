@@ -767,8 +767,6 @@ class VerticalPlane(Interface):
         omega_i = 2 * np.pi * pt.f
         omega_j = omega_i  #conservation
 
-        self.vg_i_to_vg_j = vg_i / vg_j
-
         # Phonons use the SMMM model which requires a dispersion branch index.
         # Electrons have no branch, so fall back to an effective-mass acoustic mismatch: T = 4*m1*m2/(m1+m2)^2
         if not hasattr(pt, 'branch_number'):
@@ -793,12 +791,12 @@ class VerticalPlane(Interface):
 
             # Scattering on the left wall:
             if pt.x > self.position_x:
-                scattering_types.interfaces = vertical_surface_left_scattering_2T(pt, cf.interface_roughness, cf, self.vg_i_to_vg_j)
+                scattering_types.interfaces = vertical_surface_left_scattering_2T(pt, cf.interface_roughness, cf)
                 scattering_types.interfaces_transmission = scattering_types.interfaces
 
             # Scattering on the right wall:
             else:
-                scattering_types.interfaces = vertical_surface_right_scattering_2T(pt, cf.interface_roughness, cf, self.vg_i_to_vg_j)
+                scattering_types.interfaces = vertical_surface_right_scattering_2T(pt, cf.interface_roughness, cf)
                 scattering_types.interfaces_transmission = scattering_types.interfaces
 
         # Not crossing the interface:

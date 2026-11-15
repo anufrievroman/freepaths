@@ -37,8 +37,8 @@ def configure(monkeypatch, **overrides):
         rethermalization_on_hot_sides=False, include_internal_scattering=False,
         low_memory_usage=True, output_path_animation=False, output_scattering_map=False,
         is_two_dimensional_material=False, depletion_width=0.0, max_number_of_scattering_events=None,
-        side_wall_roughness=0.0, top_roughness=0.0, hole_roughness=0.0, pillar_roughness=0.0,
-        interface_roughness=0.0, is_carrier_electron=True, temp=300.0)
+        side_wall_roughness=0.0, top_roughness=0.0, bottom_roughness=0.0, hole_roughness=0.0,
+        pillar_roughness=0.0, pillar_top_roughness=0.0, interface_roughness=0.0, is_carrier_electron=True, temp=300.0)
     settings.update(overrides)
     for name, value in settings.items():
         monkeypatch.setattr(cf, name, value, raising=False)
@@ -80,7 +80,7 @@ class LoopParticle(Particle):
         self.positions.append((self.x, self.y, self.z))
 
 
-def run(particle, monkeypatch, count_diffuse=False):
+def run(particle, monkeypatch, count_diffuse=False, mode=SimulationMode.PHONON_TRACING):
     """Run the particle through the real loop; returns its Flight (and the number of
     diffuse events the scattering dispatcher reported, if asked)"""
     diffuse_events = [0]
@@ -95,5 +95,5 @@ def run(particle, monkeypatch, count_diffuse=False):
 
     stub = SimpleNamespace(save_scattering_events=lambda *args: None, record_time_in_segment=lambda *args: None)
     flight = Flight(particle)
-    run_particle_module.run_particle(particle, flight, stub, stub, stub, None, None, None, SimulationMode.PHONON_TRACING)
+    run_particle_module.run_particle(particle, flight, stub, stub, stub, None, None, None, mode)
     return (flight, diffuse_events[0]) if count_diffuse else flight

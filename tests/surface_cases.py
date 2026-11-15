@@ -24,8 +24,8 @@ def make_cf(**kwargs):
     """Minimal config for the scattering dispatcher, with all roughness 0 and no structures"""
     cf = SimpleNamespace(
         timestep=2 * EPS / SPEED, thickness=T, width=W, length=L, depletion_width=0.0,
-        hole_roughness=0.0, side_wall_roughness=0.0, top_roughness=0.0, pillar_roughness=0.0,
-        interface_roughness=0.0, include_right_sidewall=True, include_left_sidewall=True,
+        hole_roughness=0.0, side_wall_roughness=0.0, top_roughness=0.0, bottom_roughness=0.0,
+        pillar_roughness=0.0, pillar_top_roughness=0.0, interface_roughness=0.0, include_right_sidewall=True, include_left_sidewall=True,
         include_top_sidewall=True, include_bottom_sidewall=True, holes=None, pillars=None,
         interfaces=None, temp=300, is_carrier_electron=True,
         hot_side_position_bottom=False, hot_side_position_top=False,
@@ -246,7 +246,6 @@ def build_cases():
     # and equal group velocities on both sides, so a specular transmission goes straight through:
     interface = H.VerticalPlane(position_x=0.0, outer_material="Si", inner_material="SiGe")
     interface.assign_materials(SimpleNamespace(temp=300))
-    interface.vg_i_to_vg_j = 1.0
     interface.transmission_probability = lambda cf, pt: 0.5
 
     def interface_point(r):

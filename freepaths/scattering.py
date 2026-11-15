@@ -71,7 +71,7 @@ def scattering_on_bottom_sidewall(pt, scattering_types, x, y, z):
 def floor_scattering(pt, scattering_types, x, y, z, depletion=0.0):
     """Check if the particle hits the floor surface (inset by the carrier dead layer)"""
     if z < -cf.thickness / 2 + depletion:
-        scattering_types.top_bottom = in_plane_surface_scattering(pt, cf.top_roughness)
+        scattering_types.top_bottom = in_plane_surface_scattering(pt, cf.bottom_roughness)
 
 
 def ceiling_scattering(pt, scattering_types, x, y, z, depletion=0.0):
@@ -86,7 +86,7 @@ def ceiling_scattering(pt, scattering_types, x, y, z, depletion=0.0):
             is_under_pillar = distance_from_pillar_center < pillar.diameter / 2
             if is_under_pillar:
                 if z > pillar.height + cf.thickness / 2:
-                    scattering_types.top_bottom = in_plane_surface_scattering(pt, cf.top_roughness)
+                    scattering_types.top_bottom = in_plane_surface_scattering(pt, cf.pillar_top_roughness)
                 return
         # Regular scattering if particle is not under any of the pillars:
         if pt.z < cf.thickness / 2:

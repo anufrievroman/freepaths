@@ -26,6 +26,7 @@ import numpy as np
 import pytest
 
 import gray_material
+import two_tau_material
 
 
 pytestmark = pytest.mark.slow
@@ -89,6 +90,45 @@ PARTICLE_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH, size_y=0, size_z=THICKNE
         f"Fourier kappa {kappa:.1f} +/- {error:.1f} W/mK, gray bulk C v^2 tau / 3 = {expected:.1f} W/mK"
 
 
+def test_diffusive_limit_of_a_medium_without_mode_mixing(tmp_path):
+    """Two relaxation times, all scattering elastic (two_tau_material.py): the modes never mix, so
+    kappa = sum C_i v^2 tau_i / 3 only if the hot side absorbs the phonons that come back and emits
+    new ones from the emission distribution. Re-emitting them in the same mode gives the
+    harmonic-type average instead, 37% lower here, which no gray medium can show."""
+    box = """
+import sys
+sys.path.insert(0, {tests!r})
+from two_tau_material import install
+install()
+MEDIA = "TwoTau"
+T = 300
+NUMBER_OF_PARTICLES = 4000
+TIMESTEP = 0.5e-12
+NUMBER_OF_TIMESTEPS = 300000
+NUMBER_OF_VIRTUAL_TIMESTEPS = 600000
+NUMBER_OF_TIMEFRAMES = 8
+NUMBER_OF_STABILIZATION_TIMEFRAMES = 4
+WIDTH = 300e-9
+THICKNESS = 300e-9
+LENGTH = 1200e-9
+NUMBER_OF_PIXELS_X = 1
+NUMBER_OF_PIXELS_Y = 40
+GRADIENT_FIT_RANGE = (0.2, 0.8)
+INCLUDE_INTERNAL_SCATTERING = True
+SIDE_WALL_ROUGHNESS = 0.0
+TOP_ROUGHNESS = 0.0
+BOTTOM_ROUGHNESS = 0.0
+PARTICLE_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH, size_y=0, size_z=THICKNESS, angle_distribution="lambert", angle=0)]
+""".format(tests=str(TESTS))
+    data = run_freepaths(tmp_path, "two_tau_diffusive", box)
+    kappa, _, error, _, _, _ = np.loadtxt(data / "Average thermal conductivity.csv", delimiter=",")
+    expected = two_tau_material.bulk_conductivity(300)
+    harmonic = two_tau_material.harmonic_conductivity(300)
+    assert kappa == pytest.approx(expected, rel=0.10), \
+        (f"Fourier kappa {kappa:.1f} +/- {error:.1f} W/mK, sum C v^2 tau / 3 = {expected:.1f} W/mK "
+         f"(a hot side that keeps the mode of the returning phonons gives {harmonic:.1f})")
+
+
 def test_ballistic_limit_is_the_landauer_conductance(tmp_path):
     """In the gray material (one speed), so that no slow zone-edge modes make the energy density a
     heavy-tailed estimate: each particle deposits energy in proportion to its residence time
@@ -126,6 +166,74 @@ PARTICLE_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH, size_y=0, size_z=THICKNE
     expected = gray_material.Gray(300).ballistic_conductance()
     assert measured == pytest.approx(expected, rel=0.03), \
         f"J / (2 T_interior) = {measured:.4e} W/m^2K, Landauer conductance = {expected:.4e} W/m^2K"
+
+
+# ---------------------------------------------------------------- boundary-limited conduction
+
+GRAY_BOX = """
+import sys
+sys.path.insert(0, {tests!r})
+from gray_material import install
+install()
+MEDIA = "Gray"
+T = 300
+NUMBER_OF_PARTICLES = {particles}
+TIMESTEP = 0.5e-12
+NUMBER_OF_TIMESTEPS = 200000
+NUMBER_OF_VIRTUAL_TIMESTEPS = 400000
+NUMBER_OF_TIMEFRAMES = 8
+NUMBER_OF_STABILIZATION_TIMEFRAMES = 4
+WIDTH = {width}
+THICKNESS = {thickness}
+LENGTH = {length}
+NUMBER_OF_PIXELS_X = 1
+NUMBER_OF_PIXELS_Y = 40
+GRADIENT_FIT_RANGE = (0.2, 0.8)
+INCLUDE_INTERNAL_SCATTERING = {internal}
+SIDE_WALL_ROUGHNESS = {side_roughness}
+TOP_ROUGHNESS = 1e-6
+BOTTOM_ROUGHNESS = 1e-6
+PARTICLE_SOURCES = [Source(x=0, y=0, z=0, size_x=WIDTH, size_y=0, size_z=THICKNESS, angle_distribution="lambert", angle=0)]
+"""
+
+ROUGH = 1e-6    # [m] roughness that makes every wall hit diffuse (Soffer p ~ 0 for all gray modes)
+
+
+def test_casimir_limit_of_a_diffuse_square_wire(tmp_path):
+    """No internal scattering, fully diffuse walls: kappa = C v Lambda / 3 with the Casimir length
+    Lambda = 1.115 a of a square wire of side a (McCurdy, Maris & Elbaum, Phys. Rev. B 2, 4077
+    (1970)). It is NOT the mean chord 4V/S = a: long flights along the axis carry more heat."""
+    side = 50e-9
+    box = GRAY_BOX.format(tests=str(TESTS), particles=6000, width=side, thickness=side, length=2000e-9,
+                          internal=False, side_roughness=ROUGH)
+    data = run_freepaths(tmp_path, "casimir_wire", box)
+    kappa, _, error, _, _, _ = np.loadtxt(data / "Average thermal conductivity.csv", delimiter=",")
+    expected = gray_material.Gray(300).dispersion_heat_capacity * gray_material.VELOCITY * 1.115 * side / 3
+    assert kappa == pytest.approx(expected, rel=0.07), \
+        f"Fourier kappa {kappa:.2f} +/- {error:.2f} W/mK, Casimir C v (1.115 a) / 3 = {expected:.2f} W/mK"
+
+
+def fuchs_sondheimer(delta):
+    """kappa_film / kappa_bulk of a film of thickness delta mean free paths with diffuse surfaces:
+    1 - (3 / 2 delta) int_1^inf (1/x^3 - 1/x^5) (1 - exp(-delta x)) dx  (Sondheimer, Adv. Phys. 1, 1 (1952))"""
+    from scipy.integrate import quad
+    integral, _ = quad(lambda x: (x**-3 - x**-5) * (1 - np.exp(-delta * x)), 1, np.inf)
+    return 1 - 3 / (2 * delta) * integral
+
+
+def test_fuchs_sondheimer_reduction_in_a_thin_film(tmp_path):
+    """Gray medium in a film one mean free path thick, diffuse top and bottom, specular side walls:
+    the in-plane kappa must be the bulk value times the Fuchs-Sondheimer factor."""
+    assert fuchs_sondheimer(1e3) == pytest.approx(1 - 3 / 8e3, rel=1e-4)      # thick-film limit 1 - 3/(8 delta)
+    mean_free_path = gray_material.VELOCITY * gray_material.RELAXATION_TIME
+    box = GRAY_BOX.format(tests=str(TESTS), particles=6000, width=300e-9, thickness=mean_free_path, length=1200e-9,
+                          internal=True, side_roughness=0.0)
+    data = run_freepaths(tmp_path, "thin_film", box)
+    kappa, _, error, _, _, _ = np.loadtxt(data / "Average thermal conductivity.csv", delimiter=",")
+    expected = gray_material.bulk_conductivity(300) * fuchs_sondheimer(1.0)
+    assert kappa == pytest.approx(expected, rel=0.06), \
+        (f"Fourier kappa {kappa:.1f} +/- {error:.1f} W/mK, Fuchs-Sondheimer {fuchs_sondheimer(1.0):.3f} x bulk "
+         f"= {expected:.1f} W/mK")
 
 
 # ---------------------------------------------------------------- Clausing transmission

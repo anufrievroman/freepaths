@@ -187,10 +187,6 @@ def in_plane_surface_scattering(pt, roughness):
         return Scattering.SPECULAR
 
     # Diffuse scattering:
-    # Random distribution:
-    # theta = -pi + random()*2*pi
-    # phi = -asin(random())
-
     # Lambert cosine distribution:
     pt.theta, pt.phi = lambert_angles(0, -sign(pt.phi)*pi/2)
     return Scattering.DIFFUSE
@@ -208,19 +204,13 @@ def circle_outer_scattering(pt, tangent_theta, y, y0, roughness, cf):
         pt.theta = - pt.theta - pi + 2*tangent_theta
         return Scattering.SPECULAR
 
-    # Diffuse scattering:
+    # Diffuse scattering. Lambert cosine distribution, redrawn if the new direction would
+    # immediately leave the domain. The event is diffuse whatever the draw:
     for attempt in range(10):
-
-        # Random distribution:
-        # theta = tangent_theta - (-pi/2 + pi*random()) - pi*(y < y0)
-        # phi = asin(2*random() - 1)
-
-        # Lambert cosine distribution:
         pt.theta, pt.phi = lambert_angles(tangent_theta - pi*(y < y0))
-
-        # Accept the angles only if they do not immediately cause new scattering:
         if no_new_scattering(pt, cf):
-            return Scattering.DIFFUSE
+            break
+    return Scattering.DIFFUSE
 
 
 def circle_inner_scattering(pt, tangent_theta, y, y0, roughness):
