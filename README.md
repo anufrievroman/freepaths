@@ -93,6 +93,7 @@ Details of the code and examples of the output can be found in the following pap
 
 Development of this code was funded by the following grants:
 
+- CNRS Cellule Energie grant 2024 (SEGMENT)
 - PRESTO JST (No. JPMJPR19I1)
 - CREST JST (No. JPMJCR19Q3)
 - Kakenhi (15H05869, 15K13270, and 18K14078)
